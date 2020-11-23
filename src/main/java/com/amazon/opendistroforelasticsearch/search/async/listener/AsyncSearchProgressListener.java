@@ -94,7 +94,6 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
     protected void onFinalReduce(List<SearchShard> shards, TotalHits totalHits, InternalAggregations aggs, int reducePhase) {
         assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase "+ reducePhase + "less than previous phase"
                 + partialResultsHolder.reducePhase.get();
-        assert partialResultsHolder.shards.get().equals(shards);
         partialResultsHolder.internalAggregations.set(aggs);
         partialResultsHolder.reducePhase.set(reducePhase);
         partialResultsHolder.totalHits.set(totalHits);
@@ -141,6 +140,8 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
                 }
                 shardFailures.setOnce(shardIndex, new ShardSearchFailure(e, shardTarget));
             }
+        } else {
+            shardFailures.setOnce(shardIndex, new ShardSearchFailure(e, shardTarget));
         }
     }
 

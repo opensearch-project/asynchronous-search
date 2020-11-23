@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
+import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsResponse;
 import org.elasticsearch.action.search.SearchAction;
@@ -176,18 +177,7 @@ public class AsyncSearchProgressListenerIT extends ESSingleNodeTestCase {
             }, listener);
 
             latch.await();
-
-            // TODO verify took time
-            // assertEquals(responseRef.get(), listener.partialResponse());
-            assertEquals(responseRef.get().getSuccessfulShards(), listener.partialResponse().getSuccessfulShards());
-            assertEquals(responseRef.get().getNumReducePhases(), listener.partialResponse().getNumReducePhases());
-            assertEquals(responseRef.get().getClusters(), listener.partialResponse().getClusters());
-            assertEquals(responseRef.get().getSkippedShards(), listener.partialResponse().getSkippedShards());
-            assertEquals(responseRef.get().getTotalShards(), listener.partialResponse().getTotalShards());
-            assertEquals(responseRef.get().getSuccessfulShards(), listener.partialResponse().getSuccessfulShards());
-            assertEquals(responseRef.get().getAggregations(), listener.partialResponse().getAggregations());
-            assertEquals(responseRef.get().getHits().getTotalHits(), listener.partialResponse().getHits().getTotalHits());
-            assertArrayEquals(responseRef.get().getShardFailures(), listener.partialResponse().getShardFailures());
+            AsyncSearchAssertions.assertSearchResponses(responseRef.get(), listener.partialResponse());
         } finally {
             ThreadPool.terminate(threadPool, 100, TimeUnit.MILLISECONDS);
         }
