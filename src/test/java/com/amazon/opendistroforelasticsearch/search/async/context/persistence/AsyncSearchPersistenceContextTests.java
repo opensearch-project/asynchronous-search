@@ -15,14 +15,15 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.persistence;
 
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchId;
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIdConverter;
+import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
+import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.InternalAggregations;
@@ -54,7 +55,8 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
         SearchResponse searchResponse = getMockSearchResponse();
         AsyncSearchPersistenceContext asyncSearchPersistenceContext =
                 new AsyncSearchPersistenceContext(id, asyncSearchContextId, new AsyncSearchPersistenceModel(startTimeMillis,
-                        expirationTimeMillis, searchResponse), System::currentTimeMillis);
+                        expirationTimeMillis, searchResponse), System::currentTimeMillis,
+                        new NamedWriteableRegistry(Collections.emptyList()));
         assertEquals(
                 asyncSearchPersistenceContext.getAsyncSearchResponse(),
                 new AsyncSearchResponse(id, false, startTimeMillis, expirationTimeMillis, searchResponse, null));
@@ -76,7 +78,7 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
         RuntimeException exception = new RuntimeException("test");
         AsyncSearchPersistenceContext asyncSearchPersistenceContext =
                 new AsyncSearchPersistenceContext(id, asyncSearchContextId, new AsyncSearchPersistenceModel(startTimeMillis,
-                        expirationTimeMillis, exception), System::currentTimeMillis);
+                        expirationTimeMillis, exception), System::currentTimeMillis, new NamedWriteableRegistry(Collections.emptyList()));
         AsyncSearchResponse parsed = asyncSearchPersistenceContext.getAsyncSearchResponse();
         /*
          * we cannot compare the cause, because it will be wrapped and serialized in an outer
@@ -85,7 +87,7 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
          */
         String originalMsg = parsed.getError().getCause().getMessage();
         assertEquals(originalMsg,
-                "Elasticsearch exception [type=runtime_exception, reason=test]");
+                "runtime_exception: test");
 
     }
 

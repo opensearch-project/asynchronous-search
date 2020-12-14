@@ -21,6 +21,7 @@ import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlug
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.unit.TimeValue;
@@ -60,18 +61,28 @@ public class AsyncSearchContextPermits implements Closeable {
     private Releasable acquirePermits(int permits, TimeValue timeout, final String details) throws TimeoutException {
         RunOnce release = new RunOnce(() -> {});
         if (closed) {
-            throw new IllegalStateException("trying to acquire permits on closed context ["+ asyncSearchContextId +"]");
+            logger.debug("Trying to acquire permit for closed context [{}]", asyncSearchContextId);
+            throw new AlreadyClosedException("trying to acquire permits on closed context ["+ asyncSearchContextId +"]");
         }
         try {
             if (semaphore.tryAcquire(permits, timeout.getMillis(), TimeUnit.MILLISECONDS)) {
                 this.lockDetails = details;
-                release = new RunOnce(() -> semaphore.release(permits));
+                release = new RunOnce(() -> {
+                    logger.warn("Releasing permit(s) [{}] with reason [{}]", permits, lockDetails);
+                    semaphore.release(permits);});
+                if (closed) {
+                    logger.debug("Trying to acquire permit for closed context [{}]", asyncSearchContextId);
+                    throw new AlreadyClosedException("trying to acquire permits on closed context ["+ asyncSearchContextId +"]");
+                }
                 return release::run;
             } else {
                 throw new TimeoutException("obtaining context lock" + asyncSearchContextId + "timed out after " +
                         timeout.getMillis() + "ms, previous lock details: [" + lockDetails + "] trying to lock for [" + details + "]");
             }
-        } catch (InterruptedException e) {
+        } catch (IllegalStateException e){
+            release.run();
+            throw new RuntimeException("Context already closed while trying to obtain context lock", e);
+        } catch (InterruptedException e ) {
             Thread.currentThread().interrupt();
             release.run();
             throw new RuntimeException("thread interrupted while trying to obtain context lock", e);
@@ -90,7 +101,7 @@ public class AsyncSearchContextPermits implements Closeable {
             @Override
             protected void doRun() throws TimeoutException {
                 final Releasable releasable = acquirePermits(permits, timeout, reason);
-                logger.debug("Successfully acquired permit {} for {}", permits, reason);
+                logger.warn("Successfully acquired context permit {} for {}", permits, reason);
                 onAcquired.onResponse(releasable);
             }
         });

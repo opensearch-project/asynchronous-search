@@ -53,9 +53,9 @@ public interface AsyncSearchContextListener {
     }
 
     /**
-     * @param contextId Executed when a previously created async search context is deleted.
+     * @param contextId Executed when a previously created async search context is closed.
      */
-    default void onContextDeleted(AsyncSearchContextId contextId) {
+    default void onContextClosed(AsyncSearchContextId contextId) {
     }
 
     /**

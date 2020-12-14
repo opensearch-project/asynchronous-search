@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
+import com.amazon.opendistroforelasticsearch.search.async.id.ExceptionTranslator;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.SetOnce;
@@ -44,7 +45,7 @@ import java.util.function.LongSupplier;
  */
 public class AsyncSearchProgressListener extends SearchProgressActionListener {
 
-    private final PartialResultsHolder partialResultsHolder;
+    private PartialResultsHolder partialResultsHolder;
     private final CompositeSearchProgressActionListener<AsyncSearchResponse> searchProgressActionListener;
     private final CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> successFunction;
     private final CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction;
@@ -76,14 +77,14 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
         partialResultsHolder.totalShards.set(shards.size());
         partialResultsHolder.skippedShards.set(skippedShards.size());
         partialResultsHolder.clusters.set(clusters);
-        partialResultsHolder.isInitialized.set(true);
+        partialResultsHolder.isInitialized = true;
         partialResultsHolder.shards.set(shards);
     }
 
     @Override
     protected void onPartialReduce(List<SearchShard> shards, TotalHits totalHits,
                                    DelayableWriteable.Serialized<InternalAggregations> aggs, int reducePhase) {
-        assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase "+ reducePhase + "less than previous phase"
+        assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase " + reducePhase + "less than previous phase"
                 + partialResultsHolder.reducePhase.get();
         partialResultsHolder.delayedInternalAggregations.set(aggs);
         partialResultsHolder.reducePhase.set(reducePhase);
@@ -92,7 +93,7 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
 
     @Override
     protected void onFinalReduce(List<SearchShard> shards, TotalHits totalHits, InternalAggregations aggs, int reducePhase) {
-        assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase "+ reducePhase + "less than previous phase"
+        assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase " + reducePhase + "less than previous phase"
                 + partialResultsHolder.reducePhase.get();
         partialResultsHolder.internalAggregations.set(aggs);
         partialResultsHolder.reducePhase.set(reducePhase);
@@ -157,7 +158,10 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
                 result = successFunction.apply(searchResponse);
                 searchProgressActionListener.onResponse(result);
             } catch (Exception ex) {
-                searchProgressActionListener.onFailure(ex);
+                Exception translatedException = ExceptionTranslator.translateException(ex);
+                searchProgressActionListener.onFailure(translatedException);
+            } finally {
+                clearPartialResult();
             }
         });
     }
@@ -170,14 +174,25 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
                 result = failureFunction.apply(e);
                 searchProgressActionListener.onResponse(result);
             } catch (Exception ex) {
-                searchProgressActionListener.onFailure(ex);
+                Exception translatedException = ExceptionTranslator.translateException(ex);
+                searchProgressActionListener.onFailure(translatedException);
+            } finally {
+                clearPartialResult();
             }
         });
     }
 
+    /**
+     * Invoked once search has completed with response or error.
+     */
+    private void clearPartialResult() {
+        partialResultsHolder = null;
+    }
+
     static class PartialResultsHolder {
+
+        volatile boolean isInitialized;
         final AtomicInteger reducePhase;
-        final SetOnce<Boolean> isInitialized;
         final SetOnce<Integer> totalShards;
         final SetOnce<Integer> skippedShards;
         final SetOnce<SearchResponse.Clusters> clusters;
@@ -199,7 +214,7 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
             this.successfulShards = new AtomicInteger();
             this.skippedShards = new SetOnce<>();
             this.reducePhase = new AtomicInteger(-1);
-            this.isInitialized = new SetOnce<>();
+            this.isInitialized = false;
             this.hasFetchPhase = new SetOnce<>();
             this.totalHits = new AtomicReference<>();
             this.clusters = new SetOnce<>();
@@ -212,7 +227,7 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
         }
 
         public SearchResponse partialResponse() {
-            if (isInitialized.get()) {
+            if (isInitialized) {
                 SearchHits searchHits = new SearchHits(SearchHits.EMPTY, totalHits.get(), Float.NaN);
                 InternalSearchResponse internalSearchResponse = new InternalSearchResponse(searchHits,
                         internalAggregations.get() == null ? (delayedInternalAggregations.get() != null

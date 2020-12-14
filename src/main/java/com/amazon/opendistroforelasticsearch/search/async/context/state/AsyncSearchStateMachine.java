@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.search.async.context.state;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.async.context.state.exception.AsyncSearchStateMachineException;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +39,7 @@ public class AsyncSearchStateMachine implements StateMachine<AsyncSearchState, A
     private final Map<String, AsyncSearchTransition<? extends AsyncSearchContextEvent>> transitionsMap;
     private final AsyncSearchState initialState;
     private Set<AsyncSearchState> finalStates;
-    private Set<AsyncSearchState> states;
+    private final Set<AsyncSearchState> states;
 
     public AsyncSearchStateMachine(final Set<AsyncSearchState> states, final AsyncSearchState initialState) {
         super();
@@ -80,33 +79,37 @@ public class AsyncSearchStateMachine implements StateMachine<AsyncSearchState, A
 
     /**
      * Triggers transition from current state on receiving an event. Also invokes {@linkplain Transition#onEvent()} and
-     * {@linkplain Transition#eventListener()}
+     * {@linkplain Transition#eventListener()}.
      *
      * @param event to fire
      * @return The final Async search state
-     * @throws AsyncSearchStateMachineException when no transition is found  from current state on given event
+     * @throws IllegalStateException when no transition is found  from current state on given event
      */
     @Override
     public AsyncSearchState trigger(AsyncSearchContextEvent event) throws AsyncSearchStateMachineException {
         AsyncSearchContext asyncSearchContext = event.asyncSearchContext();
         synchronized (asyncSearchContext) {
             AsyncSearchState currentState = asyncSearchContext.getAsyncSearchState();
+            if (getFinalStates().contains(currentState)) {
+                throw new AsyncSearchStateMachineClosedException(currentState, event);
+            }
             String transitionId = getTransitionId(currentState, event.getClass());
             if (transitionsMap.containsKey(transitionId)) {
                 AsyncSearchTransition<? extends AsyncSearchContextEvent> transition = transitionsMap.get(transitionId);
                 execute(transition.onEvent(), event, currentState);
                 asyncSearchContext.setState(transition.targetState());
-                logger.debug("Executed event {} for async event {} ", event.getClass().getName(),
+                logger.debug("Executed event [{}] for async search id [{}] ", event.getClass().getName(),
                         event.asyncSearchContext.getAsyncSearchId());
                 BiConsumer<AsyncSearchContextId, AsyncSearchContextListener> eventListener = transition.eventListener();
                 try {
                     eventListener.accept(event.asyncSearchContext().getContextId(), asyncSearchContext.getContextListener());
                 } catch (Exception ex) {
-                    logger.error(() -> new ParameterizedMessage("Failed to execute listener for async search id : {}",
+                    logger.error(() -> new ParameterizedMessage("Failed to execute listener for async search id : [{}]",
                             event.asyncSearchContext.getAsyncSearchId()), ex);
                 }
                 return asyncSearchContext.getAsyncSearchState();
             } else {
+                logger.warn("Invalid transition from source state [{}] on event [{}]", currentState, event.getClass().getName());
                 throw new AsyncSearchStateMachineException(currentState, event);
             }
         }

@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.search.async.response;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Requests;
@@ -49,7 +50,9 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
     private static final ParseField EXPIRATION_TIME_IN_MILLIS = new ParseField("expiration_time_in_millis");
     private static final ParseField RESPONSE = new ParseField("response");
     private static final ParseField ERROR = new ParseField("error");
-    private final String id;
+    @Nullable
+    //when the search is cancelled we don't have the id
+    private String id;
     private final boolean isRunning;
     private final long startTimeMillis;
     private final long expirationTimeMillis;
@@ -65,7 +68,7 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.searchResponse = searchResponse;
-        this.error = error == null ? null : new ElasticsearchException(error);
+        this.error = error == null ? null : ExceptionsHelper.convertToElastic(error);
     }
 
     public AsyncSearchResponse(String id, boolean isRunning, long startTimeMillis, long expirationTimeMillis,
@@ -78,8 +81,17 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
         this.error = error;
     }
 
+    public AsyncSearchResponse(boolean isRunning, long startTimeMillis, long expirationTimeMillis,
+                               SearchResponse searchResponse, ElasticsearchException error) {
+        this.isRunning = isRunning;
+        this.startTimeMillis = startTimeMillis;
+        this.expirationTimeMillis = expirationTimeMillis;
+        this.searchResponse = searchResponse;
+        this.error = error;
+    }
+
     public AsyncSearchResponse(StreamInput in) throws IOException {
-        this.id = in.readString();
+        this.id = in.readOptionalString();
         this.isRunning = in.readBoolean();
         this.startTimeMillis = in.readLong();
         this.expirationTimeMillis = in.readLong();
@@ -89,7 +101,7 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeString(id);
+        out.writeOptionalString(id);
         out.writeBoolean(isRunning);
         out.writeLong(startTimeMillis);
         out.writeLong(expirationTimeMillis);
@@ -105,7 +117,9 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
-        builder.field(ID.getPreferredName(), id);
+        if (id != null) {
+            builder.field(ID.getPreferredName(), id);
+        }
         builder.field(IS_RUNNING.getPreferredName(), isRunning);
         builder.field(START_TIME_IN_MILLIS.getPreferredName(), startTimeMillis);
         builder.field(EXPIRATION_TIME_IN_MILLIS.getPreferredName(), expirationTimeMillis);

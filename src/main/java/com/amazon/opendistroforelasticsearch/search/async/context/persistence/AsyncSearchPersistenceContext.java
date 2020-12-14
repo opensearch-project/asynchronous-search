@@ -20,17 +20,14 @@ import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchCon
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
@@ -43,16 +40,19 @@ public class AsyncSearchPersistenceContext extends AsyncSearchContext {
 
     private final String asyncSearchId;
     private final AsyncSearchPersistenceModel asyncSearchPersistenceModel;
+    private final NamedWriteableRegistry namedWriteableRegistry;
 
     public AsyncSearchPersistenceContext(String asyncSearchId, AsyncSearchContextId asyncSearchContextId,
                                          AsyncSearchPersistenceModel asyncSearchPersistenceModel,
-                                         LongSupplier currentTimeSupplier) {
+                                         LongSupplier currentTimeSupplier,
+                                         NamedWriteableRegistry namedWriteableRegistry) {
         super(asyncSearchContextId, currentTimeSupplier);
         Objects.requireNonNull(asyncSearchId);
         Objects.requireNonNull(asyncSearchContextId);
         Objects.requireNonNull(asyncSearchPersistenceModel);
         this.asyncSearchId = asyncSearchId;
         this.asyncSearchPersistenceModel = asyncSearchPersistenceModel;
+        this.namedWriteableRegistry = namedWriteableRegistry;
     }
 
     public AsyncSearchPersistenceModel getAsyncSearchPersistenceModel() {
@@ -81,34 +81,36 @@ public class AsyncSearchPersistenceContext extends AsyncSearchContext {
 
     @Override
     public SearchResponse getSearchResponse() {
-        BytesReference response = asyncSearchPersistenceModel.getResponse();
-        if (response != null) {
-            try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, response, Requests.INDEX_CONTENT_TYPE)) {
-                return SearchResponse.fromXContent(parser);
+        if (asyncSearchPersistenceModel.getResponse() == null) {
+            return null;
+        } else {
+            BytesReference bytesReference =
+                    BytesReference.fromByteBuffer(ByteBuffer.wrap(Base64.getUrlDecoder().decode(
+                            asyncSearchPersistenceModel.getResponse())));
+            try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
+                    namedWriteableRegistry)) {
+                return new SearchResponse(wrapperStreamInput);
             } catch (IOException e) {
-                logger.error(new ParameterizedMessage("could not parse search response for async search id : {}",
-                        asyncSearchId), e);
+                logger.error("Failed to parse search response " + asyncSearchPersistenceModel.getResponse(), e);
+                return null;
             }
         }
-        return null;
     }
 
     @Override
     public Exception getSearchError() {
-
-        BytesReference error = asyncSearchPersistenceModel.getError();
-        if (error != null) {
-            try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, error, Requests.INDEX_CONTENT_TYPE)) {
-                parser.nextToken();
-                return ElasticsearchException.fromXContent(parser);
-            } catch (IOException e) {
-                logger.error(() -> new ParameterizedMessage("could not parse search error for async search id : {}",
-                        asyncSearchId), e);
-            }
+        if (asyncSearchPersistenceModel.getError() == null) {
+            return null;
         }
-        return null;
+        BytesReference bytesReference =
+                BytesReference.fromByteBuffer(ByteBuffer.wrap(Base64.getUrlDecoder().decode(asyncSearchPersistenceModel.getError())));
+        try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
+                namedWriteableRegistry)) {
+            return wrapperStreamInput.readException();
+        } catch (IOException e) {
+            logger.error("Failed to parse search error " + asyncSearchPersistenceModel.getError(), e);
+            return null;
+        }
     }
 
     @Override
@@ -132,4 +134,5 @@ public class AsyncSearchPersistenceContext extends AsyncSearchContext {
                 .equals(this.asyncSearchId) && asyncSearchPersistenceContext.getAsyncSearchPersistenceModel()
                 .equals(this.asyncSearchPersistenceModel);
     }
+
 }

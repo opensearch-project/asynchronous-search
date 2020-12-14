@@ -13,17 +13,18 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async.context.state.event;
+package com.amazon.opendistroforelasticsearch.search.async.action;
 
-import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
-import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchContextEvent;
+import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
+import org.elasticsearch.action.ActionType;
 
-/**
- * Event triggered when an ongoing async search has been deleted.
- */
-public class SearchDeletionEvent extends AsyncSearchContextEvent {
+public class GetAsyncSearchAction extends ActionType<AsyncSearchResponse> {
 
-    public SearchDeletionEvent(AsyncSearchContext asyncSearchContext) {
-        super(asyncSearchContext);
+    public static final GetAsyncSearchAction INSTANCE = new GetAsyncSearchAction();
+    public static final String NAME = "indices:data/read/get_async_search";
+
+    private GetAsyncSearchAction() {
+        super(NAME, AsyncSearchResponse::new);
     }
+
 }
