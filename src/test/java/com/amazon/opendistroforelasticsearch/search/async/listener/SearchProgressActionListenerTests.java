@@ -14,12 +14,12 @@
  */
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
+import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -27,12 +27,10 @@ import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.search.profile.SearchProfileShardResults;
 import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.junit.Before;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,14 +39,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 
-public class SearchProgressActionListenerTests extends ESTestCase {
+public class SearchProgressActionListenerTests extends AsyncSearchTestCase {
 
     private final AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
     private final AtomicReference<Exception> exceptionRef = new AtomicReference<>();
     private Exception mockSearchException;
-    private IOException mockPostProcessingException;
+    private RuntimeException mockPostProcessingException;
     private SearchResponse mockSearchResponse;
     private AsyncSearchResponse mockAsyncSearchResp;
     private AsyncSearchResponse mockAsyncSearchFailResp;
@@ -56,7 +55,7 @@ public class SearchProgressActionListenerTests extends ESTestCase {
     @Before
     public void setUpMocks() {
         mockSearchException = new RuntimeException("random-search-exception");
-        mockPostProcessingException = new IOException("random-post-processing-exception");
+        mockPostProcessingException = new RuntimeException("random-post-processing-exception");
         mockSearchResponse = new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
                 new InternalAggregations(Collections.emptyList()),
@@ -74,19 +73,18 @@ public class SearchProgressActionListenerTests extends ESTestCase {
         try {
             final int numListeners = randomIntBetween(1, 20);
             threadPool = new TestThreadPool(getClass().getName());
-            CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> responseFunction =
+            Function<SearchResponse, AsyncSearchResponse> responseFunction =
                     (r) -> {
                         assertTrue(responseRef.compareAndSet(null, r));
                         return mockAsyncSearchResp;
                     };
-            CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction =
+            Function<Exception, AsyncSearchResponse> failureFunction =
                     (e) -> {
                         assertTrue(exceptionRef.compareAndSet(null, e));
                         return mockAsyncSearchFailResp;
                     };
-            AsyncSearchProgressListener progressActionListener =
-                    new AsyncSearchProgressListener(randomLong(), responseFunction, failureFunction, threadPool.generic(),
-                            ESTestCase::randomLong);
+            AsyncSearchProgressListener progressActionListener = mockAsyncSearchProgressListener(threadPool, responseFunction,
+                    failureFunction);
             Tuple<List<AtomicReference<AsyncSearchResponse>>, List<AtomicReference<Exception>>> respTuple =
                     processListeners(progressActionListener, () -> progressActionListener.onResponse(mockSearchResponse), numListeners);
 
@@ -112,19 +110,18 @@ public class SearchProgressActionListenerTests extends ESTestCase {
         try {
             final int numListeners = randomIntBetween(1, 20);
             threadPool = new TestThreadPool(getClass().getName());
-            CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> responseFunction =
+            Function<SearchResponse, AsyncSearchResponse> responseFunction =
                     (r) -> {
                         assertTrue(responseRef.compareAndSet(null, r));
                         return mockAsyncSearchResp;
                     };
-            CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction =
+            Function<Exception, AsyncSearchResponse> failureFunction =
                     (e) -> {
                         assertTrue(exceptionRef.compareAndSet(null, e));
                         return mockAsyncSearchFailResp;
                     };
-            AsyncSearchProgressListener progressActionListener =
-                    new AsyncSearchProgressListener(randomLong(), responseFunction, failureFunction, threadPool.generic(),
-                            ESTestCase::randomLong);
+            AsyncSearchProgressListener progressActionListener = mockAsyncSearchProgressListener(threadPool, responseFunction,
+                    failureFunction);
             Tuple<List<AtomicReference<AsyncSearchResponse>>, List<AtomicReference<Exception>>> respTuple =
                     processListeners(progressActionListener, () -> progressActionListener.onFailure(mockSearchException), numListeners);
 
@@ -150,19 +147,18 @@ public class SearchProgressActionListenerTests extends ESTestCase {
         try {
             final int numListeners = randomIntBetween(1, 20);
             threadPool = new TestThreadPool(getClass().getName());
-            CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> responseFunction =
+            Function<SearchResponse, AsyncSearchResponse> responseFunction =
                     (r) -> {
                         assertTrue(responseRef.compareAndSet(null, r));
                         throw mockPostProcessingException;
                     };
-            CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction =
+            Function<Exception, AsyncSearchResponse> failureFunction =
                     (e) -> {
                         assertTrue(exceptionRef.compareAndSet(null, e));
                         throw mockPostProcessingException;
                     };
-            AsyncSearchProgressListener progressActionListener =
-                    new AsyncSearchProgressListener(randomLong(), responseFunction, failureFunction, threadPool.generic(),
-                            ESTestCase::randomLong);
+            AsyncSearchProgressListener progressActionListener = mockAsyncSearchProgressListener(threadPool, responseFunction,
+                    failureFunction);
             Tuple<List<AtomicReference<AsyncSearchResponse>>, List<AtomicReference<Exception>>> respTuple =
                     processListeners(progressActionListener, () -> progressActionListener.onFailure(mockSearchException), numListeners);
 
@@ -188,19 +184,18 @@ public class SearchProgressActionListenerTests extends ESTestCase {
         try {
             final int numListeners = randomIntBetween(1, 20);
             threadPool = new TestThreadPool(getClass().getName());
-            CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> responseFunction =
+            Function<SearchResponse, AsyncSearchResponse> responseFunction =
                     (r) -> {
                         assertTrue(responseRef.compareAndSet(null, r));
                         throw mockPostProcessingException;
                     };
-            CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction =
+            Function<Exception, AsyncSearchResponse> failureFunction =
                     (e) -> {
                         assertTrue(exceptionRef.compareAndSet(null, e));
                         throw mockPostProcessingException;
                     };
-            AsyncSearchProgressListener progressActionListener =
-                    new AsyncSearchProgressListener(randomLong(), responseFunction, failureFunction, threadPool.generic(),
-                            ESTestCase::randomLong);
+            AsyncSearchProgressListener progressActionListener = mockAsyncSearchProgressListener(threadPool, responseFunction,
+                    failureFunction);
             Tuple<List<AtomicReference<AsyncSearchResponse>>, List<AtomicReference<Exception>>> respTuple =
                     processListeners(progressActionListener, () -> progressActionListener.onResponse(mockSearchResponse), numListeners);
 

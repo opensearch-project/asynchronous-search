@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.state;
 
+import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchContextEvent;
@@ -45,7 +46,6 @@ import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.search.profile.SearchProfileShardResults;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -69,7 +69,7 @@ import static com.amazon.opendistroforelasticsearch.search.async.context.state.A
 import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.SUCCEEDED;
 import static java.util.Collections.emptyMap;
 
-public class AsyncSearchStateMachineTests extends ESTestCase {
+public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
 
     private final String node = UUID.randomUUID().toString();
 
@@ -77,8 +77,7 @@ public class AsyncSearchStateMachineTests extends ESTestCase {
         TestThreadPool threadPool = null;
         try {
             threadPool = new TestThreadPool("test");
-            AsyncSearchProgressListener asyncSearchProgressListener = new AsyncSearchProgressListener(
-                    threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(), threadPool::relativeTimeInMillis);
+            AsyncSearchProgressListener asyncSearchProgressListener = mockAsyncSearchProgressListener(threadPool);
             AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             boolean keepOnCompletion = randomBoolean();

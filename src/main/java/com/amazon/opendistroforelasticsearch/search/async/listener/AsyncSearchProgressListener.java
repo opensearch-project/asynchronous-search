@@ -23,20 +23,22 @@ import org.elasticsearch.action.search.SearchProgressActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchShard;
 import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.io.stream.DelayableWriteable;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.SearchShardTarget;
+import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.internal.InternalSearchResponse;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 
 /***
@@ -47,17 +49,18 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
 
     private PartialResultsHolder partialResultsHolder;
     private final CompositeSearchProgressActionListener<AsyncSearchResponse> searchProgressActionListener;
-    private final CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> successFunction;
-    private final CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction;
+    private final Function<SearchResponse, AsyncSearchResponse> successFunction;
+    private final Function<Exception, AsyncSearchResponse> failureFunction;
     private final ExecutorService executor;
 
-    public AsyncSearchProgressListener(long relativeStartMillis, CheckedFunction<SearchResponse, AsyncSearchResponse,
-            IOException> successFunction, CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction,
-                                       ExecutorService executor, LongSupplier relativeTimeSupplier) {
+    public AsyncSearchProgressListener(long relativeStartMillis, Function<SearchResponse, AsyncSearchResponse> successFunction,
+                                       Function<Exception, AsyncSearchResponse> failureFunction,
+                                       ExecutorService executor, LongSupplier relativeTimeSupplier,
+                                       Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder) {
         this.successFunction = successFunction;
         this.failureFunction = failureFunction;
         this.executor = executor;
-        this.partialResultsHolder = new PartialResultsHolder(relativeStartMillis, relativeTimeSupplier);
+        this.partialResultsHolder = new PartialResultsHolder(relativeStartMillis, relativeTimeSupplier, reduceContextBuilder);
         this.searchProgressActionListener = new CompositeSearchProgressActionListener<AsyncSearchResponse>();
     }
 
@@ -96,6 +99,8 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
         assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase " + reducePhase + "less than previous phase"
                 + partialResultsHolder.reducePhase.get();
         partialResultsHolder.internalAggregations.set(aggs);
+        //we don't need to hold its reference beyond this point
+        partialResultsHolder.delayedInternalAggregations.set(null);
         partialResultsHolder.reducePhase.set(reducePhase);
         partialResultsHolder.totalHits.set(totalHits);
     }
@@ -206,14 +211,16 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
         final long relativeStartMillis;
         final LongSupplier relativeTimeSupplier;
         final Object shardFailuresMutex;
+        final  Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder;
 
 
-        PartialResultsHolder(long relativeStartMillis, LongSupplier relativeTimeSupplier) {
+        PartialResultsHolder(long relativeStartMillis, LongSupplier relativeTimeSupplier,
+                             Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder) {
             this.internalAggregations = new AtomicReference<>();
             this.totalShards = new SetOnce<>();
             this.successfulShards = new AtomicInteger();
             this.skippedShards = new SetOnce<>();
-            this.reducePhase = new AtomicInteger(-1);
+            this.reducePhase = new AtomicInteger(0);
             this.isInitialized = false;
             this.hasFetchPhase = new SetOnce<>();
             this.totalHits = new AtomicReference<>();
@@ -224,15 +231,23 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
             this.relativeTimeSupplier = relativeTimeSupplier;
             this.shardFailures = new SetOnce<>();
             this.shardFailuresMutex = new Object();
+            this.reduceContextBuilder = reduceContextBuilder;
         }
 
         public SearchResponse partialResponse() {
             if (isInitialized) {
                 SearchHits searchHits = new SearchHits(SearchHits.EMPTY, totalHits.get(), Float.NaN);
+                InternalAggregations finalAggregation = null;
+                //after final reduce phase this should be present
+                if (internalAggregations.get() != null) {
+                    finalAggregation = internalAggregations.get();
+                    //before final reduce phase ensure we do a top-level final reduce to get reduced aggregation results
+                } else if (delayedInternalAggregations.get() != null) {
+                    finalAggregation = InternalAggregations.topLevelReduce(Arrays.asList(delayedInternalAggregations.get().expand()),
+                            reduceContextBuilder.get().forFinalReduction());
+                }
                 InternalSearchResponse internalSearchResponse = new InternalSearchResponse(searchHits,
-                        internalAggregations.get() == null ? (delayedInternalAggregations.get() != null
-                                ? delayedInternalAggregations.get().expand() : null) : internalAggregations.get(),
-                        null, null, false, null, reducePhase.get());
+                        finalAggregation, null, null, false, null, reducePhase.get());
                 long tookInMillis = relativeTimeSupplier.getAsLong() - relativeStartMillis;
                 return new SearchResponse(internalSearchResponse, null, totalShards.get(),
                         successfulShards.get(), skippedShards.get(), tookInMillis, buildShardFailures(), clusters.get());

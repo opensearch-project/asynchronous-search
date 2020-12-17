@@ -26,9 +26,10 @@ import org.elasticsearch.action.search.SearchTask;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -37,7 +38,6 @@ import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
@@ -146,15 +147,17 @@ public class AsyncSearchProgressListenerIT extends ESSingleNodeTestCase {
         TestThreadPool threadPool = null;
         try {
             threadPool = new TestThreadPool(AsyncSearchProgressListenerIT.class.getName());
+            SearchService service = getInstanceFromNode(SearchService.class);
+            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
             AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> responseFunction =
+            Function<SearchResponse, AsyncSearchResponse> responseFunction =
                     (r) -> null;
-            CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction =
+            Function<Exception, AsyncSearchResponse> failureFunction =
                     (e) -> null;
             AsyncSearchProgressListener listener = new AsyncSearchProgressListener(threadPool.relativeTimeInMillis(), responseFunction,
-                    failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis){
+                    failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis, () -> reduceContextBuilder){
                 @Override
                 public void onResponse(SearchResponse searchResponse) {
                     assertTrue(responseRef.compareAndSet(null, searchResponse));
@@ -183,18 +186,18 @@ public class AsyncSearchProgressListenerIT extends ESSingleNodeTestCase {
         }
     }
 
-        private static List<SearchShard> createRandomIndices(Client client) {
-            int numIndices = randomIntBetween(3, 20);
-            for (int i = 0; i < numIndices; i++) {
-                String indexName = String.format(Locale.ROOT, "index-%03d" , i);
-                assertAcked(client.admin().indices().prepareCreate(indexName).get());
-                client.prepareIndex(indexName, "doc", Integer.toString(i)).setSource("number", i, "foo", "bar").get();
-            }
-            client.admin().indices().prepareRefresh("index-*").get();
-            ClusterSearchShardsResponse resp = client.admin().cluster().prepareSearchShards("index-*").get();
-            return Arrays.stream(resp.getGroups())
-                    .map(e -> new SearchShard(null, e.getShardId()))
-                    .sorted()
-                    .collect(Collectors.toList());
+    private static List<SearchShard> createRandomIndices(Client client) {
+        int numIndices = randomIntBetween(3, 20);
+        for (int i = 0; i < numIndices; i++) {
+            String indexName = String.format(Locale.ROOT, "index-%03d" , i);
+            assertAcked(client.admin().indices().prepareCreate(indexName).get());
+            client.prepareIndex(indexName, "doc", Integer.toString(i)).setSource("number", i, "foo", "bar").get();
         }
+        client.admin().indices().prepareRefresh("index-*").get();
+        ClusterSearchShardsResponse resp = client.admin().cluster().prepareSearchShards("index-*").get();
+        return Arrays.stream(resp.getGroups())
+                .map(e -> new SearchShard(null, e.getShardId()))
+                .sorted()
+                .collect(Collectors.toList());
     }
+}

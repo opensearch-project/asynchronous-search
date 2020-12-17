@@ -16,6 +16,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.active;
 
+import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
@@ -37,7 +38,6 @@ import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.search.profile.SearchProfileShardResults;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ScalingExecutorBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.CLOSED;
 import static java.util.Collections.emptyMap;
 
-public class AsyncSearchActiveContextTests extends ESTestCase {
+public class AsyncSearchActiveContextTests extends AsyncSearchTestCase {
 
     public void testInitializeContext() {
         TestThreadPool threadPool = null;
@@ -70,10 +70,9 @@ public class AsyncSearchActiveContextTests extends ESTestCase {
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
-            threadPool = new TestThreadPool("IndexShardOperationPermitsTests", settings, scalingExecutorBuilder);
+            threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
-            AsyncSearchProgressListener asyncSearchProgressListener = new AsyncSearchProgressListener(
-                    threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(), threadPool::relativeTimeInMillis);
+            AsyncSearchProgressListener asyncSearchProgressListener = mockAsyncSearchProgressListener(threadPool);
             AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             boolean keepOnCompletion = randomBoolean();
@@ -106,10 +105,9 @@ public class AsyncSearchActiveContextTests extends ESTestCase {
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
-            threadPool = new TestThreadPool("IndexShardOperationPermitsTests", settings, scalingExecutorBuilder);
+            threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
-            AsyncSearchProgressListener asyncSearchProgressListener = new AsyncSearchProgressListener(
-                    threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(), threadPool::relativeTimeInMillis);
+            AsyncSearchProgressListener asyncSearchProgressListener = mockAsyncSearchProgressListener(threadPool);
             AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             boolean keepOnCompletion = randomBoolean();
@@ -153,10 +151,9 @@ public class AsyncSearchActiveContextTests extends ESTestCase {
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
-            threadPool = new TestThreadPool("IndexShardOperationPermitsTests", settings, scalingExecutorBuilder);
+            threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
-            AsyncSearchProgressListener asyncSearchProgressListener = new AsyncSearchProgressListener(
-                    threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(), threadPool::relativeTimeInMillis);
+            AsyncSearchProgressListener asyncSearchProgressListener = mockAsyncSearchProgressListener(threadPool);
             AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             boolean keepOnCompletion = true;
@@ -217,10 +214,9 @@ public class AsyncSearchActiveContextTests extends ESTestCase {
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
-            threadPool = new TestThreadPool("IndexShardOperationPermitsTests", settings, scalingExecutorBuilder);
+            threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
-            AsyncSearchProgressListener asyncSearchProgressListener = new AsyncSearchProgressListener(
-                    threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(), threadPool::relativeTimeInMillis);
+            AsyncSearchProgressListener asyncSearchProgressListener = mockAsyncSearchProgressListener(threadPool);
             AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             boolean keepOnCompletion = randomBoolean();

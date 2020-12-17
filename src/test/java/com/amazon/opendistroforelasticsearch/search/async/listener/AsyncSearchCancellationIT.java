@@ -28,7 +28,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchTask;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginsService;
@@ -36,6 +35,7 @@ import org.elasticsearch.script.MockScriptPlugin;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchService;
+import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.lookup.LeafFieldsLookup;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.tasks.TaskInfo;
@@ -43,7 +43,6 @@ import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -167,17 +166,24 @@ public class AsyncSearchCancellationIT extends ESIntegTestCase {
 
     private void testCase(Client client, SearchRequest request, List<ScriptedBlockPlugin> plugins) throws Exception {
         AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
+        AtomicBoolean reduceContextInvocation = new AtomicBoolean();
         TestThreadPool threadPool = null;
         try {
             threadPool = new TestThreadPool(AsyncSearchProgressListenerIT.class.getName());
+            SearchService service = internalCluster().getInstance(SearchService.class);
+            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            CheckedFunction<SearchResponse, AsyncSearchResponse, IOException> responseFunction =
+            Function<SearchResponse, AsyncSearchResponse> responseFunction =
                     (r) -> null;
-            CheckedFunction<Exception, AsyncSearchResponse, IOException> failureFunction =
+            Function<Exception, AsyncSearchResponse> failureFunction =
                     (e) -> null;
             AsyncSearchProgressListener listener = new AsyncSearchProgressListener(threadPool.relativeTimeInMillis(), responseFunction,
-                    failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis){
+                    failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis,
+                    () -> {
+                assertTrue(reduceContextInvocation.compareAndSet(false, true));
+                return reduceContextBuilder;
+            }) {
                 @Override
                 public void onResponse(SearchResponse searchResponse) {
                     assertTrue(responseRef.compareAndSet(null, searchResponse));
@@ -204,7 +210,7 @@ public class AsyncSearchCancellationIT extends ESIntegTestCase {
             disableBlocks(plugins);
 
             latch.await();
-
+            assertFalse(reduceContextInvocation.get());
             if (responseRef.get() != null) {
                 AsyncSearchAssertions.assertSearchResponses(responseRef.get(), listener.partialResponse());
             } else {

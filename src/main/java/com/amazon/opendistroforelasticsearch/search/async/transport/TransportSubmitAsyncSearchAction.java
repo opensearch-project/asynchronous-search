@@ -37,6 +37,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.search.SearchService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -56,16 +57,18 @@ public class TransportSubmitAsyncSearchAction extends HandledTransportAction<Sub
     private final ClusterService clusterService;
     private final TransportSearchAction transportSearchAction;
     private final AsyncSearchService asyncSearchService;
+    private final SearchService searchService;
 
     @Inject
     public TransportSubmitAsyncSearchAction(ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
                                             ActionFilters actionFilters, AsyncSearchService asyncSearchService,
-                                            TransportSearchAction transportSearchAction) {
+                                            TransportSearchAction transportSearchAction, SearchService searchService) {
         super(SubmitAsyncSearchAction.NAME, transportService, actionFilters, SubmitAsyncSearchRequest::new);
         this.threadPool = threadPool;
         this.clusterService = clusterService;
         this.asyncSearchService = asyncSearchService;
         this.transportSearchAction = transportSearchAction;
+        this.searchService = searchService;
     }
 
     @Override
@@ -73,8 +76,7 @@ public class TransportSubmitAsyncSearchAction extends HandledTransportAction<Sub
         AsyncSearchContext asyncSearchContext = null;
         try {
             final long relativeStartTimeInMillis = threadPool.relativeTimeInMillis();
-            asyncSearchContext = asyncSearchService.createAndStoreContext(request.getKeepAlive(),
-                    request.getKeepOnCompletion(), relativeStartTimeInMillis);
+            asyncSearchContext = asyncSearchService.createAndStoreContext(request, relativeStartTimeInMillis, searchService);
             assert asyncSearchContext.getAsyncSearchProgressListener() != null : "missing progress listener for an active context";
             AsyncSearchProgressListener progressListener = asyncSearchContext.getAsyncSearchProgressListener();
             AsyncSearchContext context = asyncSearchContext; //making it effectively final for usage in anonymous class.
