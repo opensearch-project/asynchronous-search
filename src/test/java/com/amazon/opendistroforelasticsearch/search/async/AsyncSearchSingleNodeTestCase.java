@@ -18,6 +18,8 @@ package com.amazon.opendistroforelasticsearch.search.async;
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
+import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
@@ -25,14 +27,23 @@ import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSea
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.logging.log4j.LogManager;
+import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.index.reindex.ReindexPlugin;
 import org.elasticsearch.script.MockScriptPlugin;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.InternalAggregations;
+import org.elasticsearch.search.internal.InternalSearchResponse;
+import org.elasticsearch.search.profile.SearchProfileShardResults;
+import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -51,7 +62,7 @@ import java.util.function.Function;
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
 
 public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase {
-    protected static final String INDEX = ".asynchronous_search_response";
+    protected static final String INDEX = AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX;
     protected static final String TEST_INDEX = "index";
 
     @Override
@@ -104,6 +115,17 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
         client.execute(GetAsyncSearchAction.INSTANCE, request, listener);
     }
 
+    public static boolean verifyAsyncSearchState(Client client, String id, AsyncSearchState state) {
+        GetAsyncSearchRequest getAsyncSearchRequest = new GetAsyncSearchRequest(id);
+        try {
+            AsyncSearchResponse asyncSearchResponse = executeGetAsyncSearch(client, getAsyncSearchRequest).actionGet();
+            return asyncSearchResponse.getState() == state;
+        } catch (Exception ex) {
+            fail("Exception received on trying to retrieve state " + ex.getMessage());
+        }
+        return false;
+    }
+
     public List<SearchDelayPlugin> initPluginFactory() {
         List<SearchDelayPlugin> plugins = new ArrayList<>();
         PluginsService pluginsService = getInstanceFromNode(PluginsService.class);
@@ -122,6 +144,18 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
         for (SearchDelayPlugin plugin : plugins) {
             plugin.enableBlock();
         }
+    }
+
+    protected SearchResponse getMockSearchResponse() {
+        int totalShards = randomInt(100);
+        int successfulShards = totalShards - randomInt(100);
+        return new SearchResponse(new InternalSearchResponse(
+                new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
+                new InternalAggregations(Collections.emptyList()),
+                new Suggest(Collections.emptyList()),
+                new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
+                "", totalShards, successfulShards, 0, randomNonNegativeLong(),
+                ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);
     }
 
     public static class SearchDelayPlugin extends MockScriptPlugin {

@@ -76,9 +76,10 @@ public class SubmitAsyncSearchRequest extends ActionRequest {
     public SubmitAsyncSearchRequest(SearchRequest searchRequest) {
         this.searchRequest = searchRequest;
         this.searchRequest.setCcsMinimizeRoundtrips(CCR_MINIMIZE_ROUNDTRIPS);
-        this.searchRequest.setBatchedReduceSize(DEFAULT_BATCHED_REDUCE_SIZE);
         this.searchRequest.setPreFilterShardSize(DEFAULT_PRE_FILTER_SHARD_SIZE);
-        this.searchRequest.requestCache(DEFAULT_REQUEST_CACHE);
+        if (this.searchRequest.requestCache() == null) {
+            this.searchRequest.requestCache(DEFAULT_REQUEST_CACHE);
+        }
     }
 
     public SearchRequest getSearchRequest() {

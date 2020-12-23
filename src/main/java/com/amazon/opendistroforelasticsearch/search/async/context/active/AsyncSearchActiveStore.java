@@ -15,7 +15,6 @@
 package com.amazon.opendistroforelasticsearch.search.async.context.active;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -26,6 +25,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentMapLong;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.newConcurrentMapLongWithAggressiveConcurrency;
 
@@ -34,17 +34,14 @@ public class AsyncSearchActiveStore {
 
     private static Logger logger = LogManager.getLogger(AsyncSearchActiveStore.class);
     private volatile int maxRunningContext;
-    private final AsyncSearchStateMachine asyncSearchStateMachine;
     public static final Setting<Integer> MAX_RUNNING_CONTEXT = Setting.intSetting(
             "async_search.max_running_context", 100, 0, Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     private final ConcurrentMapLong<AsyncSearchActiveContext> activeContexts = newConcurrentMapLongWithAggressiveConcurrency();
 
-
-    public AsyncSearchActiveStore(ClusterService clusterService, AsyncSearchStateMachine stateMachine) {
+    public AsyncSearchActiveStore(ClusterService clusterService) {
         Settings settings = clusterService.getSettings();
         maxRunningContext = MAX_RUNNING_CONTEXT.get(settings);
-        this.asyncSearchStateMachine = stateMachine;
         clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_RUNNING_CONTEXT, this::setMaxRunningContext);
     }
 
@@ -52,8 +49,10 @@ public class AsyncSearchActiveStore {
         this.maxRunningContext = maxRunningContext;
     }
 
-    public synchronized void putContext(AsyncSearchContextId asyncSearchContextId, AsyncSearchActiveContext asyncSearchContext) {
+    public synchronized void putContext(AsyncSearchContextId asyncSearchContextId, AsyncSearchActiveContext asyncSearchContext,
+                                        Consumer<AsyncSearchContextId> contextRejectionEventConsumer) {
         if (activeContexts.size() >= maxRunningContext) {
+            contextRejectionEventConsumer.accept(asyncSearchContextId);
             throw new AsyncSearchRejectedException("Trying to create too many running contexts. Must be less than or equal to: ["
                     + maxRunningContext + "]. This limit can be set by changing the [" + MAX_RUNNING_CONTEXT.getKey() + "] setting.",
                     maxRunningContext);

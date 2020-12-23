@@ -161,11 +161,11 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
     }
 
     public boolean isAlive() {
-            if (closed.get()) {
-                assert getAsyncSearchState() == CLOSED : "State must be closed for async search id " + getAsyncSearchId();
-                return false;
-            }
-            return true;
+        if (closed.get()) {
+            assert getAsyncSearchState() == CLOSED : "State must be closed for async search id " + getAsyncSearchId();
+            return false;
+        }
+        return true;
     }
 
     @Override

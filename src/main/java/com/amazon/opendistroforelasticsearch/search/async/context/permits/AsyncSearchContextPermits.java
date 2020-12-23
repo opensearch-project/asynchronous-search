@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.store.AlreadyClosedException;
+import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.unit.TimeValue;
@@ -58,7 +59,7 @@ public class AsyncSearchContextPermits implements Closeable {
         this.semaphore = new Semaphore(TOTAL_PERMITS, true);
     }
 
-    private Releasable acquirePermits(int permits, TimeValue timeout, final String details) throws TimeoutException {
+    private Releasable acquirePermits(int permits, TimeValue timeout, final String details) {
         RunOnce release = new RunOnce(() -> {});
         if (closed) {
             logger.debug("Trying to acquire permit for closed context [{}]", asyncSearchContextId);
@@ -71,17 +72,15 @@ public class AsyncSearchContextPermits implements Closeable {
                     logger.warn("Releasing permit(s) [{}] with reason [{}]", permits, lockDetails);
                     semaphore.release(permits);});
                 if (closed) {
+                    release.run();
                     logger.debug("Trying to acquire permit for closed context [{}]", asyncSearchContextId);
                     throw new AlreadyClosedException("trying to acquire permits on closed context ["+ asyncSearchContextId +"]");
                 }
                 return release::run;
             } else {
-                throw new TimeoutException("obtaining context lock" + asyncSearchContextId + "timed out after " +
+                throw new ElasticsearchTimeoutException("obtaining context lock" + asyncSearchContextId + "timed out after " +
                         timeout.getMillis() + "ms, previous lock details: [" + lockDetails + "] trying to lock for [" + details + "]");
             }
-        } catch (IllegalStateException e){
-            release.run();
-            throw new RuntimeException("Context already closed while trying to obtain context lock", e);
         } catch (InterruptedException e ) {
             Thread.currentThread().interrupt();
             release.run();

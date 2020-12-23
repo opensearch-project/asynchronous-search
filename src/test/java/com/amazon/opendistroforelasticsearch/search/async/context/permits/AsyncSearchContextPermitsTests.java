@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.search.async.context.permits;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
+import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.CheckedRunnable;
@@ -76,7 +77,7 @@ public class AsyncSearchContextPermitsTests extends ESTestCase {
         ScalingExecutorBuilder scalingExecutorBuilder =
                 new ScalingExecutorBuilder(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                         Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
-        threadPool = new TestThreadPool("IndexShardOperationPermitsTests", settings, scalingExecutorBuilder);
+        threadPool = new TestThreadPool("PermitsTests", settings, scalingExecutorBuilder);
     }
 
     @AfterClass
@@ -326,7 +327,7 @@ public class AsyncSearchContextPermitsTests extends ESTestCase {
                     }
                 }, e -> {
                     try {
-                        assertTrue(e instanceof TimeoutException);
+                        assertTrue(e instanceof ElasticsearchTimeoutException);
                         assertThat(e, hasToString(containsString("timed out")));
                     } finally {
                         onFailureLatch.countDown();

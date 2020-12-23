@@ -24,6 +24,7 @@ import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -31,9 +32,9 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -67,20 +68,19 @@ public class AsyncSearchPersistenceService {
     public static final String ERROR = "error";
 
     private static final Logger logger = LogManager.getLogger(AsyncSearchPersistenceService.class);
-    public static final String ASYNC_SEARCH_RESPONSE_INDEX = ".asynchronous_search_response";
+    public static final String ASYNC_SEARCH_RESPONSE_INDEX = ".opendistro_asynchronous_search_response";
     private static final String MAPPING_TYPE = "_doc";
     /**
-     * The backoff policy to use when saving a task result fails. The total wait
+     * The backoff policy to use when saving a async search response fails. The total wait
      * time is 600000 milliseconds, ten minutes.
      */
-    private static final BackoffPolicy STORE_BACKOFF_POLICY =
-            BackoffPolicy.exponentialBackoff(timeValueMillis(50), 5);
+    public static final BackoffPolicy STORE_BACKOFF_POLICY =
+            BackoffPolicy.exponentialBackoff(timeValueMillis(250), 14);
 
     private final Client client;
     private final ClusterService clusterService;
     private final ThreadPool threadPool;
 
-    @Inject
     public AsyncSearchPersistenceService(Client client, ClusterService clusterService, ThreadPool threadPool) {
         this.client = client;
         this.clusterService = clusterService;
@@ -291,7 +291,9 @@ public class AsyncSearchPersistenceService {
 
             @Override
             public void onFailure(Exception e) {
-                if (!(e instanceof EsRejectedExecutionException) || !backoff.hasNext()) {
+                if (((e instanceof EsRejectedExecutionException || e instanceof ClusterBlockException
+                        || e instanceof NoShardAvailableActionException) == false) || backoff.hasNext() == false) {
+                    logger.warn(() -> new ParameterizedMessage("failed to store async search response, not retrying"), e);
                     listener.onFailure(e);
                 } else {
                     TimeValue wait = backoff.next();
@@ -304,7 +306,7 @@ public class AsyncSearchPersistenceService {
 
     private Settings indexSettings() {
         return Settings.builder()
-                .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
+                .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 5)
                 .put(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.getKey(), "0-1")
                 .put(IndexMetadata.SETTING_PRIORITY, Integer.MAX_VALUE)
                 .build();

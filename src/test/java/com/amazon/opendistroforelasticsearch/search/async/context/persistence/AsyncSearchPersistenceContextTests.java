@@ -15,11 +15,13 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.persistence;
 
+import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
-import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -40,16 +42,12 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
 
     /**
      * async search persistence context serializes search response into {@linkplain BytesReference}. We verify that de-serializing
-     * the
-     * {@linkplain BytesReference} yields the same object.
-     *
-     * @throws IOException when there is a serialization issue
+     * the{@linkplain BytesReference} yields the same object.@throws IOException when there is a serialization issue
      */
-    public void testXContentRoundTripWithSearchResponse() throws IOException {
-        AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
-                randomNonNegativeLong());
-        String id = AsyncSearchIdConverter.buildAsyncId(new AsyncSearchId(UUID.randomUUID().toString(),
-                randomNonNegativeLong(), asyncSearchContextId));
+    public void testSerializationRoundTripWithSearchResponse() throws IOException {
+        AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong());
+        String id = AsyncSearchIdConverter.buildAsyncId(new AsyncSearchId(UUID.randomUUID().toString(), randomNonNegativeLong(),
+                asyncSearchContextId));
         long expirationTimeMillis = randomNonNegativeLong();
         long startTimeMillis = randomNonNegativeLong();
         SearchResponse searchResponse = getMockSearchResponse();
@@ -59,7 +57,8 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
                         new NamedWriteableRegistry(Collections.emptyList()));
         assertEquals(
                 asyncSearchPersistenceContext.getAsyncSearchResponse(),
-                new AsyncSearchResponse(id, false, startTimeMillis, expirationTimeMillis, searchResponse, null));
+                new AsyncSearchResponse(id, asyncSearchPersistenceContext.getAsyncSearchState(), startTimeMillis,
+                        expirationTimeMillis, searchResponse, null));
     }
 
     /**
@@ -68,27 +67,25 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
      *
      * @throws IOException when there is a serialization issue
      */
-    public void testXContentRoundTripWithError() throws IOException {
-        AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
-                randomNonNegativeLong());
-        String id = AsyncSearchIdConverter.buildAsyncId(new AsyncSearchId(UUID.randomUUID().toString(),
-                randomNonNegativeLong(), asyncSearchContextId));
+    public void testSerializationRoundTripWithError() throws IOException {
+        AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong());
+        String id = AsyncSearchIdConverter.buildAsyncId(new AsyncSearchId(UUID.randomUUID().toString(), randomNonNegativeLong(),
+                asyncSearchContextId));
         long expirationTimeMillis = randomNonNegativeLong();
         long startTimeMillis = randomNonNegativeLong();
-        RuntimeException exception = new RuntimeException("test");
-        AsyncSearchPersistenceContext asyncSearchPersistenceContext =
-                new AsyncSearchPersistenceContext(id, asyncSearchContextId, new AsyncSearchPersistenceModel(startTimeMillis,
-                        expirationTimeMillis, exception), System::currentTimeMillis, new NamedWriteableRegistry(Collections.emptyList()));
-        AsyncSearchResponse parsed = asyncSearchPersistenceContext.getAsyncSearchResponse();
-        /*
-         * we cannot compare the cause, because it will be wrapped and serialized in an outer
-         * ElasticSearchException best effort: try to check that the original
-         * message appears somewhere in the rendered xContent.
-         */
-        String originalMsg = parsed.getError().getCause().getMessage();
-        assertEquals(originalMsg,
-                "runtime_exception: test");
-
+        ShardSearchFailure shardSearchFailure = new ShardSearchFailure(new RuntimeException("runtime-exception"));
+        SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
+                new ShardSearchFailure[] {shardSearchFailure});
+        AsyncSearchPersistenceContext asyncSearchPersistenceContext = new AsyncSearchPersistenceContext(id, asyncSearchContextId,
+                new AsyncSearchPersistenceModel(startTimeMillis, expirationTimeMillis, exception), System::currentTimeMillis,
+                new NamedWriteableRegistry(Collections.emptyList()));
+        ElasticsearchException deserializedException = asyncSearchPersistenceContext.getAsyncSearchResponse().getError();
+        assertTrue(deserializedException instanceof SearchPhaseExecutionException);
+        assertEquals("phase", ((SearchPhaseExecutionException) deserializedException).getPhaseName());
+        assertEquals("msg", deserializedException.getMessage());
+        assertTrue(deserializedException.getCause() instanceof NullPointerException);
+        assertEquals(1, ((SearchPhaseExecutionException) deserializedException).shardFailures().length);
+        assertTrue(((SearchPhaseExecutionException) deserializedException).shardFailures()[0].getCause() instanceof RuntimeException);
     }
 
     protected SearchResponse getMockSearchResponse() {

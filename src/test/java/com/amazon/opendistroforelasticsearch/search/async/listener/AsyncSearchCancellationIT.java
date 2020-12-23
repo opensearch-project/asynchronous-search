@@ -16,8 +16,8 @@
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
 import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchAssertions;
+import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIntegTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
-import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -30,20 +30,16 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.plugins.PluginsService;
-import org.elasticsearch.script.MockScriptPlugin;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.aggregations.InternalAggregation;
-import org.elasticsearch.search.lookup.LeafFieldsLookup;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.tasks.TaskInfo;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -51,30 +47,22 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchCancellationIT.ScriptedBlockPlugin.SCRIPT_NAME;
+import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.SUITE)
-public class AsyncSearchCancellationIT extends ESIntegTestCase {
+public class AsyncSearchCancellationIT extends AsyncSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.singleton(ScriptedBlockPlugin.class);
-    }
-
-    //We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
-    @Override
-    protected boolean ignoreExternalCluster() {
-        return true;
     }
 
     @Override
@@ -95,36 +83,6 @@ public class AsyncSearchCancellationIT extends ESIntegTestCase {
                 bulkRequestBuilder.add(client().prepareIndex("test", "type", Integer.toString(i * 5 + j)).setSource("field", "value"));
             }
             assertNoFailures(bulkRequestBuilder.get());
-        }
-    }
-
-    private List<ScriptedBlockPlugin> initBlockFactory() {
-        List<ScriptedBlockPlugin> plugins = new ArrayList<>();
-        for (PluginsService pluginsService : internalCluster().getDataNodeInstances(PluginsService.class)) {
-            plugins.addAll(pluginsService.filterPlugins(ScriptedBlockPlugin.class));
-        }
-        for (ScriptedBlockPlugin plugin : plugins) {
-            plugin.reset();
-            plugin.enableBlock();
-        }
-        return plugins;
-    }
-
-    private void awaitForBlock(List<ScriptedBlockPlugin> plugins) throws Exception {
-        int numberOfShards = getNumShards("test").numPrimaries;
-        assertBusy(() -> {
-            int numberOfBlockedPlugins = 0;
-            for (ScriptedBlockPlugin plugin : plugins) {
-                numberOfBlockedPlugins += plugin.hits.get();
-            }
-            logger.info("The plugin blocked on {} out of {} shards", numberOfBlockedPlugins, numberOfShards);
-            assertThat(numberOfBlockedPlugins, greaterThan(0));
-        });
-    }
-
-    private void disableBlocks(List<ScriptedBlockPlugin> plugins) throws Exception {
-        for (ScriptedBlockPlugin plugin : plugins) {
-            plugin.disableBlock();
         }
     }
 
@@ -181,9 +139,9 @@ public class AsyncSearchCancellationIT extends ESIntegTestCase {
             AsyncSearchProgressListener listener = new AsyncSearchProgressListener(threadPool.relativeTimeInMillis(), responseFunction,
                     failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis,
                     () -> {
-                assertTrue(reduceContextInvocation.compareAndSet(false, true));
-                return reduceContextBuilder;
-            }) {
+                        assertTrue(reduceContextInvocation.compareAndSet(false, true));
+                        return reduceContextBuilder;
+                    }) {
                 @Override
                 public void onResponse(SearchResponse searchResponse) {
                     assertTrue(responseRef.compareAndSet(null, searchResponse));
@@ -219,41 +177,6 @@ public class AsyncSearchCancellationIT extends ESIntegTestCase {
             }
         } finally {
             ThreadPool.terminate(threadPool, 100, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    public static class ScriptedBlockPlugin extends MockScriptPlugin {
-        static final String SCRIPT_NAME = "search_block";
-
-        private final AtomicInteger hits = new AtomicInteger();
-
-        private final AtomicBoolean shouldBlock = new AtomicBoolean(true);
-
-        public void reset() {
-            hits.set(0);
-        }
-
-        public void disableBlock() {
-            shouldBlock.set(false);
-        }
-
-        public void enableBlock() {
-            shouldBlock.set(true);
-        }
-
-        @Override
-        public Map<String, Function<Map<String, Object>, Object>> pluginScripts() {
-            return Collections.singletonMap(SCRIPT_NAME, params -> {
-                LeafFieldsLookup fieldsLookup = (LeafFieldsLookup) params.get("_fields");
-                LogManager.getLogger(AsyncSearchCancellationIT.class).info("Blocking on the document {}", fieldsLookup.get("_id"));
-                hits.incrementAndGet();
-                try {
-                    assertBusy(() -> assertFalse(shouldBlock.get()));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-                return true;
-            });
         }
     }
 }

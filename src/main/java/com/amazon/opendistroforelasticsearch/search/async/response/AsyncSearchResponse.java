@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.response;
 
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionResponse;
@@ -45,15 +46,15 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
 public class AsyncSearchResponse extends ActionResponse implements StatusToXContentObject {
 
     private static final ParseField ID = new ParseField("id");
-    private static final ParseField IS_RUNNING = new ParseField("is_running");
+    private static final ParseField STATE = new ParseField("state");
     private static final ParseField START_TIME_IN_MILLIS = new ParseField("start_time_in_millis");
     private static final ParseField EXPIRATION_TIME_IN_MILLIS = new ParseField("expiration_time_in_millis");
     private static final ParseField RESPONSE = new ParseField("response");
     private static final ParseField ERROR = new ParseField("error");
     @Nullable
     //when the search is cancelled we don't have the id
-    private String id;
-    private final boolean isRunning;
+    private final String id;
+    private final AsyncSearchState state;
     private final long startTimeMillis;
     private final long expirationTimeMillis;
     @Nullable
@@ -61,38 +62,39 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
     @Nullable
     private ElasticsearchException error;
 
-    public AsyncSearchResponse(String id, boolean isRunning, long startTimeMillis, long expirationTimeMillis,
+    public AsyncSearchResponse(String id, AsyncSearchState state, long startTimeMillis, long expirationTimeMillis,
                                SearchResponse searchResponse, Exception error) {
         this.id = id;
-        this.isRunning = isRunning;
+        this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.searchResponse = searchResponse;
         this.error = error == null ? null : ExceptionsHelper.convertToElastic(error);
     }
 
-    public AsyncSearchResponse(String id, boolean isRunning, long startTimeMillis, long expirationTimeMillis,
+    public AsyncSearchResponse(String id, AsyncSearchState state, long startTimeMillis, long expirationTimeMillis,
                                SearchResponse searchResponse, ElasticsearchException error) {
         this.id = id;
-        this.isRunning = isRunning;
+        this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.searchResponse = searchResponse;
         this.error = error;
     }
 
-    public AsyncSearchResponse(boolean isRunning, long startTimeMillis, long expirationTimeMillis,
+    public AsyncSearchResponse(AsyncSearchState state, long startTimeMillis, long expirationTimeMillis,
                                SearchResponse searchResponse, ElasticsearchException error) {
-        this.isRunning = isRunning;
+        this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.searchResponse = searchResponse;
         this.error = error;
+        this.id = null;
     }
 
     public AsyncSearchResponse(StreamInput in) throws IOException {
         this.id = in.readOptionalString();
-        this.isRunning = in.readBoolean();
+        this.state = in.readEnum(AsyncSearchState.class);
         this.startTimeMillis = in.readLong();
         this.expirationTimeMillis = in.readLong();
         this.searchResponse = in.readOptionalWriteable(SearchResponse::new);
@@ -102,7 +104,7 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeOptionalString(id);
-        out.writeBoolean(isRunning);
+        out.writeEnum(state);
         out.writeLong(startTimeMillis);
         out.writeLong(expirationTimeMillis);
         out.writeOptionalWriteable(searchResponse);
@@ -120,7 +122,7 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
         if (id != null) {
             builder.field(ID.getPreferredName(), id);
         }
-        builder.field(IS_RUNNING.getPreferredName(), isRunning);
+        builder.field(STATE.getPreferredName(), state);
         builder.field(START_TIME_IN_MILLIS.getPreferredName(), startTimeMillis);
         builder.field(EXPIRATION_TIME_IN_MILLIS.getPreferredName(), expirationTimeMillis);
         if (searchResponse != null) {
@@ -137,8 +139,8 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
         return builder;
     }
 
-    public boolean isRunning() {
-        return isRunning;
+    public AsyncSearchState getState() {
+        return state;
     }
 
     public long getStartTimeMillis() {
@@ -163,7 +165,7 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
 
     @Override
     public RestStatus status() {
-        return searchResponse != null || error != null ? RestStatus.OK : RestStatus.NOT_FOUND;
+        return RestStatus.OK;
     }
 
     @Override
@@ -178,12 +180,13 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
      * off-chance that the {@link #equals(Object)} ()} comparison fails and hashcode is equal for 2
      * {@linkplain AsyncSearchResponse} objects, we are wary of the @see
      * <a href="https://docs.oracle.com/en/java/javase/14/docs/api/java.base/java/lang/Object.html#hashCode()">
-     *  performance improvement on hash tables </a>} that we forgo.
+     * performance improvement on hash tables </a>} that we forgo.
+     *
      * @return hashcode of {@linkplain AsyncSearchResponse}
      */
     @Override
     public int hashCode() {
-        return Objects.hash(id, isRunning, startTimeMillis, expirationTimeMillis);
+        return Objects.hash(id, state, startTimeMillis, expirationTimeMillis);
     }
 
     @Override
@@ -196,8 +199,8 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
         }
         AsyncSearchResponse other = (AsyncSearchResponse) o;
         try {
-            return id.equals(other.id) &&
-                    isRunning == other.isRunning &&
+            return ((id == null && other.id == null) || (id != null && id.equals(other.id))) &&
+                    state.equals(other.state) &&
                     startTimeMillis == other.startTimeMillis &&
                     expirationTimeMillis == other.expirationTimeMillis
                     && Objects.equals(getErrorAsMap(error), getErrorAsMap(other.error))
@@ -243,7 +246,7 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
     public static AsyncSearchResponse innerFromXContent(XContentParser parser) throws IOException {
         ensureExpectedToken(XContentParser.Token.FIELD_NAME, parser.currentToken(), parser::getTokenLocation);
         String id = null;
-        boolean isRunning = false;
+        AsyncSearchState status = null;
         long startTimeMillis = -1;
         long expirationTimeMillis = -1;
         SearchResponse searchResponse = null;
@@ -267,18 +270,18 @@ public class AsyncSearchResponse extends ActionResponse implements StatusToXCont
                     startTimeMillis = parser.longValue();
                 } else if (EXPIRATION_TIME_IN_MILLIS.match(currentFieldName, parser.getDeprecationHandler())) {
                     expirationTimeMillis = parser.longValue();
-                } else if (IS_RUNNING.match(currentFieldName, parser.getDeprecationHandler())) {
-                    isRunning = parser.booleanValue();
+                } else if (STATE.match(currentFieldName, parser.getDeprecationHandler())) {
+                    status = AsyncSearchState.valueOf(parser.text());
                 } else {
                     parser.skipChildren();
                 }
             }
         }
-        return new AsyncSearchResponse(id, isRunning, startTimeMillis, expirationTimeMillis, searchResponse, error);
+        return new AsyncSearchResponse(id, status, startTimeMillis, expirationTimeMillis, searchResponse, error);
     }
 
     //visible for testing
     public static AsyncSearchResponse empty(String id, SearchResponse searchResponse, Exception exception) {
-        return new AsyncSearchResponse(id, false, -1, -1, searchResponse, exception);
+        return new AsyncSearchResponse(id, null, -1, -1, searchResponse, exception);
     }
 }

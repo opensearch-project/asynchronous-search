@@ -18,6 +18,8 @@ package com.amazon.opendistroforelasticsearch.search.async.utils;
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
+import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
@@ -38,7 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
 
 public class TestClientUtils {
-    static final String INDEX = ".asynchronous_search_response";
+    static final String INDEX = AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX;
     static final BackoffPolicy STORE_BACKOFF_POLICY =
             BackoffPolicy.exponentialBackoff(timeValueMillis(100), 20);
 
@@ -85,7 +87,7 @@ public class TestClientUtils {
         AsyncSearchResponse getResponse;
         do {
             getResponse = blockingGetAsyncSearchResponse(client, submitResponse, getAsyncSearchRequest);
-        } while (getResponse.isRunning());
+        } while (getResponse.getState().equals(AsyncSearchState.RUNNING.name()));
         return getResponse;
     }
 

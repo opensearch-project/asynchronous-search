@@ -15,12 +15,19 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.plugin;
 
+import com.amazon.opendistroforelasticsearch.search.async.action.AsyncSearchStatsAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
-import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
 import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.management.AsyncSearchManagementService;
+import com.amazon.opendistroforelasticsearch.search.async.rest.RestAsyncSearchStatsAction;
+import com.amazon.opendistroforelasticsearch.search.async.rest.RestDeleteAsyncSearchAction;
+import com.amazon.opendistroforelasticsearch.search.async.rest.RestGetAsyncSearchAction;
+import com.amazon.opendistroforelasticsearch.search.async.rest.RestSubmitAsyncSearchAction;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
+import com.amazon.opendistroforelasticsearch.search.async.transport.TransportAsyncSearchStatsAction;
 import com.amazon.opendistroforelasticsearch.search.async.transport.TransportDeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.transport.TransportGetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.transport.TransportSubmitAsyncSearchAction;
@@ -28,10 +35,15 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.settings.ClusterSettings;
+import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -42,6 +54,8 @@ import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SystemIndexPlugin;
 import org.elasticsearch.repositories.RepositoriesService;
+import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestHandler;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ExecutorBuilder;
 import org.elasticsearch.threadpool.ScalingExecutorBuilder;
@@ -62,12 +76,18 @@ public class AsyncSearchPlugin extends Plugin implements ActionPlugin, SystemInd
     public static final String BASE_URI = "/_opendistro/_asynchronous_search";
 
     private AsyncSearchPersistenceService persistenceService;
+    private AsyncSearchActiveStore asyncSearchActiveStore;
     private AsyncSearchService asyncSearchService;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
-        return Collections.singletonList(new SystemIndexDescriptor(".opendistro_asynchroAnous_search_response",
+        return Collections.singletonList(new SystemIndexDescriptor(AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX,
                 "Stores the response for async search"));
+    }
+
+    @Override
+    public Collection<Class<? extends LifecycleComponent>> getGuiceServiceClasses() {
+        return Collections.singletonList(AsyncSearchManagementService.class);
     }
 
 
@@ -89,7 +109,9 @@ public class AsyncSearchPlugin extends Plugin implements ActionPlugin, SystemInd
                                                IndexNameExpressionResolver indexNameExpressionResolver,
                                                Supplier<RepositoriesService> repositoriesServiceSupplier) {
         this.persistenceService = new AsyncSearchPersistenceService(client, clusterService, threadPool);
-        this.asyncSearchService = new AsyncSearchService(persistenceService, client, clusterService, threadPool, namedWriteableRegistry);
+        this.asyncSearchActiveStore = new AsyncSearchActiveStore(clusterService);
+        this.asyncSearchService = new AsyncSearchService(persistenceService, asyncSearchActiveStore, client, clusterService,
+                threadPool, namedWriteableRegistry);
         return Arrays.asList(persistenceService, asyncSearchService);
     }
 
@@ -97,6 +119,7 @@ public class AsyncSearchPlugin extends Plugin implements ActionPlugin, SystemInd
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return Arrays.asList(
                 new ActionHandler<>(SubmitAsyncSearchAction.INSTANCE, TransportSubmitAsyncSearchAction.class),
+                new ActionHandler<>(AsyncSearchStatsAction.INSTANCE, TransportAsyncSearchStatsAction.class),
                 new ActionHandler<>(GetAsyncSearchAction.INSTANCE, TransportGetAsyncSearchAction.class),
                 new ActionHandler<>(DeleteAsyncSearchAction.INSTANCE, TransportDeleteAsyncSearchAction.class));
     }
@@ -105,8 +128,22 @@ public class AsyncSearchPlugin extends Plugin implements ActionPlugin, SystemInd
     public List<Setting<?>> getSettings() {
         return Arrays.asList(
                 AsyncSearchActiveStore.MAX_RUNNING_CONTEXT,
-                AsyncSearchService.MAX_KEEP_ALIVE_SETTING
+                AsyncSearchService.MAX_KEEP_ALIVE_SETTING,
+                AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
+                AsyncSearchManagementService.RESPONSE_CLEAN_UP_INTERVAL_SETTING,
+                AsyncSearchManagementService.REAPER_INTERVAL_SETTING
         );
     }
 
+    @Override
+    public List<RestHandler> getRestHandlers(Settings settings, RestController restController, ClusterSettings clusterSettings,
+                                             IndexScopedSettings indexScopedSettings, SettingsFilter settingsFilter,
+                                             IndexNameExpressionResolver indexNameExpressionResolver,
+                                             Supplier<DiscoveryNodes> nodesInCluster) {
+        return Arrays.asList(
+                new RestSubmitAsyncSearchAction(),
+                new RestGetAsyncSearchAction(),
+                new RestDeleteAsyncSearchAction(),
+                new RestAsyncSearchStatsAction());
+    }
 }

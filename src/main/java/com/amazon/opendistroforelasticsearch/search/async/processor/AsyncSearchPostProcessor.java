@@ -2,7 +2,10 @@ package com.amazon.opendistroforelasticsearch.search.async.processor;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
+import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
 import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceModel;
+import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachineClosedException;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.BeginPersistEvent;
@@ -10,10 +13,7 @@ import com.amazon.opendistroforelasticsearch.search.async.context.state.event.Se
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchResponsePersistFailedEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchResponsePersistedEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchSuccessfulEvent;
-import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
-import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -24,6 +24,7 @@ import org.elasticsearch.common.unit.TimeValue;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+
 
 /**
  * Performs the processing after a search completes.
@@ -56,11 +57,11 @@ public class AsyncSearchPostProcessor {
                 return asyncSearchContext.getAsyncSearchResponse();
             }
             // Best effort to return the response.
-            return new AsyncSearchResponse(false, -1L, -1L, null,
+            return new AsyncSearchResponse(AsyncSearchState.FAILED, -1L, -1L, null,
                     ExceptionsHelper.convertToElastic(exception));
         } catch (AsyncSearchStateMachineClosedException ex) {
             // Best effort to return the response.
-            return new AsyncSearchResponse(false, -1L, -1L, null,
+            return new AsyncSearchResponse(AsyncSearchState.FAILED, -1L, -1L, null,
                     ExceptionsHelper.convertToElastic(exception));
         }
     }
@@ -75,18 +76,14 @@ public class AsyncSearchPostProcessor {
                 return asyncSearchContext.getAsyncSearchResponse();
             }
             // Best effort to return the response.
-            return new AsyncSearchResponse(false, -1L, -1L, searchResponse, null);
-        }  catch (AsyncSearchStateMachineClosedException ex) {
+            return new AsyncSearchResponse(AsyncSearchState.SUCCEEDED, -1L, -1L, searchResponse, null);
+        } catch (AsyncSearchStateMachineClosedException ex) {
             // Best effort to return the response.
-            return new AsyncSearchResponse(false, -1L, -1L, searchResponse, null);
+            return new AsyncSearchResponse(AsyncSearchState.SUCCEEDED, -1L, -1L, searchResponse, null);
         }
     }
 
     public void persistResponse(AsyncSearchActiveContext asyncSearchContext, AsyncSearchPersistenceModel persistenceModel) {
-        //assert we are not post processing on any other thread pool
-        assert Thread.currentThread().getName().contains(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME);
-        assert asyncSearchContext.retainedStages().contains(asyncSearchContext.getAsyncSearchState()) :
-                "found stage " + asyncSearchContext.getAsyncSearchState() + "that shouldn't be retained";
         // acquire all permits non-blocking
         asyncSearchContext.acquireAllContextPermits(ActionListener.wrap(releasable -> {
                     // check again after acquiring permit if the context has been deleted mean while

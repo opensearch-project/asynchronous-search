@@ -21,18 +21,21 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
-import org.elasticsearch.common.xcontent.ToXContentObject;
+import org.elasticsearch.common.xcontent.StatusToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.Objects;
 
 import static org.elasticsearch.common.xcontent.ConstructingObjectParser.constructorArg;
+import static org.elasticsearch.rest.RestStatus.NOT_FOUND;
+import static org.elasticsearch.rest.RestStatus.OK;
 
 /**
  * A response that indicates that a request has been acknowledged
  */
-public class AcknowledgedResponse extends ActionResponse implements ToXContentObject {
+public class AcknowledgedResponse extends ActionResponse implements StatusToXContentObject {
 
     private static final ParseField ACKNOWLEDGED = new ParseField("acknowledged");
 
@@ -107,5 +110,10 @@ public class AcknowledgedResponse extends ActionResponse implements ToXContentOb
     @Override
     public int hashCode() {
         return Objects.hash(isAcknowledged());
+    }
+
+    @Override
+    public RestStatus status() {
+        return acknowledged ? OK : NOT_FOUND;
     }
 }

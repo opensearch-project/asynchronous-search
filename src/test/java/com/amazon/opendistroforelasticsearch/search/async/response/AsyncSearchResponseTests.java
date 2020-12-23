@@ -15,10 +15,12 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.response;
 
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
@@ -54,7 +56,9 @@ public class AsyncSearchResponseTests extends AbstractSerializingTestCase<AsyncS
 
     @Override
     protected AsyncSearchResponse createTestInstance() {
-        return new AsyncSearchResponse(UUID.randomUUID().toString(), randomBoolean(), randomNonNegativeLong(),
+        return new AsyncSearchResponse(UUID.randomUUID().toString(),
+                getRandomAsyncSearchState(),
+                randomNonNegativeLong(),
                 randomNonNegativeLong(), getMockSearchResponse(), null);
 
     }
@@ -62,11 +66,15 @@ public class AsyncSearchResponseTests extends AbstractSerializingTestCase<AsyncS
     @Override
     protected AsyncSearchResponse mutateInstance(AsyncSearchResponse instance) {
         return new AsyncSearchResponse(randomBoolean() ? instance.getId() : UUID.randomUUID().toString(),
-                randomBoolean() == instance.isRunning(),
+                getRandomAsyncSearchState(),
                 randomBoolean() ? instance.getStartTimeMillis() : randomNonNegativeLong(),
                 randomBoolean() ? instance.getExpirationTimeMillis() : randomNonNegativeLong(),
                 getMockSearchResponse(),
                 instance.getError());
+    }
+
+    private AsyncSearchState getRandomAsyncSearchState() {
+        return AsyncSearchState.values()[Randomness.get().nextInt(AsyncSearchState.values().length)];
     }
 
     private SearchResponse getMockSearchResponse() {
@@ -87,7 +95,7 @@ public class AsyncSearchResponseTests extends AbstractSerializingTestCase<AsyncS
      * message appears somewhere in the rendered xContent.
      */
     public void testXContentRoundTripForAsyncSearchResponseContainingError() throws IOException {
-        AsyncSearchResponse asyncSearchResponse = new AsyncSearchResponse(UUID.randomUUID().toString(), randomBoolean(),
+        AsyncSearchResponse asyncSearchResponse = new AsyncSearchResponse(UUID.randomUUID().toString(), getRandomAsyncSearchState(),
                 randomNonNegativeLong(), randomNonNegativeLong(), null, new RuntimeException("test"));
 
         BytesReference serializedResponse;

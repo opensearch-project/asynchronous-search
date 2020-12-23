@@ -34,7 +34,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,8 +43,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchSingleNodeTestCase.SearchDelayPlugin.SCRIPT_NAME;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 public class GetAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase {
 
@@ -266,27 +265,32 @@ public class GetAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase {
         try {
             testThreadPool = new TestThreadPool(GetAsyncSearchSingleNodeIT.class.getName());
             int numThreads = concurrentRuns;
-            long lowerKeepAliveMillis = 5 * 1000 * 60 * 60 ;
-            long higherKeepAliveMillis = 10 * 1000 * 60 * 60;
+            long roundTripDelayInMillis = 200;
+            long lowerKeepAliveMillis = 5 * 1000 * 60 * 60 ; // 5 hours in millis
+            long higherKeepAliveMillis = 10 * 1000 * 60 * 60; // 10 hours in millis
             List<Runnable> operationThreads = new ArrayList<>();
             CountDownLatch countDownLatch = new CountDownLatch(numThreads);
             for (int i = 0; i < numThreads; i++) {
+                long keepAlive = randomLongBetween(lowerKeepAliveMillis, higherKeepAliveMillis);
                 Runnable thread = () -> {
                     GetAsyncSearchRequest getAsyncSearchRequest = new GetAsyncSearchRequest(submitResponse.getId());
+                    long requestedTime = System.currentTimeMillis() + keepAlive;
                     if (update) {
-                        logger.info("Triggering async search gets with keep alives --->");
-                        getAsyncSearchRequest.setKeepAlive(TimeValue.timeValueMillis(randomLongBetween(lowerKeepAliveMillis,
-                                higherKeepAliveMillis)));
+                        logger.info("Triggering async search gets with keep alive [{}] --->", requestedTime);
+                        getAsyncSearchRequest.setKeepAlive(TimeValue.timeValueMillis(keepAlive));
                     }
                     getAsyncSearchRequest.setWaitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
                     executeGetAsyncSearch(client(), getAsyncSearchRequest, new ActionListener<AsyncSearchResponse>() {
                         @Override
                         public void onResponse(AsyncSearchResponse asyncSearchResponse) {
                             if (update) {
-                                assertThat(asyncSearchResponse.getExpirationTimeMillis(), greaterThanOrEqualTo(
-                                        System.currentTimeMillis() + lowerKeepAliveMillis));
-                                assertThat(asyncSearchResponse.getExpirationTimeMillis(), lessThanOrEqualTo(
-                                        System.currentTimeMillis() + higherKeepAliveMillis));
+                                // while updates we can run into version conflicts and hence the comparison is on the successful
+                                // response. Since the final keep alive is calculated based on the current time of the server
+                                // allowing for the round trip delay given we pick intervals randomly between 5-10hrs
+                                assertThat(asyncSearchResponse.getExpirationTimeMillis(),
+                                        lessThanOrEqualTo(requestedTime + roundTripDelayInMillis));
+                                assertThat(asyncSearchResponse.getExpirationTimeMillis(),
+                                        greaterThanOrEqualTo(requestedTime - roundTripDelayInMillis));
                             }
                             numGetSuccess.incrementAndGet();
                             countDownLatch.countDown();
