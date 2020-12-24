@@ -34,6 +34,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.painless.PainlessPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.index.reindex.ReindexPlugin;
@@ -85,6 +86,7 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
         plugins.add(SearchDelayPlugin.class);
         plugins.add(AsyncSearchPlugin.class);
         plugins.add(ReindexPlugin.class);
+        plugins.add(PainlessPlugin.class);
         return plugins;
     }
 
@@ -151,7 +153,7 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
         int successfulShards = totalShards - randomInt(100);
         return new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                new InternalAggregations(Collections.emptyList()),
+                InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
                 "", totalShards, successfulShards, 0, randomNonNegativeLong(),

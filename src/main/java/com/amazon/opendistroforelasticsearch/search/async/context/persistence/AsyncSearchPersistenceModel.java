@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.persistence;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -32,52 +33,23 @@ public class AsyncSearchPersistenceModel {
     private final long startTimeMillis;
     private final String response;
     private final String error;
+    private final User user;
 
-    /**
-     * Construct a {@linkplain AsyncSearchPersistenceModel} for a search that completed with an error.
-     *
-     * @param startTimeMillis      start time in millis
-     * @param expirationTimeMillis expiration time in millis
-     * @param error                error from the completed search request
-     * @throws IOException when there is a serialization issue
-     */
-    public AsyncSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis,
-                                       Exception error) throws IOException {
-        this.startTimeMillis = startTimeMillis;
-        this.expirationTimeMillis = expirationTimeMillis;
-        this.response = null;
-        this.error = serializeError(error);
-    }
-
-    /**
-     * Construct a {@linkplain AsyncSearchPersistenceModel} for a search that completed succeeded with a response.
-     *
-     * @param startTimeMillis      start time in millis
-     * @param expirationTimeMillis expiration time in millis
-     * @param response             search response from the completed search request
-     * @throws IOException when there is a serialization issue
-     */
-    public AsyncSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis, SearchResponse response) throws IOException {
-        this.startTimeMillis = startTimeMillis;
-        this.expirationTimeMillis = expirationTimeMillis;
-        this.response = serializeResponse(response);
-        this.error = null;
-    }
-
-    public AsyncSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis, String response, String error) {
+    public AsyncSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis, String response, String error, User user) {
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.response = response;
         this.error = error;
+        this.user = user;
     }
 
     public AsyncSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis, SearchResponse response,
-                                       Exception error) throws IOException {
+                                       Exception error, User user) throws IOException {
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.response = serializeResponse(response);
         this.error = serializeError(error);
-
+        this.user = user;
     }
 
     private String serializeResponse(SearchResponse response) throws IOException {
@@ -133,6 +105,10 @@ public class AsyncSearchPersistenceModel {
         return expirationTimeMillis;
     }
 
+    public User getUser() {
+        return user;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -147,7 +123,9 @@ public class AsyncSearchPersistenceModel {
                         && ((response == null && other.response == null) ||
                         (response != null && other.response != null && response.equals(other.response)))
                         && ((error == null && other.error == null) ||
-                        (error != null && other.error != null && error.equals(other.error)));
+                        (error != null && other.error != null && error.equals(other.error)))
+                        && ((user == null && other.user == null) ||
+                        (user != null && other.user != null && user.equals(other.user)));
 
     }
 }

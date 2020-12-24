@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.service;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
@@ -42,6 +43,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.store.AlreadyClosedException;
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
@@ -60,6 +62,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -75,6 +78,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.amazon.opendistroforelasticsearch.search.async.UserAuthUtils.isUserValid;
 import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.CLOSED;
 import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.FAILED;
 import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.INIT;
@@ -149,11 +153,12 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
      *
      * @param request                 the SubmitAsyncSearchRequest
      * @param relativeStartTimeMillis the relative start time of the search in millis
+     * @param user current user
      * @param reduceContextBuilder    the reference for the reduceContextBuilder
      * @return the AsyncSearchContext for the submitted request
      */
     public AsyncSearchContext createAndStoreContext(SubmitAsyncSearchRequest request, long relativeStartTimeMillis,
-                                                    Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder) {
+                                                    Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder, User user) {
         validateRequest(request);
         AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUIDs.base64UUID(), idGenerator.incrementAndGet());
         AsyncSearchProgressListener progressActionListener = new AsyncSearchProgressListener(relativeStartTimeMillis,
@@ -163,7 +168,7 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
                 reduceContextBuilder);
         AsyncSearchActiveContext asyncSearchContext = new AsyncSearchActiveContext(asyncSearchContextId, clusterService.localNode().getId(),
                 request.getKeepAlive(), request.getKeepOnCompletion(), threadPool, currentTimeSupplier, progressActionListener,
-                statsListener);
+                statsListener, user);
         asyncSearchActiveStore.putContext(asyncSearchContextId, asyncSearchContext, statsListener::onContextRejected);
         return asyncSearchContext;
     }
@@ -190,22 +195,30 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
      *
      * @param id                   The async search id
      * @param asyncSearchContextId the Async search context id
+     * @param user                 current user
      * @param listener             to be invoked on finding an {@linkplain AsyncSearchContext}
      */
-    public void findContext(String id, AsyncSearchContextId asyncSearchContextId, ActionListener<AsyncSearchContext> listener) {
-        Optional<AsyncSearchActiveContext> asyncSearchActiveContext = asyncSearchActiveStore.getContext(asyncSearchContextId);
-        if (asyncSearchActiveContext.isPresent()) {
+    public void findContext(String id, AsyncSearchContextId asyncSearchContextId, User user, ActionListener<AsyncSearchContext> listener) {
+        Optional<AsyncSearchActiveContext> optionalAsyncSearchActiveContext = asyncSearchActiveStore.getContext(asyncSearchContextId);
+        if (optionalAsyncSearchActiveContext.isPresent()) {
             logger.debug("Active context is present for async search ID [{}]", id);
-            listener.onResponse(asyncSearchActiveContext.get());
+            AsyncSearchActiveContext asyncSearchActiveContext = optionalAsyncSearchActiveContext.get();
+            if (isUserValid(user, asyncSearchActiveContext.getUser()) == false) {
+                logger.debug("Invalid user requesting GET active context for async search id {}", id);
+                listener.onFailure(new ElasticsearchSecurityException(
+                        "User doesn't have necessary roles to access the async search with id "+ id, RestStatus.FORBIDDEN));
+            } else {
+                listener.onResponse(asyncSearchActiveContext);
+            }
         } else {
             logger.debug("Active context is not present for async search ID [{}]", id);
-            persistenceService.getResponse(id, ActionListener.wrap(
+            persistenceService.getResponse(id, user, ActionListener.wrap(
                     (persistenceModel) ->
                             listener.onResponse(new AsyncSearchPersistenceContext(id, asyncSearchContextId, persistenceModel,
-                                    currentTimeSupplier, namedWriteableRegistry)),
+                            currentTimeSupplier, namedWriteableRegistry)),
                     ex -> {
                         logger.debug(() -> new ParameterizedMessage("Context not found for ID  in the system index {}", id), ex);
-                        listener.onFailure(new ResourceNotFoundException(id));
+                        listener.onFailure(ex);
                     }
             ));
         }
@@ -231,15 +244,18 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
      *
      * @param id                   async search id
      * @param asyncSearchContextId context id
+     * @param user                 current user
      * @param listener             listener to invoke on deletion or failure to do so
      */
-    public void freeContext(String id, AsyncSearchContextId asyncSearchContextId, ActionListener<Boolean> listener) {
+    public void freeContext(String id, AsyncSearchContextId asyncSearchContextId, User user, ActionListener<Boolean> listener) {
         // if there are no context found to be cleaned up we throw a ResourceNotFoundException
         GroupedActionListener<Boolean> groupedDeletionListener = new GroupedActionListener<>(
                 ActionListener.wrap((responses) -> {
                     if (responses.stream().anyMatch(r -> r)) {
+                        logger.debug("Free context for async search id {} successful ", id);
                         listener.onResponse(true);
                     } else {
+                        logger.debug("Freeing context, async search id {} not found ", id);
                         listener.onFailure(new ResourceNotFoundException(id));
                     }
                 }, listener::onFailure), 2);
@@ -247,7 +263,12 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
         if (asyncSearchContextOptional.isPresent()) {
             logger.warn("Active context present for async search id [{}]", id);
             AsyncSearchActiveContext asyncSearchContext = asyncSearchContextOptional.get();
-            cancelAndFreeActiveAndPersistedContext(asyncSearchContext, groupedDeletionListener);
+            if(isUserValid(user, asyncSearchContext.getUser()) == false) {
+                groupedDeletionListener.onFailure(new ElasticsearchSecurityException(
+                        "User doesn't have necessary roles to access the async search with id "+ id, RestStatus.FORBIDDEN));
+            } else {
+                cancelAndFreeActiveAndPersistedContext(asyncSearchContext, groupedDeletionListener);
+            }
         } else {
             logger.warn("Active context NOT present for async search id [{}]", id);
             // async search context didn't exist so obviously we didn't delete
@@ -256,7 +277,7 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
             //we don't need to acquire lock if the in-memory context doesn't exist. For persistence context we have a distributed view
             //with the last writer wins policy
             logger.warn("Deleting async search id [{}] from system index ", id);
-            persistenceService.deleteResponse(id, groupedDeletionListener);
+            persistenceService.deleteResponse(id, user, groupedDeletionListener);
         }
     }
 
@@ -276,6 +297,8 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
 
     }
 
+    // We are skipping user check in this while deleting from the persisted layer
+    // as we have already checked for user in the present active context.
     private void cancelAndFreeActiveAndPersistedContext(AsyncSearchActiveContext asyncSearchContext,
                                                         GroupedActionListener<Boolean> groupedDeletionListener) {
         //Intent of the lock here is to disallow ongoing migration to system index
@@ -286,7 +309,7 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
                     cancelTask(asyncSearchContext, "User triggered context deletion");
                     groupedDeletionListener.onResponse(response);
                     logger.debug("Deleting async search id [{}] from system index ", asyncSearchContext.getAsyncSearchId());
-                    persistenceService.deleteResponse(asyncSearchContext.getAsyncSearchId(), groupedDeletionListener);
+                    persistenceService.deleteResponse(asyncSearchContext.getAsyncSearchId(), null, groupedDeletionListener);
                     releasable.close();
                 }, exception -> {
                     if (ExceptionsHelper.unwrapCause(exception) instanceof AlreadyClosedException == false) {
@@ -297,7 +320,7 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
                     cancelTask(asyncSearchContext, "User triggered context deletion");
                     groupedDeletionListener.onResponse(false);
                     logger.debug("Deleting async search id [{}] from system index ", asyncSearchContext.getAsyncSearchId());
-                    persistenceService.deleteResponse(asyncSearchContext.getAsyncSearchId(), groupedDeletionListener);
+                    persistenceService.deleteResponse(asyncSearchContext.getAsyncSearchId(), null, groupedDeletionListener);
                 }
         ), TimeValue.timeValueSeconds(5), "free context");
     }
@@ -321,9 +344,10 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
      * @param id                   async search id
      * @param keepAlive            the new keep alive duration
      * @param asyncSearchContextId async search context id
+     * @param  user                current user
      * @param listener             listener to invoke after updating expiration.
      */
-    public void updateKeepAliveAndGetContext(String id, TimeValue keepAlive, AsyncSearchContextId asyncSearchContextId,
+    public void updateKeepAliveAndGetContext(String id, TimeValue keepAlive, AsyncSearchContextId asyncSearchContextId, User user,
                                              ActionListener<AsyncSearchContext> listener) {
         validateKeepAlive(keepAlive);
         long requestedExpirationTime = currentTimeSupplier.getAsLong() + keepAlive.getMillis();
@@ -338,14 +362,20 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
                         if (asyncSearchActiveContext.getAsyncSearchState() == AsyncSearchState.PERSISTED) {
                             logger.debug("Updating persistence store after state is PERSISTED async search id [{}] " +
                                     "for updating context", asyncSearchActiveContext.getAsyncSearchId());
-                            persistenceService.updateExpirationTime(id, requestedExpirationTime, ActionListener.wrap(
+                            persistenceService.updateExpirationTime(id, requestedExpirationTime, user, ActionListener.wrap(
                                     (actionResponse) -> listener.onResponse(new AsyncSearchPersistenceContext(id, asyncSearchContextId,
                                             actionResponse, currentTimeSupplier, namedWriteableRegistry)), listener::onFailure));
                         } else {
-                            asyncSearchActiveContext.setExpirationTimeMillis(requestedExpirationTime);
-                            logger.debug("Updating persistence store: NO as state is NOT PERSISTED yet async search id [{}] " +
-                                    "for updating context", asyncSearchActiveContext.getAsyncSearchId());
-                            listener.onResponse(asyncSearchActiveContext);
+                            if(isUserValid(user, asyncSearchActiveContext.getUser()) == false) {
+                                listener.onFailure(new ElasticsearchSecurityException(
+                                        "User doesn't have necessary roles to access the async search with id "+ id, RestStatus.FORBIDDEN));
+                            }
+                            else {
+                                logger.debug("Updating persistence store: NO as state is NOT PERSISTED yet async search id [{}] " +
+                                        "for updating context", asyncSearchActiveContext.getAsyncSearchId());
+                                asyncSearchActiveContext.setExpirationTimeMillis(requestedExpirationTime);
+                                listener.onResponse(asyncSearchActiveContext);
+                            }
                         }
                         releasable.close();
                     },
@@ -359,7 +389,7 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
                         }
                         logger.debug("Updating persistence store after failing to acquire permits for async search id [{}] for updating " +
                                 "context with expiration time [{}]", asyncSearchActiveContext.getAsyncSearchId(), requestedExpirationTime);
-                        persistenceService.updateExpirationTime(id, requestedExpirationTime,
+                        persistenceService.updateExpirationTime(id, requestedExpirationTime, user,
                                 ActionListener.wrap((actionResponse) -> listener.onResponse(new AsyncSearchPersistenceContext(
                                                 id, asyncSearchContextId, actionResponse, currentTimeSupplier, namedWriteableRegistry)),
                                         listener::onFailure));
@@ -369,7 +399,7 @@ public class AsyncSearchService extends AbstractLifecycleComponent implements Cl
             // try update the doc on the index assuming there exists one.
             logger.debug("Updating persistence store after active context evicted for async search id [{}] " +
                     "for updating context", id);
-            persistenceService.updateExpirationTime(id, requestedExpirationTime,
+            persistenceService.updateExpirationTime(id, requestedExpirationTime, user,
                     ActionListener.wrap((actionResponse) -> listener.onResponse(new AsyncSearchPersistenceContext(
                             id, asyncSearchContextId, actionResponse, currentTimeSupplier, namedWriteableRegistry)), listener::onFailure));
         }

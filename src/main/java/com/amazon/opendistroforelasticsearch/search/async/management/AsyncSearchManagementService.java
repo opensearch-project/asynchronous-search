@@ -185,7 +185,8 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
                 Set<AsyncSearchContext> toFree = asyncSearchService.getContextsToReap();
                 // don't block on response
                 toFree.forEach(
-                        context -> asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(), ActionListener.wrap(
+                        context -> asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(),
+                                null, ActionListener.wrap(
                                 (response) -> logger.warn("Successfully freed up context [{}] running duration [{}]",
                                         context.getAsyncSearchId(), context.getExpirationTimeMillis() - context.getStartTimeMillis()),
                                 (exception -> logger.warn(() -> new ParameterizedMessage("Failed to cleanup async search context [{}] " +

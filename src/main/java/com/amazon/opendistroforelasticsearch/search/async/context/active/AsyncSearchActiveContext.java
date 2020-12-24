@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.active;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.permits.AsyncSearchContextPermits;
@@ -29,6 +30,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchProgressActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchTask;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -63,12 +65,14 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
     private final SetOnce<SearchResponse> searchResponse;
     private final AtomicBoolean closed;
     private final AsyncSearchContextPermits asyncSearchContextPermits;
+    @Nullable
+    private final User user;
 
     public AsyncSearchActiveContext(AsyncSearchContextId asyncSearchContextId, String nodeId,
                                     TimeValue keepAlive, boolean keepOnCompletion,
                                     ThreadPool threadPool, LongSupplier currentTimeSupplier,
                                     AsyncSearchProgressListener searchProgressActionListener,
-                                    AsyncSearchContextListener asyncSearchContextListener) {
+                                    AsyncSearchContextListener asyncSearchContextListener, @Nullable User user) {
         super(asyncSearchContextId, currentTimeSupplier);
         this.keepOnCompletion = keepOnCompletion;
         this.error = new SetOnce<>();
@@ -82,6 +86,7 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
         this.completed = new AtomicBoolean(false);
         this.closed = new AtomicBoolean(false);
         this.asyncSearchContextPermits = new AsyncSearchContextPermits(asyncSearchContextId, threadPool);
+        this.user = user;
     }
 
     public void setTask(SearchTask searchTask) {
@@ -151,6 +156,10 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
         return startTimeMillis;
     }
 
+    @Override
+    public User getUser() {
+        return user;
+    }
 
     public void acquireContextPermit(final ActionListener<Releasable> onPermitAcquired, TimeValue timeout, String reason) {
         asyncSearchContextPermits.asyncAcquirePermit(onPermitAcquired, timeout, reason);

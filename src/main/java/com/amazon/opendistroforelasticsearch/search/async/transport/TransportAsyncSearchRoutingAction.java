@@ -15,6 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.transport;
 
+import com.amazon.opendistroforelasticsearch.commons.ConfigConstants;
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.async.request.AsyncSearchRoutingRequest;
@@ -33,6 +35,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -78,7 +81,7 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
         }
     }
 
-    public abstract void handleRequest(AsyncSearchId asyncSearchId, Request request, ActionListener<Response> listener);
+    public abstract void handleRequest(AsyncSearchId asyncSearchId, Request request, ActionListener<Response> listener, User user);
 
     final class AsyncForwardAction extends AbstractRunnable {
 
@@ -107,7 +110,7 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
         @Override
         public void onFailure(Exception e) {
             logger.error(new ParameterizedMessage("Failed to dispatch request for action {} ", actionName), e);
-            handleRequest(asyncSearchId, request, listener);
+            sendLocalRequest(asyncSearchId, request, listener);
         }
 
         @Override
@@ -130,7 +133,7 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
                                                     "target node [{}] Error: [{}]",
                                             request.getId(), targetNode, exp.getDetailedMessage());
                                     //try on local node since we weren't able to forward
-                                    handleRequest(asyncSearchId, request, listener);
+                                    sendLocalRequest(asyncSearchId, request, listener);
                                 } else {
                                     logger.debug("Exception received for request with id[{}] to from target node [{}],  Error: [{}]",
                                             request.getId(), targetNode, exp.getDetailedMessage());
@@ -147,7 +150,17 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
                             }
                         });
             } else {
-                handleRequest(asyncSearchId, request, listener);
+                sendLocalRequest(asyncSearchId, request, listener);
+            }
+        }
+
+        private void sendLocalRequest(AsyncSearchId asyncSearchId, Request request, ActionListener<Response> listener)
+        {
+            ThreadContext threadContext = threadPool.getThreadContext();
+            String userStr =  threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT);
+            User user = User.parse(userStr);
+            try (ThreadContext.StoredContext ctx = threadContext.stashContext()) {
+                handleRequest(asyncSearchId, request, listener, user);
             }
         }
     }

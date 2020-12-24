@@ -85,7 +85,7 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
             AsyncSearchActiveContext context = new AsyncSearchActiveContext(asyncSearchContextId, node,
                     keepAlive, keepOnCompletion, threadPool,
                     threadPool::absoluteTimeInMillis, asyncSearchProgressListener, new AsyncSearchContextListener() {
-            });
+            }, null);
             assertNull(context.getTask());
             assertEquals(context.getAsyncSearchState(), INIT);
             AtomicInteger numPersisted = new AtomicInteger();
@@ -131,7 +131,7 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
         int successfulShards = totalShards - randomInt(100);
         return new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                new InternalAggregations(Collections.emptyList()),
+                InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
                 "", totalShards, successfulShards, 0, randomNonNegativeLong(),

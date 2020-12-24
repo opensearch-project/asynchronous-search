@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.transport;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
@@ -59,12 +60,13 @@ public class TransportGetAsyncSearchAction extends TransportAsyncSearchRoutingAc
     }
 
     @Override
-    public void handleRequest(AsyncSearchId asyncSearchId, GetAsyncSearchRequest request, ActionListener<AsyncSearchResponse> listener) {
+    public void handleRequest(AsyncSearchId asyncSearchId, GetAsyncSearchRequest request,
+                              ActionListener<AsyncSearchResponse> listener, User user) {
         try {
             boolean updateNeeded = request.getKeepAlive() != null;
             if (updateNeeded) {
                 asyncSearchService.updateKeepAliveAndGetContext(request.getId(), request.getKeepAlive(),
-                        asyncSearchId.getAsyncSearchContextId(), ActionListener.wrap(
+                        asyncSearchId.getAsyncSearchContextId(), user, ActionListener.wrap(
                                 // check if the context is active and is still RUNNING
                                 (context) -> handleWaitForCompletion(context, request.getWaitForCompletionTimeout(), listener),
                                 (e) -> {
@@ -75,7 +77,7 @@ public class TransportGetAsyncSearchAction extends TransportAsyncSearchRoutingAc
                         ));
             } else {
                 // we don't need to update keep-alive, simply find one on the node if one exists or look up the index
-                asyncSearchService.findContext(request.getId(), asyncSearchId.getAsyncSearchContextId(), ActionListener.wrap(
+                asyncSearchService.findContext(request.getId(), asyncSearchId.getAsyncSearchContextId(), user, ActionListener.wrap(
                         (context) -> handleWaitForCompletion(context, request.getWaitForCompletionTimeout(), listener),
                         (e) -> {
                             logger.debug(() -> new ParameterizedMessage("Unable to get async search request {}",

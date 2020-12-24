@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.service;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchSingleNodeTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
@@ -24,6 +25,7 @@ import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSea
 import com.amazon.opendistroforelasticsearch.search.async.task.AsyncSearchTask;
 import com.amazon.opendistroforelasticsearch.search.async.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchAction;
@@ -58,17 +60,20 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         AsyncSearchService asyncSearchService = getInstanceFromNode(AsyncSearchService.class);
         TimeValue keepAlive = timeValueDays(9);
         boolean keepOnCompletion = randomBoolean();
+        User user1 = TestClientUtils.randomUser();
+        User user2 = TestClientUtils.randomUser();
         SearchRequest searchRequest = new SearchRequest();
         SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
         submitAsyncSearchRequest.keepAlive(keepAlive);
         AsyncSearchContext context = asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                System.currentTimeMillis(), () -> getInstanceFromNode(SearchService.class).aggReduceContextBuilder(searchRequest));
+                System.currentTimeMillis(), () -> getInstanceFromNode(SearchService.class).aggReduceContextBuilder(searchRequest), user1);
         assertTrue(context instanceof AsyncSearchActiveContext);
         AsyncSearchActiveContext asyncSearchActiveContext = (AsyncSearchActiveContext) context;
         assertNull(asyncSearchActiveContext.getTask());
         assertNull(asyncSearchActiveContext.getAsyncSearchId());
         assertEquals(asyncSearchActiveContext.getAsyncSearchState(), INIT);
+        assertEquals(asyncSearchActiveContext.getUser(), user1);
         //bootstrap search
         AsyncSearchTask task = new AsyncSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME, TaskId.EMPTY_TASK_ID,
                 emptyMap(), (AsyncSearchActiveContext) context, null, (c) -> {
@@ -78,8 +83,8 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         assertEquals(asyncSearchActiveContext.getStartTimeMillis(), task.getStartTime());
         assertEquals(asyncSearchActiveContext.getExpirationTimeMillis(), task.getStartTime() + keepAlive.millis());
         assertEquals(asyncSearchActiveContext.getAsyncSearchState(), RUNNING);
-        CountDownLatch findContextLatch = new CountDownLatch(1);
-        asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(), asyncSearchActiveContext.getContextId(), wrap(
+        CountDownLatch findContextLatch = new CountDownLatch(3);
+        ActionListener<AsyncSearchContext> expectedSuccessfulActive = wrap(
                 r -> {
                     try {
                         assertTrue(r instanceof AsyncSearchActiveContext);
@@ -95,7 +100,29 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
                         findContextLatch.countDown();
                     }
                 }
-        ));
+        );
+        ActionListener<AsyncSearchContext> expectedSecurityException = wrap(
+                r -> {
+                    try {
+                        fail("Expecting security exception");
+                    } finally {
+                        findContextLatch.countDown();
+                    }
+                }, e -> {
+                    try {
+                        assertTrue(e instanceof ElasticsearchSecurityException);
+                    } finally {
+                        findContextLatch.countDown();
+                    }
+                }
+        );
+        asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(),
+                asyncSearchActiveContext.getContextId(), user1, expectedSuccessfulActive);
+        asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(),
+                asyncSearchActiveContext.getContextId(), user2, expectedSecurityException);
+        asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(),
+                asyncSearchActiveContext.getContextId(), null, expectedSuccessfulActive);
+
         findContextLatch.await();
 
         AsyncSearchProgressListener asyncSearchProgressListener = asyncSearchActiveContext.getAsyncSearchProgressListener();
@@ -108,8 +135,8 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         }
         if (keepOnCompletion) { //persist to disk
             TestClientUtils.assertResponsePersistence(client(), context.getAsyncSearchId());
-            CountDownLatch findContextLatch1 = new CountDownLatch(1);
-            asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(), asyncSearchActiveContext.getContextId(), wrap(
+            CountDownLatch findContextLatch1 = new CountDownLatch(3);
+            ActionListener<AsyncSearchContext> expectedSuccessfulPersisted = wrap(
                     r -> {
                         try {
                             assertNotEquals(r, asyncSearchActiveContext);
@@ -124,10 +151,47 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
                             findContextLatch1.countDown();
                         }
                     }
-            ));
+            );
+            ActionListener<AsyncSearchContext> expectedSecurityExceptionPersisted = wrap(
+                    r -> {
+                        try {
+                            fail("Expecting security exception");
+                        } finally {
+                            findContextLatch1.countDown();
+                        }
+                    }, e -> {
+                        try {
+                            assertTrue(e instanceof ElasticsearchSecurityException);
+                        } finally {
+                            findContextLatch1.countDown();
+                        }
+                    }
+            );
+            asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(),
+                    asyncSearchActiveContext.getContextId(), user1, expectedSuccessfulPersisted);
+            asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(),
+                    asyncSearchActiveContext.getContextId(), user2, expectedSecurityExceptionPersisted);
+            asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(),
+                    asyncSearchActiveContext.getContextId(), null, expectedSuccessfulPersisted);
+
             findContextLatch1.await();
-            CountDownLatch freeContextLatch = new CountDownLatch(1);
-            asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(), wrap(
+            CountDownLatch freeContextLatch = new CountDownLatch(2);
+            asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(), user2, wrap(
+                    r -> {
+                        try {
+                            fail("Expecting security exception");
+                        } finally {
+                            freeContextLatch.countDown();
+                        }
+                    }, e -> {
+                        try {
+                            assertTrue(e instanceof ElasticsearchSecurityException);
+                        } finally {
+                            freeContextLatch.countDown();
+                        }
+                    }
+            ));
+            asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(), user1, wrap(
                     r -> {
                         try {
                             assertTrue("persistence context should be deleted", r);
@@ -145,9 +209,10 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
             ));
             freeContextLatch.await();
         } else {
+
             waitUntil(() -> asyncSearchService.getAllActiveContexts().isEmpty());
             CountDownLatch freeContextLatch = new CountDownLatch(1);
-            asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(), wrap(
+            asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(), null, wrap(
                     r -> {
                         try {
                             fail("No context should have been deleted");
@@ -177,7 +242,7 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
         submitAsyncSearchRequest.keepAlive(keepAlive);
         AsyncSearchContext context = asyncSearchService.createAndStoreContext(submitAsyncSearchRequest, System.currentTimeMillis(),
-                () -> getInstanceFromNode(SearchService.class).aggReduceContextBuilder(searchRequest));
+                () -> getInstanceFromNode(SearchService.class).aggReduceContextBuilder(searchRequest), null);
         assertTrue(context instanceof AsyncSearchActiveContext);
         AsyncSearchActiveContext asyncSearchActiveContext = (AsyncSearchActiveContext) context;
         assertNull(asyncSearchActiveContext.getTask());
@@ -195,7 +260,7 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         assertEquals(originalExpirationTimeMillis, task.getStartTime() + keepAlive.millis());
         assertEquals(asyncSearchActiveContext.getAsyncSearchState(), RUNNING);
         CountDownLatch findContextLatch = new CountDownLatch(1);
-        asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(), asyncSearchActiveContext.getContextId(), wrap(
+        asyncSearchService.findContext(asyncSearchActiveContext.getAsyncSearchId(), asyncSearchActiveContext.getContextId(), null, wrap(
                 r -> {
                     try {
                         assertTrue(r instanceof AsyncSearchActiveContext);
@@ -216,7 +281,7 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         CountDownLatch updateLatch = new CountDownLatch(1);
         TimeValue newKeepAlive = timeValueDays(10);
         asyncSearchService.updateKeepAliveAndGetContext(asyncSearchActiveContext.getAsyncSearchId(), newKeepAlive,
-                asyncSearchActiveContext.getContextId(), wrap(r -> {
+                asyncSearchActiveContext.getContextId(), null, wrap(r -> {
                     try {
                         assertTrue(r instanceof AsyncSearchActiveContext);
                         assertThat(r.getExpirationTimeMillis(), greaterThan(originalExpirationTimeMillis));
@@ -237,12 +302,14 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
     public void testUpdateExpirationOnPersistedSearch() throws InterruptedException {
         AsyncSearchService asyncSearchService = getInstanceFromNode(AsyncSearchService.class);
         TimeValue keepAlive = timeValueDays(9);
+        User user1 = TestClientUtils.randomUser();
+        User user2 = TestClientUtils.randomUser();
         SearchRequest searchRequest = new SearchRequest();
         SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepAlive(keepAlive);
         submitAsyncSearchRequest.keepOnCompletion(true);
         AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                System.currentTimeMillis(), () -> getInstanceFromNode(SearchService.class).aggReduceContextBuilder(searchRequest));
+                System.currentTimeMillis(), () -> getInstanceFromNode(SearchService.class).aggReduceContextBuilder(searchRequest), user1);
         AsyncSearchTask task = new AsyncSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME, TaskId.EMPTY_TASK_ID,
                 emptyMap(), context, null, (c) -> {
         });
@@ -255,9 +322,23 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         assertEquals(context.getAsyncSearchState(), RUNNING);
         context.getAsyncSearchProgressListener().onResponse(getMockSearchResponse());
         TestClientUtils.assertResponsePersistence(client(), context.getAsyncSearchId());
-        CountDownLatch updateLatch = new CountDownLatch(1);
+        CountDownLatch updateLatch = new CountDownLatch(2);
         asyncSearchService.updateKeepAliveAndGetContext(context.getAsyncSearchId(), keepAlive,
-                context.getContextId(), wrap(r -> {
+                context.getContextId(), user2, wrap(r -> {
+                    try {
+                        fail("Expected security exception");
+                    } finally {
+                        updateLatch.countDown();
+                    }
+                }, e -> {
+                    try {
+                        assertTrue(e instanceof ElasticsearchSecurityException);
+                    } finally {
+                        updateLatch.countDown();
+                    }
+                }));
+        asyncSearchService.updateKeepAliveAndGetContext(context.getAsyncSearchId(), keepAlive,
+                context.getContextId(), user1, wrap(r -> {
                     try {
                         assertTrue(r instanceof AsyncSearchPersistenceContext);
                         assertThat(r.getExpirationTimeMillis(), greaterThan(originalExpirationTimeMillis));
@@ -290,7 +371,7 @@ public class AsyncSearchServiceTests extends AsyncSearchSingleNodeTestCase {
         int successfulShards = totalShards - randomInt(100);
         return new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                new InternalAggregations(Collections.emptyList()),
+                InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
                 "", totalShards, successfulShards, 0, randomNonNegativeLong(),

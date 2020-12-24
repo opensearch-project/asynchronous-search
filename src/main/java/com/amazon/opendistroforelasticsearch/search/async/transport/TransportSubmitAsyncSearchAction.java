@@ -15,6 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.transport;
 
+import com.amazon.opendistroforelasticsearch.commons.ConfigConstants;
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
@@ -74,10 +76,12 @@ public class TransportSubmitAsyncSearchAction extends HandledTransportAction<Sub
     @Override
     protected void doExecute(Task task, SubmitAsyncSearchRequest request, ActionListener<AsyncSearchResponse> listener) {
         AsyncSearchContext asyncSearchContext = null;
+        String userStr = threadPool.getThreadContext().getTransient(ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT);
+        User user = User.parse(userStr);
         try {
             final long relativeStartTimeInMillis = threadPool.relativeTimeInMillis();
             asyncSearchContext = asyncSearchService.createAndStoreContext(request, relativeStartTimeInMillis,
-                    () -> searchService.aggReduceContextBuilder(request.getSearchRequest()));
+                    () -> searchService.aggReduceContextBuilder(request.getSearchRequest()), user);
             assert asyncSearchContext.getAsyncSearchProgressListener() != null : "missing progress listener for an active context";
             AsyncSearchProgressListener progressListener = asyncSearchContext.getAsyncSearchProgressListener();
             AsyncSearchContext context = asyncSearchContext; //making it effectively final for usage in anonymous class.
@@ -106,7 +110,7 @@ public class TransportSubmitAsyncSearchAction extends HandledTransportAction<Sub
             logger.error(() -> new ParameterizedMessage("Failed to submit async search request {}", request), e);
             if (asyncSearchContext != null) {
                 AsyncSearchActiveContext asyncSearchActiveContext = (AsyncSearchActiveContext) asyncSearchContext;
-                asyncSearchService.freeContext(asyncSearchActiveContext.getAsyncSearchId(), asyncSearchActiveContext.getContextId(),
+                asyncSearchService.freeContext(asyncSearchActiveContext.getAsyncSearchId(), asyncSearchActiveContext.getContextId(), user,
                         ActionListener.wrap((r) -> {
                             logger.debug(() -> new ParameterizedMessage("Successfully cleaned up context on submit async" +
                                     " search id [{}] on failure", asyncSearchActiveContext.getAsyncSearchId()), e);

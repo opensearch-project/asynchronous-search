@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.transport;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
@@ -46,9 +47,9 @@ public class TransportDeleteAsyncSearchAction extends TransportAsyncSearchRoutin
 
     @Override
     public void handleRequest(AsyncSearchId asyncSearchId, DeleteAsyncSearchRequest request,
-                              ActionListener<AcknowledgedResponse> listener) {
+                              ActionListener<AcknowledgedResponse> listener, User user) {
         try {
-            asyncSearchService.freeContext(request.getId(), asyncSearchId.getAsyncSearchContextId(), ActionListener
+            asyncSearchService.freeContext(request.getId(), asyncSearchId.getAsyncSearchContextId(), user, ActionListener
                     .wrap((complete) -> listener.onResponse(new AcknowledgedResponse(complete)), listener::onFailure));
         } catch (Exception e) {
             logger.error(() -> new ParameterizedMessage("Unable to delete async search request {}", request), e);

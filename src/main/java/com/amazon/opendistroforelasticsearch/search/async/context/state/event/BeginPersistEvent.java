@@ -19,7 +19,7 @@ public class BeginPersistEvent extends AsyncSearchContextEvent {
     public AsyncSearchPersistenceModel getAsyncSearchPersistenceModel() {
         try {
             return new AsyncSearchPersistenceModel(asyncSearchContext.getStartTimeMillis(), asyncSearchContext.getExpirationTimeMillis(),
-                    asyncSearchContext.getSearchResponse(), asyncSearchContext.getSearchError());
+                    asyncSearchContext.getSearchResponse(), asyncSearchContext.getSearchError(), asyncSearchContext.getUser());
         } catch (IOException e) {
             logger.error("Failed to create async search persistence model for context " + asyncSearchContext, e);
             return null;

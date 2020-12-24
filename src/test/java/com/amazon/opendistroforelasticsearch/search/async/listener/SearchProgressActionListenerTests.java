@@ -58,7 +58,7 @@ public class SearchProgressActionListenerTests extends AsyncSearchTestCase {
         mockPostProcessingException = new RuntimeException("random-post-processing-exception");
         mockSearchResponse = new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                new InternalAggregations(Collections.emptyList()),
+                InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, 1),
                 "", 1, 1, 0, 0, ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);

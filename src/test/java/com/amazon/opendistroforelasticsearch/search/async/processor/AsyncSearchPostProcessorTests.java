@@ -108,7 +108,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder());
+                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             ShardSearchFailure shardSearchFailure = new ShardSearchFailure(new RuntimeException("runtime-exception"));
             SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
                     new ShardSearchFailure[]{shardSearchFailure});
@@ -151,7 +151,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder());
+                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asyncSearchStateMachine.trigger(new SearchStartedEvent(context,
                     new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
             SearchResponse mockSearchResponse = getMockSearchResponse();
@@ -189,7 +189,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder());
+                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asyncSearchStateMachine.trigger(new SearchStartedEvent(context,
                     new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
             SearchResponse mockSearchResponse = getMockSearchResponse();
@@ -231,7 +231,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueMillis(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder());
+                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asyncSearchStateMachine.trigger(new SearchStartedEvent(context,
                     new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
             SearchResponse mockSearchResponse = getMockSearchResponse();
@@ -272,7 +272,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
-                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder());
+                    System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asyncSearchStateMachine.trigger(new SearchStartedEvent(context,
                     new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
             asyncSearchStateMachine.trigger(new SearchClosedEvent(context));
@@ -296,7 +296,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         int successfulShards = totalShards - randomInt(100);
         return new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                new InternalAggregations(Collections.emptyList()),
+                InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
                 "", totalShards, successfulShards, 0, randomNonNegativeLong(),

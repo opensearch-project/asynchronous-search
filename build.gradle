@@ -1,8 +1,9 @@
 buildscript {
     ext {
-        es_version = '7.8.1'
+        es_version = '7.9.1'
         distribution = 'oss-zip'
         es_group = "org.elasticsearch"
+        opendistroVersion = '1.11.1.0'
     }
 
     repositories {
@@ -53,10 +54,12 @@ dependencies {
     testCompile ('junit:junit:4.12') {
         exclude group: 'org.hamcrest'
     }
+    testCompile group: "org.codelibs.elasticsearch.module", name: "lang-painless", version: "${es_version}"
     testCompile "org.elasticsearch.plugin:reindex-client:${es_version}"
     testCompile "org.elasticsearch.test:framework:${es_version}"
     compileOnly "org.elasticsearch.plugin:transport-netty4-client:${es_version}"
     compileOnly "org.elasticsearch:elasticsearch:${es_version}"
+    compile "com.amazon.opendistroforelasticsearch:common-utils:${opendistroVersion}"
 }
 compileTestJava {
     classpath = classpath.filter{ File file ->

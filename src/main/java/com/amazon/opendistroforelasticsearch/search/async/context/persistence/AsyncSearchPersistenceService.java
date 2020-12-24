@@ -15,10 +15,12 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.persistence;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.ResourceNotFoundException;
@@ -46,6 +48,9 @@ import org.elasticsearch.index.engine.DocumentMissingException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -53,7 +58,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import static com.amazon.opendistroforelasticsearch.search.async.UserAuthUtils.isUserValid;
+import static com.amazon.opendistroforelasticsearch.search.async.UserAuthUtils.parseUser;
 import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
 
 /**
@@ -66,6 +74,7 @@ public class AsyncSearchPersistenceService {
     public static final String START_TIME_MILLIS = "start_time_millis";
     public static final String RESPONSE = "response";
     public static final String ERROR = "error";
+    public static final String USER = "user";
 
     private static final Logger logger = LogManager.getLogger(AsyncSearchPersistenceService.class);
     public static final String ASYNC_SEARCH_RESPONSE_INDEX = ".opendistro_asynchronous_search_response";
@@ -108,9 +117,11 @@ public class AsyncSearchPersistenceService {
      * Fetches and de-serializes the async search response from index.
      *
      * @param id       async search id
+     * @param user     current user
      * @param listener invoked once get request completes. Throws ResourceNotFoundException if index doesn't exist.
      */
-    public void getResponse(String id, ActionListener<AsyncSearchPersistenceModel> listener) {
+    @SuppressWarnings("unchecked")
+    public void getResponse(String id, User user, ActionListener<AsyncSearchPersistenceModel> listener) {
         if (indexExists() == false) {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
@@ -120,10 +131,19 @@ public class AsyncSearchPersistenceService {
                 {
                     if (getResponse.isExists()) {
                         Map<String, Object> source = getResponse.getSource();
-                        listener.onResponse(new AsyncSearchPersistenceModel((long) source.get(START_TIME_MILLIS),
+                        AsyncSearchPersistenceModel asyncSearchPersistenceModel = new AsyncSearchPersistenceModel(
+                                (long) source.get(START_TIME_MILLIS),
                                 (long) source.get(EXPIRATION_TIME_MILLIS),
                                 source.containsKey(RESPONSE) ? (String) source.get(RESPONSE) : null,
-                                source.containsKey(ERROR) ? (String) source.get(ERROR) : null));
+                                source.containsKey(ERROR) ? (String) source.get(ERROR) : null,
+                                parseUser((Map<String, Object>) source.get(USER)));
+                        if(isUserValid(user, asyncSearchPersistenceModel.getUser())) {
+                            listener.onResponse(asyncSearchPersistenceModel);
+                        } else {
+                            logger.debug("Invalid user requesting GET persisted context for async search id {}", id);
+                            listener.onFailure(new ElasticsearchSecurityException(
+                                    "User doesn't have necessary roles to access the async search with id "+ id, RestStatus.FORBIDDEN));
+                        }
                     } else {
                         listener.onFailure(new ResourceNotFoundException(id));
                     }
@@ -141,25 +161,17 @@ public class AsyncSearchPersistenceService {
      * returns true
      *
      * @param id       async search id
+     * @param user     current user
      * @param listener invoked once delete document request completes.
      */
 
-    public void deleteResponse(String id, ActionListener<Boolean> listener) {
+    public void deleteResponse(String id, User user, ActionListener<Boolean> listener) {
         if (indexExists() == false) {
             logger.warn("Async search index [{}] doesn't exists", ASYNC_SEARCH_RESPONSE_INDEX);
             listener.onResponse(false);
             return;
         }
-
-        client.delete(new DeleteRequest(ASYNC_SEARCH_RESPONSE_INDEX, id), ActionListener.wrap(deleteResponse -> {
-            if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
-                logger.warn("Delete async search {} successful. Returned result {}", id, deleteResponse.getResult());
-                listener.onResponse(true);
-            } else {
-                logger.warn("Delete async search {} unsuccessful. Returned result {}", id, deleteResponse.getResult());
-                listener.onResponse(false);
-            }
-        }, e -> {
+        Consumer<Exception> onFailure = e -> {
             final Throwable cause = ExceptionsHelper.unwrapCause(e);
             if (cause instanceof DocumentMissingException) {
                 logger.warn(() -> new ParameterizedMessage("Async search response doc already deleted {}", id), e);
@@ -168,7 +180,45 @@ public class AsyncSearchPersistenceService {
                 logger.warn(() -> new ParameterizedMessage("Failed to delete async search for id {}", id), e);
                 listener.onFailure(cause instanceof Exception ? (Exception) cause : new NotSerializableExceptionWrapper(cause));
             }
-        }));
+        };
+        if(user == null) {
+            client.delete(new DeleteRequest(ASYNC_SEARCH_RESPONSE_INDEX, id), ActionListener.wrap(deleteResponse -> {
+                if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
+                    logger.warn("Delete async search {} successful. Returned result {}", id, deleteResponse.getResult());
+                    listener.onResponse(true);
+                } else {
+                    logger.debug("Delete async search {} unsuccessful. Returned result {}", id, deleteResponse.getResult());
+                    listener.onResponse(false);
+                }
+            }, onFailure));
+        }
+        else {
+            UpdateRequest updateRequest = new UpdateRequest(ASYNC_SEARCH_RESPONSE_INDEX, id);
+            String scriptCode = "if (ctx._source.user == null || ctx._source.user.backend_roles == null || " +
+                    "( params.backend_roles!=null && params.backend_roles.containsAll(ctx._source.user.backend_roles))) " +
+                    "{ ctx.op = 'delete' } else { ctx.op = 'none' }";
+            Map<String, Object> params = new HashMap<>();
+            params.put("backend_roles", user.getBackendRoles());
+            Script deleteConditionallyScript = new Script(ScriptType.INLINE, "painless", scriptCode, params);
+            updateRequest.script(deleteConditionallyScript);
+            client.update(updateRequest, ActionListener.wrap(deleteResponse -> {
+                switch (deleteResponse.getResult()) {
+                    case UPDATED:
+                        listener.onFailure(new IllegalStateException("Document updated when requesting delete for async search id "+ id));
+                        break;
+                    case NOOP:
+                        listener.onFailure(new ElasticsearchSecurityException(
+                                "User doesn't have necessary roles to access the async search with id "+ id, RestStatus.FORBIDDEN));
+                        break;
+                    case NOT_FOUND:
+                        listener.onResponse(false);
+                        break;
+                    case DELETED:
+                        listener.onResponse(true);
+                        break;
+                }
+            }, onFailure));
+        }
     }
 
     /**
@@ -176,27 +226,55 @@ public class AsyncSearchPersistenceService {
      *
      * @param id                   async search id
      * @param expirationTimeMillis the new expiration time
+     * @param  user                current user
      * @param listener             listener invoked with the response on completion of update request
      */
-    public void updateExpirationTime(String id, long expirationTimeMillis, ActionListener<AsyncSearchPersistenceModel> listener) {
+    @SuppressWarnings("unchecked")
+    public void updateExpirationTime(String id, long expirationTimeMillis,
+                                     User user, ActionListener<AsyncSearchPersistenceModel> listener) {
         if (indexExists() == false) {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
         }
-        Map<String, Object> source = new HashMap<>();
-        source.put(EXPIRATION_TIME_MILLIS, expirationTimeMillis);
         UpdateRequest updateRequest = new UpdateRequest(ASYNC_SEARCH_RESPONSE_INDEX, id);
-        updateRequest.doc(source, XContentType.JSON);
         updateRequest.retryOnConflict(5);
+        if(user == null) {
+            Map<String, Object> source = new HashMap<>();
+            source.put(EXPIRATION_TIME_MILLIS, expirationTimeMillis);
+            updateRequest.doc(source, XContentType.JSON);
+        }
+        else {
+            //TODO- Remove hardcoded strings
+            String scriptCode = "if (ctx._source.user == null || ctx._source.user.backend_roles == null || " +
+                    "(params.backend_roles != null && params.backend_roles.containsAll(ctx._source.user.backend_roles))) " +
+                    "{ ctx._source.expiration_time_millis =  params.expiration_time_millis } else { ctx.op = 'none' }";
+            Map<String, Object> params = new HashMap<>();
+            params.put("backend_roles", user.getBackendRoles());
+            params.put("expiration_time_millis", expirationTimeMillis);
+            Script conditionalUpdateScript = new Script(ScriptType.INLINE, "painless", scriptCode, params);
+            updateRequest.script(conditionalUpdateScript);
+        }
         updateRequest.fetchSource(FetchSourceContext.FETCH_SOURCE);
         client.update(updateRequest, ActionListener.wrap(updateResponse -> {
             switch (updateResponse.getResult()) {
-                case UPDATED:
                 case NOOP:
-                    Map<String, Object> source1 = updateResponse.getGetResult().getSource();
-                    listener.onResponse(new AsyncSearchPersistenceModel((long) source1.get(START_TIME_MILLIS),
-                            (long) source1.get(EXPIRATION_TIME_MILLIS),
-                            (String) source1.get(RESPONSE), (String) source1.get(ERROR)));
+                    if(user != null) {
+                        listener.onFailure(new ElasticsearchSecurityException(
+                                "User doesn't have necessary roles to access the async search with id " + id, RestStatus.FORBIDDEN));
+                    } else {
+                        Map<String, Object> updatedSource = updateResponse.getGetResult().getSource();
+                        listener.onResponse(new AsyncSearchPersistenceModel((long) updatedSource.get(START_TIME_MILLIS),
+                                (long) updatedSource.get(EXPIRATION_TIME_MILLIS),
+                                (String) updatedSource.get(RESPONSE), (String) updatedSource.get(ERROR),
+                                parseUser((Map<String, Object>) updatedSource.get(USER))));
+                    }
+                    break;
+                case UPDATED:
+                    Map<String, Object> updatedSource = updateResponse.getGetResult().getSource();
+                    listener.onResponse(new AsyncSearchPersistenceModel((long) updatedSource.get(START_TIME_MILLIS),
+                            (long) updatedSource.get(EXPIRATION_TIME_MILLIS),
+                            (String) updatedSource.get(RESPONSE), (String) updatedSource.get(ERROR),
+                            parseUser((Map<String, Object>) updatedSource.get(USER))));
                     break;
                 case NOT_FOUND:
                 case DELETED:
@@ -276,6 +354,7 @@ public class AsyncSearchPersistenceService {
         source.put(ERROR, model.getError());
         source.put(EXPIRATION_TIME_MILLIS, model.getExpirationTimeMillis());
         source.put(START_TIME_MILLIS, model.getStartTimeMillis());
+        source.put(USER, model.getUser());
         IndexRequestBuilder indexRequestBuilder = client.prepareIndex(ASYNC_SEARCH_RESPONSE_INDEX, MAPPING_TYPE,
                 id).setSource(source, XContentType.JSON);
         doStoreResult(STORE_BACKOFF_POLICY.iterator(), indexRequestBuilder, listener);

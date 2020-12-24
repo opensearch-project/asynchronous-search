@@ -15,10 +15,12 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.persistence;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
+import com.amazon.opendistroforelasticsearch.search.async.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -51,9 +53,10 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
         long expirationTimeMillis = randomNonNegativeLong();
         long startTimeMillis = randomNonNegativeLong();
         SearchResponse searchResponse = getMockSearchResponse();
+        User user = TestClientUtils.randomUserOrNull();
         AsyncSearchPersistenceContext asyncSearchPersistenceContext =
                 new AsyncSearchPersistenceContext(id, asyncSearchContextId, new AsyncSearchPersistenceModel(startTimeMillis,
-                        expirationTimeMillis, searchResponse), System::currentTimeMillis,
+                        expirationTimeMillis, searchResponse, null, user), System::currentTimeMillis,
                         new NamedWriteableRegistry(Collections.emptyList()));
         assertEquals(
                 asyncSearchPersistenceContext.getAsyncSearchResponse(),
@@ -76,8 +79,9 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
         ShardSearchFailure shardSearchFailure = new ShardSearchFailure(new RuntimeException("runtime-exception"));
         SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
                 new ShardSearchFailure[] {shardSearchFailure});
+        User user = TestClientUtils.randomUser();
         AsyncSearchPersistenceContext asyncSearchPersistenceContext = new AsyncSearchPersistenceContext(id, asyncSearchContextId,
-                new AsyncSearchPersistenceModel(startTimeMillis, expirationTimeMillis, exception), System::currentTimeMillis,
+                new AsyncSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user), System::currentTimeMillis,
                 new NamedWriteableRegistry(Collections.emptyList()));
         ElasticsearchException deserializedException = asyncSearchPersistenceContext.getAsyncSearchResponse().getError();
         assertTrue(deserializedException instanceof SearchPhaseExecutionException);
@@ -91,7 +95,7 @@ public class AsyncSearchPersistenceContextTests extends ESTestCase {
     protected SearchResponse getMockSearchResponse() {
         return new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                new InternalAggregations(Collections.emptyList()),
+                InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, 1),
                 "", 1, 1, 0, 0,

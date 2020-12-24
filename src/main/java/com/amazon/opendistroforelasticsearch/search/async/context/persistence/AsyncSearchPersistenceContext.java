@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.context.persistence;
 
+import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
@@ -111,6 +112,11 @@ public class AsyncSearchPersistenceContext extends AsyncSearchContext {
             logger.error("Failed to parse search error " + asyncSearchPersistenceModel.getError(), e);
             return null;
         }
+    }
+
+    @Override
+    public User getUser() {
+        return asyncSearchPersistenceModel.getUser();
     }
 
     @Override
