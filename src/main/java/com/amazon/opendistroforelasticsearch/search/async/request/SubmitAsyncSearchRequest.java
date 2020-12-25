@@ -76,10 +76,7 @@ public class SubmitAsyncSearchRequest extends ActionRequest {
     public SubmitAsyncSearchRequest(SearchRequest searchRequest) {
         this.searchRequest = searchRequest;
         this.searchRequest.setCcsMinimizeRoundtrips(CCR_MINIMIZE_ROUNDTRIPS);
-        this.searchRequest.setPreFilterShardSize(DEFAULT_PRE_FILTER_SHARD_SIZE);
-        if (this.searchRequest.requestCache() == null) {
-            this.searchRequest.requestCache(DEFAULT_REQUEST_CACHE);
-        }
+        this.searchRequest.setPreFilterShardSize(DEFAULT_PRE_FILTER_SHARD_SIZE); //TODO update rest action to add defaults if params missing
     }
 
     public SearchRequest getSearchRequest() {

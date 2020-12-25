@@ -28,10 +28,9 @@ import java.io.IOException;
  */
 public class GetAsyncSearchRequest extends AsyncSearchRoutingRequest<GetAsyncSearchRequest> {
 
-    public static final TimeValue DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT = TimeValue.timeValueSeconds(1);
-
     @Nullable
-    private TimeValue waitForCompletionTimeout = DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT;
+    private TimeValue waitForCompletionTimeout;
+
     @Nullable
     private TimeValue keepAlive;
 

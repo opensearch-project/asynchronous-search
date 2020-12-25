@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
-import com.amazon.opendistroforelasticsearch.search.async.id.ExceptionTranslator;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.SetOnce;
@@ -23,6 +22,7 @@ import org.elasticsearch.action.search.SearchProgressActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchShard;
 import org.elasticsearch.action.search.ShardSearchFailure;
+import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.common.io.stream.DelayableWriteable;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.search.SearchHits;
@@ -135,19 +135,23 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
     }
 
     private void onSearchFailure(int shardIndex, SearchShardTarget shardTarget, Exception e) {
-        AtomicArray<ShardSearchFailure> shardFailures = partialResultsHolder.shardFailures.get();
-        // lazily create shard failures, so we can early build the empty shard failure list in most cases (no failures)
-        if (shardFailures == null) { // this is double checked locking but it's fine since SetOnce uses a volatile read internally
-            synchronized (partialResultsHolder.shardFailuresMutex) {
-                shardFailures = this.partialResultsHolder.shardFailures.get(); // read again otherwise somebody else has created it?
-                if (shardFailures == null) { // still null so we are the first and create a new instance
-                    shardFailures = new AtomicArray<>(partialResultsHolder.totalShards.get());
-                    this.partialResultsHolder.shardFailures.set(shardFailures);
+        if (TransportActions.isShardNotAvailableException(e) == false) {
+            AtomicArray<ShardSearchFailure> shardFailures = partialResultsHolder.shardFailures.get();
+            // lazily create shard failures, so we can early build the empty shard failure list in most cases (no failures)
+            if (shardFailures == null) { // this is double checked locking but it's fine since SetOnce uses a volatile read internally
+                synchronized (partialResultsHolder.shardFailuresMutex) {
+                    shardFailures = this.partialResultsHolder.shardFailures.get(); // read again otherwise somebody else has created it?
+                    if (shardFailures == null) { // still null so we are the first and create a new instance
+                        shardFailures = new AtomicArray<>(partialResultsHolder.totalShards.get());
+                        this.partialResultsHolder.shardFailures.set(shardFailures);
+                    }
+                    shardFailures.set(shardIndex, new ShardSearchFailure(e, shardTarget));
                 }
-                shardFailures.setOnce(shardIndex, new ShardSearchFailure(e, shardTarget));
+            } else {
+                if (TransportActions.isReadOverrideException(e)) {
+                    shardFailures.set(shardIndex, new ShardSearchFailure(e, shardTarget));
+                }
             }
-        } else {
-            shardFailures.setOnce(shardIndex, new ShardSearchFailure(e, shardTarget));
         }
     }
 
@@ -163,8 +167,7 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
                 result = successFunction.apply(searchResponse);
                 searchProgressActionListener.onResponse(result);
             } catch (Exception ex) {
-                Exception translatedException = ExceptionTranslator.translateException(ex);
-                searchProgressActionListener.onFailure(translatedException);
+                searchProgressActionListener.onFailure(ex);
             } finally {
                 clearPartialResult();
             }
@@ -179,8 +182,7 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
                 result = failureFunction.apply(e);
                 searchProgressActionListener.onResponse(result);
             } catch (Exception ex) {
-                Exception translatedException = ExceptionTranslator.translateException(ex);
-                searchProgressActionListener.onFailure(translatedException);
+                searchProgressActionListener.onFailure(ex);
             } finally {
                 clearPartialResult();
             }

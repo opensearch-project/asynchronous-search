@@ -51,7 +51,7 @@ public class InternalAsyncSearchStats implements AsyncSearchContextListener {
     }
 
     @Override
-    public void onRunningContextClosed(AsyncSearchContextId contextId) {
+    public void onRunningContextDeleted(AsyncSearchContextId contextId) {
         countStatsHolder.runningAsyncSearchCount.dec();
     }
 

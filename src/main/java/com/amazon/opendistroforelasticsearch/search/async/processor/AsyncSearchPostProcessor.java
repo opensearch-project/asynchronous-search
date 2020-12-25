@@ -3,6 +3,7 @@ package com.amazon.opendistroforelasticsearch.search.async.processor;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
+import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchContextClosedException;
 import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceModel;
 import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
@@ -14,6 +15,7 @@ import com.amazon.opendistroforelasticsearch.search.async.context.state.event.Se
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchResponsePersistedEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchSuccessfulEvent;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -22,7 +24,9 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.unit.TimeValue;
 
+import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 
@@ -100,27 +104,55 @@ public class AsyncSearchPostProcessor {
                                         //Mark any dangling reference as PERSISTED and cleaning it up from the IN_MEMORY context
                                         logger.warn("Successfully persisted response for async search id [{}]",
                                                 asyncSearchContext.getAsyncSearchId());
-                                        asyncSearchStateMachine.trigger(new SearchResponsePersistedEvent(asyncSearchContext));
+                                        try {
+                                            asyncSearchStateMachine.trigger(new SearchResponsePersistedEvent(asyncSearchContext));
+                                        } catch (AsyncSearchStateMachineClosedException ex) {
+                                            // this should never happen since we had checked after acquiring the all permits so a
+                                            // concurrent delete is not expected here
+                                            throw new IllegalStateException(String.format(Locale.ROOT, "Unexpected, context with id [%s] " +
+                                                            "closed while triggering event [$s]", asyncSearchContext.getAsyncSearchId(),
+                                                    SearchResponsePersistedEvent.class.getName()));
+                                        }
                                     },
 
                                     (e) -> {
-                                        asyncSearchStateMachine.trigger(new SearchResponsePersistFailedEvent(asyncSearchContext));
+                                        try {
+                                            asyncSearchStateMachine.trigger(new SearchResponsePersistFailedEvent(asyncSearchContext));
+                                        } catch (AsyncSearchStateMachineClosedException ex) {
+                                            //this should never happen since we had checked after acquiring the all permits so a
+                                            // concurrent delete is not expected here
+                                            throw new IllegalStateException(String.format(Locale.ROOT,"Unexpected, state machine for " +
+                                                     "context id [%s] closed while triggering event",
+                                                    asyncSearchContext.getAsyncSearchId(),
+                                                    SearchResponsePersistFailedEvent.class.getName()));
+                                        }
                                         logger.error("Failed to persist final response for [{}] due to [{}]",
                                                 asyncSearchContext.getAsyncSearchId(), e);
                                     }
                             ), releasable::close));
 
                 }, (e) -> {
-                    logger.error(() -> new ParameterizedMessage("Exception while acquiring the permit for asyncSearchContext [{}] due to ",
-                            asyncSearchContext), e);
+                    // Failure to acquire context can happen either due to a TimeoutException or AsyncSearchAlreadyClosedException
+                    // If we weren't able to acquire permits we clean up the context to release heap.
+                    Throwable cause = ExceptionsHelper.unwrapCause(e);
+                    Level level = cause instanceof AsyncSearchContextClosedException || cause instanceof TimeoutException
+                            ? Level.DEBUG : Level.WARN;
+                    logger.log(level, () -> new ParameterizedMessage("Exception while acquiring the permit for " +
+                            "asyncSearchContext [{}] due to ", asyncSearchContext), e);
                     freeActiveContextConsumer.accept(asyncSearchContext);
                 }),
-                TimeValue.timeValueSeconds(60), "persisting response");
+                TimeValue.timeValueSeconds(120), "persisting response");
     }
 
     private void handlePersist(AsyncSearchActiveContext asyncSearchContext) {
         if (asyncSearchContext.shouldPersist()) {
-            asyncSearchStateMachine.trigger(new BeginPersistEvent(asyncSearchContext));
+            try {
+                asyncSearchStateMachine.trigger(new BeginPersistEvent(asyncSearchContext));
+            } catch (AsyncSearchStateMachineClosedException e) {
+                //very rare since we checked if the context is alive before firing this event
+                //anyways clean it, it's idempotent
+                freeActiveContextConsumer.accept(asyncSearchContext);
+            }
         } else {
             freeActiveContextConsumer.accept(asyncSearchContext);
         }

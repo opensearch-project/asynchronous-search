@@ -267,7 +267,8 @@ public class AsyncSearchManagementServiceIT extends AsyncSearchIntegTestCase {
             }
         });
         updateLatch.await();
-        assertThat(asyncSearchResponseRef.get().getExpirationTimeMillis(), lessThan(System.currentTimeMillis()));
+        assertThat(asyncSearchResponseRef.get().getExpirationTimeMillis(),
+                lessThan((System.currentTimeMillis()) + randomLongBetween(100, 200)));
         boolean cleanedUp = waitUntil(() -> verifyAsyncSearchDoesNotExists(asyncSearchResponseRef.get().getId()));
         assertTrue(cleanedUp);
         disableBlocks(plugins);

@@ -26,12 +26,12 @@ import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.block.ClusterBlockException;
@@ -370,8 +370,9 @@ public class AsyncSearchPersistenceService {
 
             @Override
             public void onFailure(Exception e) {
-                if (((e instanceof EsRejectedExecutionException || e instanceof ClusterBlockException
-                        || e instanceof NoShardAvailableActionException) == false) || backoff.hasNext() == false) {
+                final Throwable cause = ExceptionsHelper.unwrapCause(e);
+                if (((cause instanceof EsRejectedExecutionException || cause instanceof ClusterBlockException
+                        || TransportActions.isShardNotAvailableException(e)) == false) || backoff.hasNext() == false) {
                     logger.warn(() -> new ParameterizedMessage("failed to store async search response, not retrying"), e);
                     listener.onFailure(e);
                 } else {

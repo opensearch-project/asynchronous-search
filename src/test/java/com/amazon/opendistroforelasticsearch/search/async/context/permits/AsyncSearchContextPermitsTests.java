@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.search.async.context.permits;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
-import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.CheckedRunnable;
@@ -327,7 +326,7 @@ public class AsyncSearchContextPermitsTests extends ESTestCase {
                     }
                 }, e -> {
                     try {
-                        assertTrue(e instanceof ElasticsearchTimeoutException);
+                        assertTrue(e instanceof TimeoutException);
                         assertThat(e, hasToString(containsString("timed out")));
                     } finally {
                         onFailureLatch.countDown();

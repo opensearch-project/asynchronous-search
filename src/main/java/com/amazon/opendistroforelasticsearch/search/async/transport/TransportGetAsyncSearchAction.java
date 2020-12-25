@@ -34,7 +34,6 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
@@ -68,7 +67,7 @@ public class TransportGetAsyncSearchAction extends TransportAsyncSearchRoutingAc
                 asyncSearchService.updateKeepAliveAndGetContext(request.getId(), request.getKeepAlive(),
                         asyncSearchId.getAsyncSearchContextId(), user, ActionListener.wrap(
                                 // check if the context is active and is still RUNNING
-                                (context) -> handleWaitForCompletion(context, request.getWaitForCompletionTimeout(), listener),
+                                (context) -> handleWaitForCompletion(context, request, listener),
                                 (e) -> {
                                     logger.debug(() -> new ParameterizedMessage("Unable to update and get async search request {}",
                                             asyncSearchId), e);
@@ -78,7 +77,7 @@ public class TransportGetAsyncSearchAction extends TransportAsyncSearchRoutingAc
             } else {
                 // we don't need to update keep-alive, simply find one on the node if one exists or look up the index
                 asyncSearchService.findContext(request.getId(), asyncSearchId.getAsyncSearchContextId(), user, ActionListener.wrap(
-                        (context) -> handleWaitForCompletion(context, request.getWaitForCompletionTimeout(), listener),
+                        (context) -> handleWaitForCompletion(context, request, listener),
                         (e) -> {
                             logger.debug(() -> new ParameterizedMessage("Unable to get async search request {}",
                                     asyncSearchId), e);
@@ -91,20 +90,22 @@ public class TransportGetAsyncSearchAction extends TransportAsyncSearchRoutingAc
         }
     }
 
-    private void handleWaitForCompletion(AsyncSearchContext context, TimeValue timeValue, ActionListener<AsyncSearchResponse> listener) {
-        if (context.isRunning()) {
+    private void handleWaitForCompletion(AsyncSearchContext context, GetAsyncSearchRequest request,
+                                         ActionListener<AsyncSearchResponse> listener) {
+        //We wait for a response only if a wait for completion is non-null and the search execution is still in progress.
+        if (context.isRunning() && request.getWaitForCompletionTimeout() != null) {
             logger.debug("Context is running for async search id [{}]", context.getAsyncSearchId());
             AsyncSearchProgressListener progressActionListener = context.getAsyncSearchProgressListener();
             assert progressActionListener != null : "progress listener cannot be null";
             PrioritizedActionListener<AsyncSearchResponse> wrappedListener = AsyncSearchTimeoutWrapper.wrapScheduledTimeout(threadPool,
-                    timeValue, AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, listener,
+                    request.getWaitForCompletionTimeout(), AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, listener,
                     (actionListener) -> {
                         progressActionListener.searchProgressActionListener().removeListener(actionListener);
                         listener.onResponse(context.getAsyncSearchResponse());
                     });
             progressActionListener.searchProgressActionListener().addOrExecuteListener(wrappedListener);
         } else {
-            // we don't need to wait any further on search progress
+            // we don't need to wait any further on search completion
             logger.debug("Context is not running for async search id [{}]", context.getAsyncSearchId());
             listener.onResponse(context.getAsyncSearchResponse());
         }

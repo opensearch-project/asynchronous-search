@@ -22,6 +22,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ConcurrentMapLong;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
 import java.util.Map;
 import java.util.Optional;
@@ -53,9 +54,8 @@ public class AsyncSearchActiveStore {
                                         Consumer<AsyncSearchContextId> contextRejectionEventConsumer) {
         if (activeContexts.size() >= maxRunningContext) {
             contextRejectionEventConsumer.accept(asyncSearchContextId);
-            throw new AsyncSearchRejectedException("Trying to create too many running contexts. Must be less than or equal to: ["
-                    + maxRunningContext + "]. This limit can be set by changing the [" + MAX_RUNNING_CONTEXT.getKey() + "] setting.",
-                    maxRunningContext);
+            throw new EsRejectedExecutionException("Trying to create too many running contexts. Must be less than or equal to: ["
+                    + maxRunningContext + "]. This limit can be set by changing the [" + MAX_RUNNING_CONTEXT.getKey() + "] setting.");
         }
         activeContexts.put(asyncSearchContextId.getId(), asyncSearchContext);
     }

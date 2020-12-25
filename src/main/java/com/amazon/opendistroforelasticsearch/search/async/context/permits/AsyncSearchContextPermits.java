@@ -17,12 +17,11 @@ package com.amazon.opendistroforelasticsearch.search.async.context.permits;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
+import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchContextClosedException;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.apache.lucene.store.AlreadyClosedException;
-import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.unit.TimeValue;
@@ -59,11 +58,12 @@ public class AsyncSearchContextPermits implements Closeable {
         this.semaphore = new Semaphore(TOTAL_PERMITS, true);
     }
 
-    private Releasable acquirePermits(int permits, TimeValue timeout, final String details) {
+    private Releasable acquirePermits(int permits, TimeValue timeout, final String details) throws AsyncSearchContextClosedException,
+            TimeoutException {
         RunOnce release = new RunOnce(() -> {});
         if (closed) {
             logger.debug("Trying to acquire permit for closed context [{}]", asyncSearchContextId);
-            throw new AlreadyClosedException("trying to acquire permits on closed context ["+ asyncSearchContextId +"]");
+            throw new AsyncSearchContextClosedException(asyncSearchContextId);
         }
         try {
             if (semaphore.tryAcquire(permits, timeout.getMillis(), TimeUnit.MILLISECONDS)) {
@@ -74,11 +74,11 @@ public class AsyncSearchContextPermits implements Closeable {
                 if (closed) {
                     release.run();
                     logger.debug("Trying to acquire permit for closed context [{}]", asyncSearchContextId);
-                    throw new AlreadyClosedException("trying to acquire permits on closed context ["+ asyncSearchContextId +"]");
+                    throw new AsyncSearchContextClosedException( asyncSearchContextId);
                 }
                 return release::run;
             } else {
-                throw new ElasticsearchTimeoutException("obtaining context lock" + asyncSearchContextId + "timed out after " +
+                throw new TimeoutException("obtaining context lock" + asyncSearchContextId + "timed out after " +
                         timeout.getMillis() + "ms, previous lock details: [" + lockDetails + "] trying to lock for [" + details + "]");
             }
         } catch (InterruptedException e ) {
@@ -98,7 +98,7 @@ public class AsyncSearchContextPermits implements Closeable {
             }
 
             @Override
-            protected void doRun() throws TimeoutException {
+            protected void doRun() throws TimeoutException, AsyncSearchContextClosedException {
                 final Releasable releasable = acquirePermits(permits, timeout, reason);
                 logger.warn("Successfully acquired context permit {} for {}", permits, reason);
                 onAcquired.onResponse(releasable);

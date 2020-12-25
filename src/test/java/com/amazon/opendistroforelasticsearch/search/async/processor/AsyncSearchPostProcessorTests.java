@@ -6,12 +6,14 @@ import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSe
 import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
-import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchClosedEvent;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachineClosedException;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchDeletedEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchStartedEvent;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
+import com.amazon.opendistroforelasticsearch.search.async.stats.InternalAsyncSearchStats;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
@@ -58,6 +60,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 public class AsyncSearchPostProcessorTests extends ESTestCase {
@@ -85,7 +88,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         clusterSettings = new ClusterSettings(settings, settingsSet);
     }
 
-    public void testProcessSearchFailureOnDeletedContext() {
+    public void testProcessSearchFailureOnDeletedContext() throws AsyncSearchStateMachineClosedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         AtomicBoolean activeContextCleanUpConsumerInvocation = new AtomicBoolean();
@@ -99,7 +102,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchPersistenceService persistenceService = new AsyncSearchPersistenceService(fakeClient, mockClusterService,
                     testThreadPool);
             AsyncSearchService asyncSearchService = new AsyncSearchService(persistenceService, asyncSearchActiveStore, fakeClient,
-                    mockClusterService, testThreadPool, new NamedWriteableRegistry(Collections.emptyList()));
+                    mockClusterService, testThreadPool, new InternalAsyncSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
@@ -114,7 +117,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
                     new ShardSearchFailure[]{shardSearchFailure});
             asyncSearchStateMachine.trigger(new SearchStartedEvent(context,
                     new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
-            asyncSearchStateMachine.trigger(new SearchClosedEvent(context));
+            asyncSearchStateMachine.trigger(new SearchDeletedEvent(context));
             AsyncSearchResponse asyncSearchResponse = postProcessor.processSearchFailure(exception, context.getContextId());
             assertNull(asyncSearchResponse.getId());
             assertNull(asyncSearchResponse.getSearchResponse());
@@ -129,7 +132,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         }
     }
 
-    public void testProcessSearchResponseBeginPersistence() {
+    public void testProcessSearchResponseBeginPersistence() throws AsyncSearchStateMachineClosedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         AtomicBoolean activeContextCleanUpConsumerInvocation = new AtomicBoolean();
@@ -142,7 +145,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchPersistenceService persistenceService = new AsyncSearchPersistenceService(fakeClient, mockClusterService,
                     testThreadPool);
             AsyncSearchService asyncSearchService = new AsyncSearchService(persistenceService, asyncSearchActiveStore, fakeClient,
-                    mockClusterService, testThreadPool, new NamedWriteableRegistry(Collections.emptyList()));
+                    mockClusterService, testThreadPool, new InternalAsyncSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
@@ -167,7 +170,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         }
     }
 
-    public void testProcessSearchResponsePersisted() {
+    public void testProcessSearchResponsePersisted() throws AsyncSearchStateMachineClosedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         AtomicBoolean activeContextCleanUpConsumerInvocation = new AtomicBoolean();
@@ -180,7 +183,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchPersistenceService persistenceService = new AsyncSearchPersistenceService(fakeClient, mockClusterService,
                     testThreadPool);
             AsyncSearchService asyncSearchService = new AsyncSearchService(persistenceService, asyncSearchActiveStore, fakeClient,
-                    mockClusterService, testThreadPool, new NamedWriteableRegistry(Collections.emptyList()));
+                    mockClusterService, testThreadPool, new InternalAsyncSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
@@ -209,7 +212,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         }
     }
 
-    public void testProcessSearchResponseForExpiredContext() {
+    public void testProcessSearchResponseForExpiredContext() throws AsyncSearchStateMachineClosedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         AtomicBoolean activeContextCleanUpConsumerInvocation = new AtomicBoolean();
@@ -222,7 +225,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchPersistenceService persistenceService = new AsyncSearchPersistenceService(fakeClient, mockClusterService,
                     testThreadPool);
             AsyncSearchService asyncSearchService = new AsyncSearchService(persistenceService, asyncSearchActiveStore, fakeClient,
-                    mockClusterService, testThreadPool, new NamedWriteableRegistry(Collections.emptyList()));
+                    mockClusterService, testThreadPool, new InternalAsyncSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
@@ -250,7 +253,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         }
     }
 
-    public void testProcessSearchResponseOnClosedContext() {
+    public void testProcessSearchResponseOnClosedContext() throws AsyncSearchStateMachineClosedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         AtomicBoolean activeContextCleanUpConsumerInvocation = new AtomicBoolean();
@@ -263,7 +266,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchPersistenceService persistenceService = new AsyncSearchPersistenceService(fakeClient, mockClusterService,
                     testThreadPool);
             AsyncSearchService asyncSearchService = new AsyncSearchService(persistenceService, asyncSearchActiveStore, fakeClient,
-                    mockClusterService, testThreadPool, new NamedWriteableRegistry(Collections.emptyList()));
+                    mockClusterService, testThreadPool, new InternalAsyncSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
@@ -275,7 +278,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
                     System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asyncSearchStateMachine.trigger(new SearchStartedEvent(context,
                     new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
-            asyncSearchStateMachine.trigger(new SearchClosedEvent(context));
+            asyncSearchStateMachine.trigger(new SearchDeletedEvent(context));
             SearchResponse mockSearchResponse = getMockSearchResponse();
             AsyncSearchResponse asyncSearchResponse = postProcessor.processSearchResponse(mockSearchResponse, context.getContextId());
             assertNull(asyncSearchResponse.getId());
@@ -296,8 +299,8 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         int successfulShards = totalShards - randomInt(100);
         return new SearchResponse(new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
-                InternalAggregations.from(Collections.emptyList()),
-                new Suggest(Collections.emptyList()),
+                InternalAggregations.from(emptyList()),
+                new Suggest(emptyList()),
                 new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
                 "", totalShards, successfulShards, 0, randomNonNegativeLong(),
                 ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);

@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.search.async;
 
-import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchRejectedException;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
@@ -30,6 +29,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.TriConsumer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -132,7 +132,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
 
                         @Override
                         public void onFailure(Exception e) {
-                            if (e instanceof AsyncSearchRejectedException) {
+                            if (e instanceof EsRejectedExecutionException) {
                                 numRejectedAsyncSearch.incrementAndGet();
                             }
                             numFailedAsyncSearch.incrementAndGet();

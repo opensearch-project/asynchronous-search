@@ -77,6 +77,8 @@ public class AsyncSearchPersistenceModel {
         if (error == null) {
             return null;
         }
+        //we don't persist stacktrace
+        error.setStackTrace(new StackTraceElement[]{});
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.writeException(error instanceof ElasticsearchException ? error : new ElasticsearchException(error));
             byte[] bytes = BytesReference.toBytes(out.bytes());

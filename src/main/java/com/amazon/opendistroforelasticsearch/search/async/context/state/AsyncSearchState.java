@@ -47,7 +47,6 @@ public enum AsyncSearchState {
      */
     PERSISTING,
 
-
     /**
      * The context has been persisted to system index
      */
@@ -59,7 +58,7 @@ public enum AsyncSearchState {
     PERSIST_FAILED,
 
     /**
-     * The context has been closed
+     * The context has been deleted
      */
-    CLOSED;
+    DELETED;
 }

@@ -41,7 +41,6 @@ import static org.hamcrest.Matchers.containsString;
  */
 public abstract class AsyncSearchRestTestCase extends ESRestTestCase {
 
-
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
 

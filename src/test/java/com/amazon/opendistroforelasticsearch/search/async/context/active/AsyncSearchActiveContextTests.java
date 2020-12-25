@@ -52,7 +52,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.CLOSED;
+import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.DELETED;
 import static java.util.Collections.emptyMap;
 
 public class AsyncSearchActiveContextTests extends AsyncSearchTestCase {
@@ -240,7 +240,7 @@ public class AsyncSearchActiveContextTests extends AsyncSearchTestCase {
             assertTrue(context.isAlive());
             assertFalse(context.isExpired());
             expectThrows(SetOnce.AlreadySetException.class, () -> context.setTask(task));
-            context.setState(CLOSED);
+            context.setState(DELETED);
             context.close();
             assertFalse(context.isAlive());
             expectThrows(AssertionError.class, () -> context.setExpirationTimeMillis(randomNonNegativeLong()));

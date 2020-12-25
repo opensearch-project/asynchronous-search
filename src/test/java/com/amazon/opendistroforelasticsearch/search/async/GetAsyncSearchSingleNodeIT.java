@@ -218,7 +218,10 @@ public class GetAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase {
                         getAsyncSearchRequest.setKeepAlive(TimeValue.timeValueMillis(randomLongBetween(lowerKeepAliveMillis,
                                 higherKeepAliveMillis)));
                     }
-                    getAsyncSearchRequest.setWaitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
+                    //if waitForCompletionTimeout is null we return response immediately
+                    TimeValue waitForCompletionTimeout = randomBoolean() ? null :
+                            TimeValue.timeValueMillis(randomLongBetween(1, 5000));
+                    getAsyncSearchRequest.setWaitForCompletionTimeout(waitForCompletionTimeout);
                     executeGetAsyncSearch(client(), getAsyncSearchRequest, new ActionListener<AsyncSearchResponse>() {
                         @Override
                         public void onResponse(AsyncSearchResponse acknowledgedResponse) {

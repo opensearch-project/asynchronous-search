@@ -15,17 +15,24 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.threadpool.TestThreadPool;
+import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 @ESIntegTestCase.ClusterScope(numDataNodes = 5, scope = ESIntegTestCase.Scope.TEST)
 public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
@@ -83,84 +90,93 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         }
     }
 
-//    public void testStatsAcrossNodes() throws InterruptedException, ExecutionException {
-//        String index = "idx";
-//        createIndex(index);
-//        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
-//                        .setSource("field1", "the quick brown fox jumps"),
-//                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-//                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
-//
-//        List<DiscoveryNode> dataNodes = new LinkedList<>();
-//        clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
-//            dataNodes.add(node.value);
-//        });
-//        assertFalse(dataNodes.isEmpty());
-//        int numThreads = 20;
-//        List<Thread> threads = new ArrayList<>();
-//        AtomicLong expectedNumSuccesses = new AtomicLong();
-//        AtomicLong expectedNumFailures = new AtomicLong();
-//        AtomicLong expectedNumPersisted = new AtomicLong();
-//
-//        for (int i = 0; i < numThreads; i++) {
-//            Thread t = new Thread(() -> {
-//                try {
-//                    boolean success = randomBoolean();
-//                    boolean keepOnCompletion = randomBoolean();
-//                    if (keepOnCompletion) {
-//                        expectedNumPersisted.getAndIncrement();
-//                    }
-//                    SubmitAsyncSearchRequest submitAsyncSearchRequest;
-//                    if (success) {
-//                        expectedNumSuccesses.getAndIncrement();
-//                        submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(index));
-//                        submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
-//                        submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
-//
-//                    } else {
-//                        expectedNumFailures.getAndIncrement();
-//                        submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest("non_existent_index"));
-//                        submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
-//                    }
-//
-//                    AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(client(dataNodes.get(randomInt(1)).getName()),
-//                            submitAsyncSearchRequest);
-//                    if (keepOnCompletion) {
-//                        TestClientUtils.assertResponsePersistence(client(), asyncSearchResponse.getId());
-//                    }
-//
-//                } catch (Exception e) {
-//                    fail(e.getMessage());
-//                }
-//            });
-//            threads.add(t);
-//        }
-//        threads.forEach(Thread::start);
-//        for (Thread thread : threads) {
-//            thread.join(100);
-//        }
-//        AsyncSearchStatsResponse statsResponse = client().execute(AsyncSearchStatsAction.INSTANCE, new AsyncSearchStatsRequest()).get();
-//        AtomicLong actualNumSuccesses = new AtomicLong();
-//        AtomicLong actualNumFailures = new AtomicLong();
-//        AtomicLong actualNumPersisted = new AtomicLong();
-//        for (AsyncSearchStats node : statsResponse.getNodes()) {
-//            AsyncSearchCountStats asyncSearchCountStats = node.getAsyncSearchCountStats();
-//            assertEquals(asyncSearchCountStats.getRunningCount(), 0);
-//
-//            assertThat(expectedNumSuccesses.get(), greaterThanOrEqualTo(asyncSearchCountStats.getCompletedCount()));
-//            actualNumSuccesses.getAndAdd(asyncSearchCountStats.getCompletedCount());
-//
-//            assertThat(expectedNumFailures.get(), greaterThanOrEqualTo(asyncSearchCountStats.getFailedCount()));
-//            actualNumFailures.getAndAdd(asyncSearchCountStats.getFailedCount());
-//
-//            assertThat(expectedNumPersisted.get(), greaterThanOrEqualTo(asyncSearchCountStats.getPersistedCount()));
-//            actualNumPersisted.getAndAdd(asyncSearchCountStats.getPersistedCount());
-//        }
-//
-//        assertEquals(expectedNumPersisted.get(), actualNumPersisted.get());
-//        assertEquals(expectedNumFailures.get(), actualNumFailures.get());
-//        assertEquals(expectedNumSuccesses.get(), actualNumSuccesses.get());
-//    }
+    public void testStatsAcrossNodes() throws InterruptedException, ExecutionException, BrokenBarrierException {
+        TestThreadPool threadPool = null;
+        try {
+            threadPool = new TestThreadPool(AsyncSearchStatsIT.class.getName());
+            String index = "idx";
+            createIndex(index);
+            indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+                            .setSource("field1", "the quick brown fox jumps"),
+                    client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
+                    client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+
+            List<DiscoveryNode> dataNodes = new LinkedList<>();
+            clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
+                dataNodes.add(node.value);
+            });
+            assertFalse(dataNodes.isEmpty());
+            int numThreads = 20;
+            List<Runnable> threads = new ArrayList<>();
+            AtomicLong expectedNumSuccesses = new AtomicLong();
+            AtomicLong expectedNumFailures = new AtomicLong();
+            AtomicLong expectedNumPersisted = new AtomicLong();
+            CyclicBarrier cyclicBarrier = new CyclicBarrier(numThreads + 1);
+            for (int i = 0; i < numThreads; i++) {
+                threads.add(() -> {
+                    try {
+                        boolean success = randomBoolean();
+                        boolean keepOnCompletion = randomBoolean();
+                        if (keepOnCompletion) {
+                            expectedNumPersisted.getAndIncrement();
+                        }
+                        SubmitAsyncSearchRequest submitAsyncSearchRequest;
+                        if (success) {
+                            expectedNumSuccesses.getAndIncrement();
+                            submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(index));
+                            submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
+                            submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
+
+                        } else {
+                            expectedNumFailures.getAndIncrement();
+                            submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest("non_existent_index"));
+                            submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
+                        }
+
+                        AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(client(dataNodes.get(randomInt(1)).getName()),
+                                submitAsyncSearchRequest);
+                        if (keepOnCompletion) {
+                            TestClientUtils.assertResponsePersistence(client(), asyncSearchResponse.getId());
+                        }
+                    } catch (Exception e) {
+                        fail(e.getMessage());
+                    } finally {
+                        try {
+                            cyclicBarrier.await();
+                        } catch (InterruptedException | BrokenBarrierException ignored) {
+
+                        }
+                    }
+                });
+            }
+            TestThreadPool finalThreadPool = threadPool;
+            threads.forEach(t -> finalThreadPool.generic().execute(t));
+            cyclicBarrier.await();
+            AsyncSearchStatsResponse statsResponse = client().execute(AsyncSearchStatsAction.INSTANCE, new AsyncSearchStatsRequest()).get();
+            AtomicLong actualNumSuccesses = new AtomicLong();
+            AtomicLong actualNumFailures = new AtomicLong();
+            AtomicLong actualNumPersisted = new AtomicLong();
+            for (AsyncSearchStats node : statsResponse.getNodes()) {
+                AsyncSearchCountStats asyncSearchCountStats = node.getAsyncSearchCountStats();
+                assertEquals(asyncSearchCountStats.getRunningCount(), 0);
+
+                assertThat(expectedNumSuccesses.get(), greaterThanOrEqualTo(asyncSearchCountStats.getCompletedCount()));
+                actualNumSuccesses.getAndAdd(asyncSearchCountStats.getCompletedCount());
+
+                assertThat(expectedNumFailures.get(), greaterThanOrEqualTo(asyncSearchCountStats.getFailedCount()));
+                actualNumFailures.getAndAdd(asyncSearchCountStats.getFailedCount());
+
+                assertThat(expectedNumPersisted.get(), greaterThanOrEqualTo(asyncSearchCountStats.getPersistedCount()));
+                actualNumPersisted.getAndAdd(asyncSearchCountStats.getPersistedCount());
+            }
+
+            assertEquals(expectedNumPersisted.get(), actualNumPersisted.get());
+            assertEquals(expectedNumFailures.get(), actualNumFailures.get());
+            assertEquals(expectedNumSuccesses.get(), actualNumSuccesses.get());
+        } finally {
+            ThreadPool.terminate(threadPool, 30, TimeUnit.SECONDS);
+        }
+    }
 
     public void testRunningAsyncSearchCountStat() throws InterruptedException, ExecutionException {
         String index = "idx";
