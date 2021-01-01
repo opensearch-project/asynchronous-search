@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.search.async.context.state;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextEventListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -41,13 +41,16 @@ public class AsyncSearchStateMachine implements StateMachine<AsyncSearchState, A
     private final AsyncSearchState initialState;
     private Set<AsyncSearchState> finalStates;
     private final Set<AsyncSearchState> states;
+    private final AsyncSearchContextEventListener asyncSearchContextEventListener;
 
-    public AsyncSearchStateMachine(final Set<AsyncSearchState> states, final AsyncSearchState initialState) {
+    public AsyncSearchStateMachine(final Set<AsyncSearchState> states, final AsyncSearchState initialState,
+                                   AsyncSearchContextEventListener asyncSearchContextEventListener) {
         super();
         this.transitionsMap = new HashMap<>();
         this.states = states;
         this.initialState = initialState;
         this.finalStates = new HashSet<>();
+        this.asyncSearchContextEventListener = asyncSearchContextEventListener;
     }
 
     public void markTerminalStates(final Set<AsyncSearchState> finalStates) {
@@ -81,6 +84,7 @@ public class AsyncSearchStateMachine implements StateMachine<AsyncSearchState, A
     /**
      * Triggers transition from current state on receiving an event. Also invokes {@linkplain Transition#onEvent()} and
      * {@linkplain Transition#eventListener()}.
+     *
      * @param event to fire
      * @return The final Async search state
      * @throws AsyncSearchStateMachineClosedException the state machine has reached a terminal state
@@ -100,23 +104,23 @@ public class AsyncSearchStateMachine implements StateMachine<AsyncSearchState, A
                 asyncSearchContext.setState(transition.targetState());
                 logger.debug("Executed event [{}] for async search id [{}] ", event.getClass().getName(),
                         event.asyncSearchContext.getAsyncSearchId());
-                BiConsumer<AsyncSearchContextId, AsyncSearchContextListener> eventListener = transition.eventListener();
+                BiConsumer<AsyncSearchContextId, AsyncSearchContextEventListener> eventListener = transition.eventListener();
                 try {
-                    eventListener.accept(event.asyncSearchContext().getContextId(), asyncSearchContext.getContextListener());
+                    eventListener.accept(event.asyncSearchContext().getContextId(), asyncSearchContextEventListener);
                 } catch (Exception ex) {
                     logger.error(() -> new ParameterizedMessage("Failed to execute listener for async search id : [{}]",
                             event.asyncSearchContext.getAsyncSearchId()), ex);
                 }
                 return asyncSearchContext.getAsyncSearchState();
             } else {
-                String message = String.format(Locale.ROOT, "Invalid transition for context [%s] from source state [%s] on event [%s]",
+                String message = String.format(Locale.ROOT, "Invalid transition for async search context [%s] from source state [%s] on " +
+                                "event [%s]",
                         asyncSearchContext.getAsyncSearchId(), currentState, event.getClass().getName());
                 logger.error(message);
                 throw new IllegalStateException(message);
             }
         }
     }
-
 
 
     @SuppressWarnings("unchecked")

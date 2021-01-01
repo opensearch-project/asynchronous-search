@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchAssertions;
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsResponse;
 import org.elasticsearch.action.search.SearchAction;

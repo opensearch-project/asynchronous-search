@@ -21,7 +21,7 @@ import org.elasticsearch.action.ActionType;
 public class DeleteAsyncSearchAction extends ActionType<AcknowledgedResponse> {
 
     public static final DeleteAsyncSearchAction INSTANCE = new DeleteAsyncSearchAction();
-    public static final String NAME = "indices:data/write/delete_async_search";
+    public static final String NAME = "cluster:admin/opendistro/asynchronous_search/delete";
 
     private DeleteAsyncSearchAction() {
         super(NAME, AcknowledgedResponse::new);

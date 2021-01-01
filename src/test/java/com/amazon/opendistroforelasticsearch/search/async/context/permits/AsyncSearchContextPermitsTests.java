@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.search.async.context.permits;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.CheckedRunnable;
 import org.elasticsearch.common.lease.Releasable;
@@ -239,20 +240,20 @@ public class AsyncSearchContextPermitsTests extends ESTestCase {
                 } catch (final BrokenBarrierException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                ActionListener<Releasable> onAcquired = new ActionListener<Releasable>() {
+                    @Override
+                    public void onResponse(Releasable releasable) {
+                        values.add(value);
+                        releasable.close();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+
+                    }
+                };
                 permits.asyncAcquirePermit(
-                        new ActionListener<Releasable>() {
-                            @Override
-                            public void onResponse(Releasable releasable) {
-                                values.add(value);
-                                releasable.close();
-                                operationLatch.countDown();
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-
-                            }
-                        },
+                        new LatchedActionListener<Releasable>(onAcquired, operationLatch),
                         TimeValue.timeValueMinutes(1), "");
             });
             thread.start();
@@ -265,10 +266,21 @@ public class AsyncSearchContextPermitsTests extends ESTestCase {
             } catch (final BrokenBarrierException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            permits.asyncAcquireAllPermits(wrap(() -> {
-                values.add(operations);
-                operationLatch.countDown();
-            }), TimeValue.timeValueMinutes(30), "");
+            ActionListener<Releasable> onAcquired = new ActionListener<Releasable>() {
+                @Override
+                public void onResponse(Releasable releasable) {
+                    values.add(operations);
+                    releasable.close();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+
+                }
+            };
+            permits.asyncAcquirePermit(
+                    new LatchedActionListener<Releasable>(onAcquired, operationLatch),
+                    TimeValue.timeValueMinutes(1), "");
         });
         blockingThread.start();
 

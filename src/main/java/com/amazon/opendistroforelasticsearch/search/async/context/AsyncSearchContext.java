@@ -18,7 +18,6 @@ package com.amazon.opendistroforelasticsearch.search.async.context;
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -40,7 +39,6 @@ public abstract class AsyncSearchContext {
     protected final LongSupplier currentTimeSupplier;
     protected volatile AsyncSearchState currentStage = AsyncSearchState.INIT;
     protected volatile AsyncSearchProgressListener asyncSearchProgressListener;
-    protected AsyncSearchContextListener asyncSearchContextListener;
 
     public AsyncSearchContext(AsyncSearchContextId asyncSearchContextId, LongSupplier currentTimeSupplier) {
         this.asyncSearchContextId = asyncSearchContextId;
@@ -50,11 +48,6 @@ public abstract class AsyncSearchContext {
     public @Nullable
     AsyncSearchProgressListener getAsyncSearchProgressListener() {
         return asyncSearchProgressListener;
-    }
-
-    @Nullable
-    public AsyncSearchContextListener getContextListener() {
-        return asyncSearchContextListener;
     }
 
     public AsyncSearchState getAsyncSearchState() {

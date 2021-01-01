@@ -1,5 +1,6 @@
 package com.amazon.opendistroforelasticsearch.search.async.restIT;
 
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
@@ -160,6 +161,15 @@ public abstract class AsyncSearchRestTestCase extends ESRestTestCase {
         Request request = new Request("PUT", "_cluster/settings");
         request.setJsonEntity(Strings.toString(builder));
         Response response = client().performRequest(request);
-        assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
+
+    public void deleteIndexIfExists() throws IOException {
+        assertNotNull("index name is null", AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX);
+        assertNotNull("client is null", client());
+        if (indexExists(AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX)) {
+            deleteIndex(AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX);
+        }
+    }
+
 }

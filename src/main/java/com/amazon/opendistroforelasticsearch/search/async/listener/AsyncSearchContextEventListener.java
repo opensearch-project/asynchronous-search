@@ -20,7 +20,7 @@ import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchCon
 /**
  * An listener for async search context events.
  */
-public interface AsyncSearchContextListener {
+public interface AsyncSearchContextEventListener {
 
     /**
      * @param contextId Executed when a new async search context was created
@@ -76,6 +76,20 @@ public interface AsyncSearchContextListener {
      * @param contextId Executed when a running async search context is deleted and has bypassed succeeded/failed state
      */
     default void onRunningContextDeleted(AsyncSearchContextId contextId) {
+
+    }
+
+    /**
+     * @param contextId Executed when an async search context is cancelled
+     */
+    default void onContextCancelled(AsyncSearchContextId contextId) {
+
+    }
+
+    /**
+     * @param contextId Executed when an async search context is initialized
+     */
+    default void onContextInitialized(AsyncSearchContextId contextId) {
 
     }
 }

@@ -1,9 +1,9 @@
 package com.amazon.opendistroforelasticsearch.search.async.processor;
 
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchAssertions;
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachineClosedException;
@@ -79,6 +79,7 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
                         AsyncSearchActiveStore.MAX_RUNNING_CONTEXT,
                         AsyncSearchService.MAX_KEEP_ALIVE_SETTING,
+                        AsyncSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
@@ -106,8 +107,8 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true));
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest());
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
@@ -149,8 +150,8 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true));
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest());
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
@@ -187,8 +188,8 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true));
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest());
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
@@ -229,8 +230,8 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true));
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest());
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueMillis(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,
@@ -270,8 +271,8 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
             AsyncSearchStateMachine asyncSearchStateMachine = asyncSearchService.getStateMachine();
             AsyncSearchPostProcessor postProcessor = new AsyncSearchPostProcessor(persistenceService,
                     asyncSearchActiveStore, asyncSearchStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true));
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest());
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.keepAlive(TimeValue.timeValueHours(1));
             AsyncSearchActiveContext context = (AsyncSearchActiveContext) asyncSearchService.createAndStoreContext(submitAsyncSearchRequest,

@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.search.async.context.state;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextEventListener;
 
 import java.util.function.BiConsumer;
 
@@ -25,12 +25,12 @@ public class AsyncSearchTransition<Event extends AsyncSearchContextEvent> implem
     private final AsyncSearchState sourceState;
     private final AsyncSearchState targetState;
     private final BiConsumer<AsyncSearchState, Event> onEvent;
-    private final BiConsumer<AsyncSearchContextId, AsyncSearchContextListener> eventListener;
+    private final BiConsumer<AsyncSearchContextId, AsyncSearchContextEventListener> eventListener;
     private final Class<Event> eventType;
 
     public AsyncSearchTransition(AsyncSearchState sourceState, AsyncSearchState targetState,
                                  BiConsumer<AsyncSearchState, Event> onEvent,
-                                 BiConsumer<AsyncSearchContextId, AsyncSearchContextListener> eventListener,
+                                 BiConsumer<AsyncSearchContextId, AsyncSearchContextEventListener> eventListener,
                                  Class<Event> eventName) {
         this.sourceState = sourceState;
         this.targetState = targetState;
@@ -60,7 +60,7 @@ public class AsyncSearchTransition<Event extends AsyncSearchContextEvent> implem
     }
 
     @Override
-    public BiConsumer<AsyncSearchContextId, AsyncSearchContextListener> eventListener() {
+    public BiConsumer<AsyncSearchContextId, AsyncSearchContextEventListener> eventListener() {
         return eventListener;
     }
 }

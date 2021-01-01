@@ -13,12 +13,12 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.commons;
 
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
@@ -26,18 +26,22 @@ import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearch
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.reindex.ReindexPlugin;
 import org.elasticsearch.painless.PainlessPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginsService;
-import org.elasticsearch.index.reindex.ReindexPlugin;
 import org.elasticsearch.script.MockScriptPlugin;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -49,13 +53,13 @@ import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -74,6 +78,7 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
     @Before
     public void setUp() throws Exception {
         super.setUp();
+        assertTrue(getInstanceFromNode(AsyncSearchService.class).getAllActiveContexts().isEmpty());
         createIndex(TEST_INDEX, Settings.builder().put("index.refresh_interval", -1).build());
         for (int i = 0; i < 10; i++)
             client().prepareIndex(TEST_INDEX, "type", String.valueOf(i)).setSource("field", "value" + i)
@@ -113,7 +118,7 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
     }
 
     public static void executeGetAsyncSearch(Client client, GetAsyncSearchRequest request,
-                                                ActionListener<AsyncSearchResponse> listener) {
+                                             ActionListener<AsyncSearchResponse> listener) {
         client.execute(GetAsyncSearchAction.INSTANCE, request, listener);
     }
 
@@ -191,11 +196,28 @@ public abstract class AsyncSearchSingleNodeTestCase extends ESSingleNodeTestCase
 
     @After
     public void tearDownData() throws InterruptedException {
-
+        logger.warn("deleting async search response index");
+        waitUntil(() -> getInstanceFromNode(AsyncSearchService.class).getAllActiveContexts().isEmpty());
+        logger.warn("delete async search response index");
         CountDownLatch deleteLatch = new CountDownLatch(1);
         client().admin().indices().prepareDelete(INDEX).execute(ActionListener.wrap(r -> deleteLatch.countDown(), e -> {
             deleteLatch.countDown();
         }));
         deleteLatch.await();
+    }
+
+    protected void assertDocNotPresentInAsyncSearchResponseIndex(String id) {
+        try {
+            assertFalse(client().get(new GetRequest(INDEX).refresh(true).id(id)).actionGet().isExists());
+        } catch (Exception e) {
+            assertTrue(e instanceof IndexNotFoundException);
+        }
+    }
+
+    protected void assertAsyncSearchResourceCleanUp(String id) {
+        assertDocNotPresentInAsyncSearchResponseIndex(id);
+        AsyncSearchService asyncSearchService = getInstanceFromNode(AsyncSearchService.class);
+        Map<Long, AsyncSearchActiveContext> activeContexts = asyncSearchService.getAllActiveContexts();
+        assertTrue(activeContexts.isEmpty());
     }
 }

@@ -52,7 +52,7 @@ public class TransportDeleteAsyncSearchAction extends TransportAsyncSearchRoutin
             asyncSearchService.freeContext(request.getId(), asyncSearchId.getAsyncSearchContextId(), user, ActionListener
                     .wrap((complete) -> listener.onResponse(new AcknowledgedResponse(complete)), listener::onFailure));
         } catch (Exception e) {
-            logger.error(() -> new ParameterizedMessage("Unable to delete async search request {}", request), e);
+            logger.error(() -> new ParameterizedMessage("Unable to delete async search [{}]", request.getId()), e);
             listener.onFailure(e);
         }
     }

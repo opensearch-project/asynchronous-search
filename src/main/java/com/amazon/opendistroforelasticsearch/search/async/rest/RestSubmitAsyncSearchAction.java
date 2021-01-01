@@ -21,7 +21,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.rest.action.RestStatusToXContentListener;
 import org.elasticsearch.rest.action.search.RestSearchAction;
 
@@ -68,36 +67,24 @@ public class RestSubmitAsyncSearchAction extends BaseRestHandler {
         IntConsumer setSize = size -> searchRequest.source().size(size);
         request.withContentOrSourceParamParserOrNull(parser ->
                 RestSearchAction.parseSearchRequest(searchRequest, request, parser, setSize));
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
-        if (request.hasParam("wait_for_completion_timeout")) {
-            submitAsyncSearchRequest.waitForCompletionTimeout(request.paramAsTime("wait_for_completion_timeout",
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+
+        submitAsyncSearchRequest.waitForCompletionTimeout(request.paramAsTime("wait_for_completion_timeout",
                     SubmitAsyncSearchRequest.DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT));
-        }
-        if (request.hasParam("keep_alive")) {
-            submitAsyncSearchRequest.keepAlive(request.paramAsTime("keep_alive", SubmitAsyncSearchRequest.DEFAULT_KEEP_ALIVE));
-        }
-        if (request.hasParam("keep_on_completion")) {
-            submitAsyncSearchRequest.keepOnCompletion(request.paramAsBoolean("keep_on_completion",
+
+        submitAsyncSearchRequest.keepAlive(request.paramAsTime("keep_alive", SubmitAsyncSearchRequest.DEFAULT_KEEP_ALIVE));
+
+        submitAsyncSearchRequest.keepOnCompletion(request.paramAsBoolean("keep_on_completion",
                     SubmitAsyncSearchRequest.DEFAULT_KEEP_ON_COMPLETION));
-        }
-        if (request.hasParam("ccs_minimize_roundtrips")) {
-            searchRequest.setCcsMinimizeRoundtrips(false);
-        }
-        if (request.hasParam("pre_filter_shard_size")) {
-            searchRequest.setPreFilterShardSize(request.paramAsInt("pre_filter_shard_size",
-                    SubmitAsyncSearchRequest.DEFAULT_PRE_FILTER_SHARD_SIZE));
-        }
-        if (request.hasParam("request_cache")) {
-            searchRequest.requestCache(false);
-        }
-        if (request.hasParam("batched_reduce_size")) {
-            final int batchedReduceSize = request.paramAsInt("batched_reduce_size",
-                    SubmitAsyncSearchRequest.DEFAULT_BATCHED_REDUCE_SIZE);
-            searchRequest.setBatchedReduceSize(batchedReduceSize);
-        }
+
+        searchRequest.requestCache(request.paramAsBoolean("request_cache", SubmitAsyncSearchRequest.DEFAULT_REQUEST_CACHE));
+
+        searchRequest.setBatchedReduceSize(request.paramAsInt("batched_reduce_size",
+                SubmitAsyncSearchRequest.DEFAULT_BATCHED_REDUCE_SIZE));
+
         return channel -> {
-            RestCancellableNodeClient cancelClient = new RestCancellableNodeClient(client, request.getHttpChannel());
-            cancelClient.execute(SubmitAsyncSearchAction.INSTANCE, submitAsyncSearchRequest, new RestStatusToXContentListener<>(channel));
+            //RestCancellableNodeClient cancelClient = new RestCancellableNodeClient(client, request.getHttpChannel());
+            client.execute(SubmitAsyncSearchAction.INSTANCE, submitAsyncSearchRequest, new RestStatusToXContentListener<>(channel));
         };
     }
 

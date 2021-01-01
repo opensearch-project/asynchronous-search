@@ -1,7 +1,7 @@
 package com.amazon.opendistroforelasticsearch.search.async.context.active;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextEventListener;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import org.elasticsearch.Version;
@@ -37,19 +37,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchTestCase.mockAsyncSearchProgressListener;
+import static com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchTestCase.mockAsyncSearchProgressListener;
 
 public class AsyncSearchActiveStoreTests extends ESTestCase {
     private ClusterSettings clusterSettings;
     private ExecutorBuilder<?> executorBuilder;
-    private int maxRunningContexts = 100;
+    private int maxRunningContexts = 50;
 
     @Before
     public void createObjects() {
         Settings settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
-                .put("async_search.max_running_context", maxRunningContexts) //TODO setting not working fix this
+                .put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), maxRunningContexts) //TODO setting not working fix this
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
@@ -87,13 +87,12 @@ public class AsyncSearchActiveStoreTests extends ESTestCase {
                                 runningContexts.incrementAndGet());
                         boolean keepOnCompletion = randomBoolean();
                         TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
-                        AsyncSearchContextListener asyncSearchContextListener = new AsyncSearchContextListener() {
+                        AsyncSearchContextEventListener asyncSearchContextEventListener = new AsyncSearchContextEventListener() {
                         };
                         AsyncSearchActiveContext context = new AsyncSearchActiveContext(asyncSearchContextId, node.getId(),
                                 keepAlive, keepOnCompletion, finalTestThreadPool1,
-                                finalTestThreadPool1::absoluteTimeInMillis, asyncSearchProgressListener, asyncSearchContextListener, null);
-
-                        activeStore.putContext(asyncSearchContextId, context, asyncSearchContextListener::onContextRejected);
+                                finalTestThreadPool1::absoluteTimeInMillis, asyncSearchProgressListener, null);
+                        activeStore.putContext(asyncSearchContextId, context, asyncSearchContextEventListener::onContextRejected);
                         numSuccesses.getAndIncrement();
                         Optional<AsyncSearchActiveContext> optional = activeStore.getContext(asyncSearchContextId);
                         assert (optional.isPresent());

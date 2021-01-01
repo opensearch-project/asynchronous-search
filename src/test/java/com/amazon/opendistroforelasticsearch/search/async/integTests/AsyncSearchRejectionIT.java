@@ -13,10 +13,14 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.integTests;
 
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
+import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchIntegTestCase;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListenerIT;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
@@ -25,20 +29,31 @@ import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.LatchedActionListener;
+import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchTask;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchService;
+import org.elasticsearch.search.aggregations.InternalAggregation;
+import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.threadpool.TestThreadPool;
+import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
@@ -75,7 +90,7 @@ public class AsyncSearchRejectionIT extends AsyncSearchIntegTestCase {
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(QueryBuilders.matchQuery("field", "1"))
                     .request();
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(request);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(request);
             submitAsyncSearchRequest.keepOnCompletion(true);
                     client().execute(SubmitAsyncSearchAction.INSTANCE, submitAsyncSearchRequest,
                             new LatchedActionListener<>(new ActionListener<AsyncSearchResponse>() {
@@ -143,5 +158,61 @@ public class AsyncSearchRejectionIT extends AsyncSearchIntegTestCase {
         }
         assertThat(responses.size(), equalTo(numberOfAsyncOps));
         assertThat(numFailures.get(), equalTo(0));
+    }
+
+    public void testSearchFailures() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            client().prepareIndex("test", "type", Integer.toString(i)).setSource("field", "1").get();
+        }
+        int numberOfAsyncOps = randomIntBetween(100, 200);
+        final CountDownLatch latch = new CountDownLatch(numberOfAsyncOps);
+        final CopyOnWriteArrayList<Object> responses = new CopyOnWriteArrayList<>();
+        TestThreadPool threadPool = null;
+        try {
+            threadPool = new TestThreadPool(AsyncSearchProgressListenerIT.class.getName());
+            for (int i = 0; i < numberOfAsyncOps; i++) {
+                SearchRequest request = client().prepareSearch("test")
+                        .setSearchType(SearchType.QUERY_THEN_FETCH)
+                        .setQuery(QueryBuilders.matchQuery("field", "1"))
+                        .request();
+                AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
+                AtomicInteger reduceContextInvocation = new AtomicInteger();
+                AsyncSearchProgressListener listener;
+                SearchService service = internalCluster().getInstance(SearchService.class);
+                InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
+                AtomicReference<Exception> exceptionRef = new AtomicReference<>();
+                Function<SearchResponse, AsyncSearchResponse> responseFunction =
+                        (r) -> null;
+                Function<Exception, AsyncSearchResponse> failureFunction =
+                        (e) -> null;
+                listener = new AsyncSearchProgressListener(threadPool.relativeTimeInMillis(), responseFunction,
+                        failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis,
+                        () -> reduceContextBuilder) {
+                    @Override
+                    public void onResponse(SearchResponse searchResponse) {
+                        assertTrue(responseRef.compareAndSet(null, searchResponse));
+                        AsyncSearchAssertions.assertSearchResponses(searchResponse, this.partialResponse());
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onFailure(Exception exception) {
+                        assertTrue(exceptionRef.compareAndSet(null, exception));
+                        latch.countDown();
+                    }
+                };
+                client().execute(SearchAction.INSTANCE, new SearchRequest(request) {
+                    @Override
+                    public SearchTask createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
+                        SearchTask task = super.createTask(id, type, action, parentTaskId, headers);
+                        task.setProgressListener(listener);
+                        return task;
+                    }
+                }, listener);
+            }
+            latch.await();
+        } finally {
+            ThreadPool.terminate(threadPool, 100, TimeUnit.MILLISECONDS);
+        }
     }
 }

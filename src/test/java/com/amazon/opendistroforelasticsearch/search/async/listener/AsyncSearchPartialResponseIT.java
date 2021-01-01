@@ -14,7 +14,7 @@
  */
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchAssertions;
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -118,7 +118,7 @@ public class AsyncSearchPartialResponseIT extends ESIntegTestCase {
                         .collectMode(randomFrom(Aggregator.SubAggCollectionMode.values())).order(BucketOrder.count(false)))
                 .request();
         request.setBatchedReduceSize(2);
-        testCase(internalCluster().smartClient(), request);
+        testCase(client(), request);
     }
 
     private void testCase(Client client, SearchRequest request) throws Exception {

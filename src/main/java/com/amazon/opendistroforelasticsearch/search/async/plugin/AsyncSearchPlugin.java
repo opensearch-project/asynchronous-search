@@ -20,7 +20,7 @@ import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSear
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.management.AsyncSearchManagementService;
 import com.amazon.opendistroforelasticsearch.search.async.rest.RestAsyncSearchStatsAction;
 import com.amazon.opendistroforelasticsearch.search.async.rest.RestDeleteAsyncSearchAction;
@@ -130,9 +130,10 @@ public class AsyncSearchPlugin extends Plugin implements ActionPlugin, SystemInd
         return Arrays.asList(
                 AsyncSearchActiveStore.MAX_RUNNING_CONTEXT,
                 AsyncSearchService.MAX_KEEP_ALIVE_SETTING,
+                AsyncSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                 AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
-                AsyncSearchManagementService.RESPONSE_CLEAN_UP_INTERVAL_SETTING,
-                AsyncSearchManagementService.REAPER_INTERVAL_SETTING
+                AsyncSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
+                AsyncSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING
         );
     }
 

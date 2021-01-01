@@ -69,16 +69,12 @@ public class AsyncSearchPersistenceModel {
      * @param error the exception
      * @return Serialized error
      * @throws IOException when serialization fails.
-     * @see <a href="https://docs.oracle.com/en/java/javase/14/docs/api/java.base/java/lang/Object.html#hashCode()">
-     * String type is required to store binary field in index </a>} Error is wrapped with elastic search exception to avoid
-     * NotSerializableExceptionWrapper during deserialization
+     * String type is required to store binary field in index
      */
     private String serializeError(Exception error) throws IOException {
         if (error == null) {
             return null;
         }
-        //we don't persist stacktrace
-        error.setStackTrace(new StackTraceElement[]{});
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.writeException(error instanceof ElasticsearchException ? error : new ElasticsearchException(error));
             byte[] bytes = BytesReference.toBytes(out.bytes());

@@ -16,11 +16,11 @@
 package com.amazon.opendistroforelasticsearch.search.async.stats;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextEventListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.metrics.CounterMetric;
 
-public class InternalAsyncSearchStats implements AsyncSearchContextListener {
+public class InternalAsyncSearchStats implements AsyncSearchContextEventListener {
 
     private final CountStatsHolder countStatsHolder = new CountStatsHolder();
 
@@ -51,6 +51,21 @@ public class InternalAsyncSearchStats implements AsyncSearchContextListener {
     }
 
     @Override
+    public void onNewContext(AsyncSearchContextId contextId) {
+        countStatsHolder.submittedAsyncSearchCount.inc();
+    }
+
+    @Override
+    public void onContextCancelled(AsyncSearchContextId contextId) {
+        countStatsHolder.cancelledAsyncSearchCount.inc();
+    }
+
+    @Override
+    public void onContextInitialized(AsyncSearchContextId contextId) {
+        countStatsHolder.initializedAsyncSearchCount.inc();
+    }
+
+    @Override
     public void onRunningContextDeleted(AsyncSearchContextId contextId) {
         countStatsHolder.runningAsyncSearchCount.dec();
     }
@@ -72,11 +87,16 @@ public class InternalAsyncSearchStats implements AsyncSearchContextListener {
         final CounterMetric failedAsyncSearchCount = new CounterMetric();
         final CounterMetric completedAsyncSearchCount = new CounterMetric();
         final CounterMetric rejectedAsyncSearchCount = new CounterMetric();
+        final CounterMetric submittedAsyncSearchCount = new CounterMetric();
+        final CounterMetric cancelledAsyncSearchCount = new CounterMetric();
+        final CounterMetric initializedAsyncSearchCount = new CounterMetric();
+
 
         public AsyncSearchCountStats countStats() {
             return new AsyncSearchCountStats(runningAsyncSearchCount.count(), persistedAsyncSearchCount.count(),
                     completedAsyncSearchCount.count(), failedAsyncSearchCount.count(), rejectedAsyncSearchCount.count(),
-                    persistFailedAsyncSearchCount.count());
+                    persistFailedAsyncSearchCount.count(), initializedAsyncSearchCount.count(), submittedAsyncSearchCount.count(),
+                    cancelledAsyncSearchCount.count());
         }
     }
 }

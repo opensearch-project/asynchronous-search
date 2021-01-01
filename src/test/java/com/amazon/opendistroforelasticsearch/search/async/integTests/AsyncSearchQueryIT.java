@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.integTests;
 
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
@@ -81,7 +81,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
  */
 @LuceneTestCase.SuppressCodecs("*")
 @ESIntegTestCase.ClusterScope(transportClientRatio = 0)// requires custom completion format
-public class    AsyncSearchQueryIT extends ESIntegTestCase {
+public class AsyncSearchQueryIT extends ESIntegTestCase {
 
     public static final int NUM_SHARDS = 2;
     public static final String SETTING_NUMBER_OF_SHARDS = "index.number_of_shards";
@@ -273,7 +273,7 @@ public class    AsyncSearchQueryIT extends ESIntegTestCase {
     }
 
     private AsyncSearchResponse getPersistedAsyncSearchResponse(SearchRequest searchRequest) throws InterruptedException {
-        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         request.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
         request.keepOnCompletion(true);
         AsyncSearchResponse asyncSearchResponse = TestClientUtils.blockingSubmitAsyncSearch(client(),

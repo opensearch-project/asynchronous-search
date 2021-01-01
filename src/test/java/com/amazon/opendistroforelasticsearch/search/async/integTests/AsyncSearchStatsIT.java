@@ -1,6 +1,8 @@
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.integTests;
 
 import com.amazon.opendistroforelasticsearch.search.async.action.AsyncSearchStatsAction;
+import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchIntegTestCase;
+import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
 import com.amazon.opendistroforelasticsearch.search.async.request.AsyncSearchStatsRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
@@ -22,14 +24,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
+import static com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -44,7 +45,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         logger.info("Using lowLevelCancellation: {}", lowLevelCancellation);
         return Settings.builder()
                 .put(super.nodeSettings(nodeOrdinal))
-                .put("async_search.max_running_context", asyncSearchConcurrentLimit)
+                .put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), asyncSearchConcurrentLimit)
                 .build();
     }
 
@@ -55,7 +56,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                         .setSource("field1", "the quick brown fox jumps"),
                 client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
                 client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(index));
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest(index));
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
         submitAsyncSearchRequest.keepOnCompletion(true);
         List<DiscoveryNode> dataNodes = new LinkedList<>();
@@ -76,8 +77,11 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                 if (nodeStats.getNode().equals(randomDataNode)) {
                     assertEquals(1, asyncSearchCountStats.getPersistedCount());
                     assertEquals(1, asyncSearchCountStats.getCompletedCount());
+                    assertEquals(1, asyncSearchCountStats.getSubmittedCount());
+                    assertEquals(1, asyncSearchCountStats.getInitializedCount());
                     assertEquals(0, asyncSearchCountStats.getFailedCount());
                     assertEquals(0, asyncSearchCountStats.getRunningCount());
+                    assertEquals(0, asyncSearchCountStats.getCancelledCount());
                 } else {
                     assertEquals(0, asyncSearchCountStats.getPersistedCount());
                     assertEquals(0, asyncSearchCountStats.getCompletedCount());
@@ -90,7 +94,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         }
     }
 
-    public void testStatsAcrossNodes() throws InterruptedException, ExecutionException, BrokenBarrierException {
+    public void testStatsAcrossNodes() throws InterruptedException, ExecutionException {
         TestThreadPool threadPool = null;
         try {
             threadPool = new TestThreadPool(AsyncSearchStatsIT.class.getName());
@@ -111,7 +115,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
             AtomicLong expectedNumSuccesses = new AtomicLong();
             AtomicLong expectedNumFailures = new AtomicLong();
             AtomicLong expectedNumPersisted = new AtomicLong();
-            CyclicBarrier cyclicBarrier = new CyclicBarrier(numThreads + 1);
+            CountDownLatch latch = new CountDownLatch(numThreads);
             for (int i = 0; i < numThreads; i++) {
                 threads.add(() -> {
                     try {
@@ -123,13 +127,14 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                         SubmitAsyncSearchRequest submitAsyncSearchRequest;
                         if (success) {
                             expectedNumSuccesses.getAndIncrement();
-                            submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(index));
+                            submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest(index));
                             submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
                             submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
 
                         } else {
                             expectedNumFailures.getAndIncrement();
-                            submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest("non_existent_index"));
+                            submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest(
+                                    "non_existent_index"));
                             submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
                         }
 
@@ -141,17 +146,13 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                     } catch (Exception e) {
                         fail(e.getMessage());
                     } finally {
-                        try {
-                            cyclicBarrier.await();
-                        } catch (InterruptedException | BrokenBarrierException ignored) {
-
-                        }
+                        latch.countDown();
                     }
                 });
             }
             TestThreadPool finalThreadPool = threadPool;
             threads.forEach(t -> finalThreadPool.generic().execute(t));
-            cyclicBarrier.await();
+            latch.await();
             AsyncSearchStatsResponse statsResponse = client().execute(AsyncSearchStatsAction.INSTANCE, new AsyncSearchStatsRequest()).get();
             AtomicLong actualNumSuccesses = new AtomicLong();
             AtomicLong actualNumFailures = new AtomicLong();
@@ -174,7 +175,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
             assertEquals(expectedNumFailures.get(), actualNumFailures.get());
             assertEquals(expectedNumSuccesses.get(), actualNumSuccesses.get());
         } finally {
-            ThreadPool.terminate(threadPool, 30, TimeUnit.SECONDS);
+            ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
         }
     }
 
@@ -191,7 +192,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                 scriptQuery(new Script(
                         ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
                 .request();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(client(), submitAsyncSearchRequest);
         AsyncSearchStatsResponse statsResponse = client().execute(AsyncSearchStatsAction.INSTANCE, new AsyncSearchStatsRequest()).get();
@@ -234,18 +235,16 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         AtomicBoolean throttlingOccured = new AtomicBoolean();
         int numThreads = 21;
         List<Thread> threads = new ArrayList<>();
+        List<ScriptedBlockPlugin> plugins = initBlockFactory();
+        SearchRequest searchRequest = client().prepareSearch(index).setQuery(
+                scriptQuery(new Script(
+                        ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
+                .request();
         for (int i = 0; i < numThreads; i++) {
             Thread t = new Thread(() -> {
                 try {
-                    List<ScriptedBlockPlugin> plugins = initBlockFactory();
-                    SearchRequest searchRequest = client().prepareSearch(index).setQuery(
-                            scriptQuery(new Script(
-                                    ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
-                            .request();
-                    SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
+                    SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
                     executeSubmitAsyncSearch(client(randomDataNode.getName()), submitAsyncSearchRequest);
-                    waitUntil(() -> verifyThrottlingFromStats(throttlingOccured));
-                    disableBlocks(plugins);
                 } catch (ExecutionException e) {
                     assertThat(e.getMessage(), containsString("Trying to create too many running contexts"));
                 } catch (InterruptedException e) {
@@ -256,8 +255,10 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         }
         threads.forEach(Thread::start);
         for (Thread thread : threads) {
-            thread.join(100);
+            thread.join();
         }
+        waitUntil(() -> verifyThrottlingFromStats(throttlingOccured));
+        disableBlocks(plugins);
     }
 
     private boolean verifyThrottlingFromStats(AtomicBoolean throttlingOccurred) {

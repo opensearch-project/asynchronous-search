@@ -17,23 +17,25 @@ package com.amazon.opendistroforelasticsearch.search.async.service.persistence;
 
 import com.amazon.opendistroforelasticsearch.commons.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchSingleNodeTestCase;
+import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchSingleNodeTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceModel;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
+import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.utils.TestClientUtils;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -77,7 +79,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         String id = AsyncSearchIdConverter.buildAsyncId(newAsyncSearchId);
         User user1 = TestClientUtils.randomUser();
         User user2 = TestClientUtils.randomUser();
-        for(User user: Arrays.asList(user1, null)) {
+        for (User user : Arrays.asList(user1, null)) {
             AsyncSearchResponse newAsyncSearchResponse = new AsyncSearchResponse(id,
                     AsyncSearchState.PERSISTED,
                     asyncSearchResponse.getStartTimeMillis(),
@@ -86,8 +88,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
                     asyncSearchResponse.getError());
             createDoc(persistenceService, newAsyncSearchResponse, user);
 
-            if(user != null)
-            {
+            if (user != null) {
                 CountDownLatch getLatch1 = new CountDownLatch(1);
                 persistenceService.getResponse(newAsyncSearchResponse.getId(), user2,
                         ActionListener.wrap(r -> failure(getLatch1, "Unauthorized get to the search result"),
@@ -97,13 +98,12 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
             CountDownLatch getLatch2 = new CountDownLatch(1);
             persistenceService.getResponse(newAsyncSearchResponse.getId(), user,
                     ActionListener.wrap(r -> verifyPersistenceModel(
-                                    new AsyncSearchPersistenceModel(asyncSearchResponse.getStartTimeMillis(),
+                            new AsyncSearchPersistenceModel(asyncSearchResponse.getStartTimeMillis(),
                                     asyncSearchResponse.getExpirationTimeMillis(), asyncSearchResponse.getSearchResponse(),
                                     null, user), r, getLatch2),
                             e -> failure(getLatch2, e)));
             getLatch2.await();
-            if(user != null)
-            {
+            if (user != null) {
                 CountDownLatch deleteLatch1 = new CountDownLatch(1);
                 User diffUser = TestClientUtils.randomUser();
                 persistenceService.deleteResponse(newAsyncSearchResponse.getId(), user2,
@@ -113,7 +113,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
             }
             CountDownLatch deleteLatch2 = new CountDownLatch(1);
             persistenceService.deleteResponse(newAsyncSearchResponse.getId(), user,
-                    ActionListener.wrap(r -> assertBoolean(deleteLatch2, r, true), e -> failure(deleteLatch2, e)));
+                    ActionListener.wrap(r -> assertBoolean(deleteLatch2, r, true), e -> assertRnf(deleteLatch2, e)));
             deleteLatch2.await();
 
             //assert failure
@@ -121,12 +121,12 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
             persistenceService.getResponse(newAsyncSearchResponse.getId(), null,
                     ActionListener.wrap((AsyncSearchPersistenceModel r) -> failure(getLatch3,
                             new IllegalStateException("no response should " +
-                            "have been found for async search " + id)), exception -> assertRnf(getLatch3, exception)))
+                                    "have been found for async search " + id)), exception -> assertRnf(getLatch3, exception)))
             ;
             persistenceService.getResponse(newAsyncSearchResponse.getId(), user2,
                     ActionListener.wrap((AsyncSearchPersistenceModel r) ->
                             failure(getLatch3, new IllegalStateException("no response should " +
-                            "have been found for async search " + id)), exception -> assertRnf(getLatch3, exception)))
+                                    "have been found for async search " + id)), exception -> assertRnf(getLatch3, exception)))
             ;
             getLatch3.await();
         }
@@ -138,7 +138,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         SearchResponse searchResponse = client().search(new SearchRequest(TEST_INDEX)).get();
         User user1 = TestClientUtils.randomUser();
         User user2 = TestClientUtils.randomUser();
-        for(User originalUser: Arrays.asList(user1, null)) {
+        for (User originalUser : Arrays.asList(user1, null)) {
             AsyncSearchId asyncSearchId = generateNewAsyncSearchId(transportService);
             AsyncSearchPersistenceModel model1 = new AsyncSearchPersistenceModel(System.currentTimeMillis(),
                     System.currentTimeMillis() + new TimeValue(10, TimeUnit.DAYS).getMillis(), searchResponse, null, originalUser);
@@ -147,7 +147,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
             persistenceService.storeResponse(id, model1, ActionListener.wrap(
                     r -> assertSuccessfulResponseCreation(id, r, createLatch), e -> failure(createLatch, e)));
             createLatch.await();
-            for(User currentuser: Arrays.asList(originalUser, user2)) {
+            for (User currentuser : Arrays.asList(originalUser, user2)) {
                 CountDownLatch latch = new CountDownLatch(2);
                 //assert failure
                 persistenceService.getResponse("id", currentuser, ActionListener.wrap((AsyncSearchPersistenceModel r) -> failure(latch,
@@ -155,7 +155,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
                         exception -> assertRnf(latch, exception)));
                 //assert failure
                 persistenceService.deleteResponse("id", currentuser,
-                        ActionListener.wrap((r) -> assertBoolean(latch, r, false), e -> failure(latch, e)));
+                        ActionListener.wrap((r) -> assertBoolean(latch, r, false), e -> assertRnf(latch, e)));
                 latch.await();
             }
         }
@@ -200,7 +200,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         ThreadPool threadPool1 = getInstanceFromNode(ThreadPool.class);
         User user1 = TestClientUtils.randomUser();
         User user2 = TestClientUtils.randomUser();
-        for(User originalUser: Arrays.asList(user1, null)) {
+        for (User originalUser : Arrays.asList(user1, null)) {
             try (ThreadContext.StoredContext ctx = threadPool1.getThreadContext().stashContext()) {
                 threadPool1.getThreadContext().putTransient(
                         ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT, getUserRolesString(originalUser));
@@ -249,6 +249,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
     }
 
     public void testAsyncSearchExpirationUpdateOnBlockedPersistence() throws Exception {
+        AsyncSearchPersistenceService persistenceService = getInstanceFromNode(AsyncSearchPersistenceService.class);
         AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUIDs.base64UUID(), randomInt(100));
         AsyncSearchId newAsyncSearchId = new AsyncSearchId(getInstanceFromNode(TransportService.class).getLocalNode().getId(), 1,
                 asyncSearchContextId);
@@ -259,28 +260,27 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         client().admin().indices().prepareUpdateSettings(AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX)
                 .setSettings(Settings.builder().put(IndexMetadata.SETTING_READ_ONLY_ALLOW_DELETE, true).build()).execute().actionGet();
         SearchRequest searchRequest = new SearchRequest().indices("index").source(new SearchSourceBuilder());
-        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         request.keepOnCompletion(true);
         request.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
         AsyncSearchResponse asyncSearchResponse = TestClientUtils.blockingSubmitAsyncSearch(client(), request);
-        assertBusy(() -> assertTrue(verifyAsyncSearchState(client(), asyncSearchResponse.getId(), AsyncSearchState.PERSISTING)));
-        GetAsyncSearchRequest getAsyncSearchRequest = new GetAsyncSearchRequest(asyncSearchResponse.getId());
-        getAsyncSearchRequest.setKeepAlive(TimeValue.timeValueHours(10));
-        CountDownLatch getLatch = new CountDownLatch(1);
-        executeGetAsyncSearch(client(), getAsyncSearchRequest, new ActionListener<AsyncSearchResponse>() {
-            @Override
-            public void onResponse(AsyncSearchResponse asyncSearchResponse) {
-                getLatch.countDown();
-                fail("Expected a failure, got" + asyncSearchResponse);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                getLatch.countDown();
-                assertThat(e, instanceOf(ElasticsearchTimeoutException.class));
-            }
-        });
-        getLatch.await();
+        waitUntil(() -> verifyAsyncSearchState(client(), asyncSearchResponse.getId(), AsyncSearchState.PERSISTING));
+        // This is needed to ensure we are able to acquire a permit for post processing before we try a GET operation
+        waitUntil(() -> getRequestTimesOut(asyncSearchResponse.getId(), AsyncSearchState.PERSISTING));
+        DeleteAsyncSearchRequest deleteAsyncSearchRequest = new DeleteAsyncSearchRequest(asyncSearchResponse.getId());
+        try {
+            executeDeleteAsyncSearch(client(), deleteAsyncSearchRequest).actionGet();
+            fail("Expected timeout");
+        } catch (Exception e) {
+            assertThat(e, instanceOf(ElasticsearchTimeoutException.class));
+        }
+        client().admin().indices().prepareUpdateSettings(AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX)
+                .setSettings(Settings.builder().putNull(IndexMetadata.SETTING_READ_ONLY_ALLOW_DELETE).build()).execute().actionGet();
+        waitUntil(() -> verifyAsyncSearchState(client(), asyncSearchResponse.getId(), AsyncSearchState.PERSISTED));
+        CountDownLatch deleteLatch = new CountDownLatch(1);
+        persistenceService.deleteResponse(asyncSearchResponse.getId(), null,
+                ActionListener.wrap(r -> assertBoolean(deleteLatch, r, true), e -> fail("Unexpected failure " + e.getMessage())));
+        deleteLatch.await();
     }
 
     public void testDeleteExpiredResponse() throws InterruptedException, IOException {
@@ -309,30 +309,23 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         getLatch.await();
 
         CountDownLatch deleteLatch = new CountDownLatch(1);
-        persistenceService.deleteExpiredResponses(new ActionListener<AcknowledgedResponse>() {
+        persistenceService.deleteExpiredResponses(new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
             @Override
             public void onResponse(AcknowledgedResponse acknowledgedResponse) {
                 assertTrue(acknowledgedResponse.isAcknowledged());
-                deleteLatch.countDown();
             }
 
             @Override
             public void onFailure(Exception e) {
-                try {
-                    fail("Received exception while deleting expired response");
-                } finally {
-                    deleteLatch.countDown();
-                }
-
+               fail("Received exception while deleting expired response " + e.getMessage());
             }
-        }, System.currentTimeMillis());
-
+        }, deleteLatch), System.currentTimeMillis());
+        deleteLatch.await();
     }
 
     private void assertRnf(CountDownLatch latch, Exception exception) {
         try {
-            assertTrue("Expected : RNF. Actual : " + exception.getClass() + "with cause : " + exception.getCause(),
-                    exception instanceof ResourceNotFoundException);
+            assertThat(exception, instanceOf(ResourceNotFoundException.class));
         } finally {
             latch.countDown();
         }
@@ -361,7 +354,7 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
 
     private AsyncSearchResponse submitAndGetPersistedAsyncSearchResponse() throws InterruptedException {
         SearchRequest searchRequest = new SearchRequest().indices("index").source(new SearchSourceBuilder());
-        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         request.keepOnCompletion(true);
         request.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
         AsyncSearchResponse asyncSearchResponse = TestClientUtils.blockingSubmitAsyncSearch(client(), request);
@@ -402,16 +395,14 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
             assertEquals(expected, actual);
         } finally {
             latch.countDown();
-
         }
     }
 
-    private void verifySecurityException( Exception ex, CountDownLatch latch) {
+    private void verifySecurityException(Exception ex, CountDownLatch latch) {
         try {
             assertTrue(ex instanceof ElasticsearchSecurityException);
         } finally {
             latch.countDown();
-
         }
     }
 
@@ -425,9 +416,28 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
     }
 
     public final String getUserRolesString(User user) {
-        if(user == null) {
+        if (user == null) {
             return null;
         }
         return user.getName() + "|" + String.join(",", user.getBackendRoles()) + "|" + String.join(",", user.getRoles());
+    }
+
+    private boolean getRequestTimesOut(String id, AsyncSearchState state) {
+        boolean timedOut;
+        final GetAsyncSearchRequest getAsyncSearchRequest = new GetAsyncSearchRequest(id);
+        getAsyncSearchRequest.setKeepAlive(TimeValue.timeValueHours(10));
+        try {
+            AsyncSearchResponse asyncSearchResponse = executeGetAsyncSearch(client(), getAsyncSearchRequest).actionGet();
+            assertEquals(AsyncSearchState.PERSISTING, asyncSearchResponse.getState());
+            timedOut = false;
+        } catch (ElasticsearchTimeoutException e) {
+            timedOut = true;
+        }
+        return timedOut;
+    }
+
+    @Override
+    protected boolean resetNodeAfterTest() {
+        return true;
     }
 }

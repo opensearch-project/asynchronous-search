@@ -13,11 +13,11 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.commons;
 
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.action.SubmitAsyncSearchAction;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
@@ -156,6 +156,11 @@ public abstract class AsyncSearchIntegTestCase extends ESIntegTestCase {
 
     protected boolean verifyTaskCancelled(String action, TaskId taskId) {
         ListTasksResponse listTasksResponse = client().admin().cluster().prepareListTasks().setActions(action).setTaskId(taskId).get();
+        return listTasksResponse.getTasks().size() == 0;
+    }
+
+    protected boolean verifyTaskCancelled(String action) {
+        ListTasksResponse listTasksResponse = client().admin().cluster().prepareListTasks().setActions(action).get();
         return listTasksResponse.getTasks().size() == 0;
     }
 

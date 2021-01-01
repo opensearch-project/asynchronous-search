@@ -21,15 +21,13 @@ import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchCon
 import com.amazon.opendistroforelasticsearch.search.async.context.permits.AsyncSearchContextPermits;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchProgressActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchTask;
+import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.unit.TimeValue;
@@ -49,13 +47,9 @@ import static com.amazon.opendistroforelasticsearch.search.async.context.state.A
  */
 public class AsyncSearchActiveContext extends AsyncSearchContext implements Closeable {
 
-    private static final Logger logger = LogManager.getLogger(AsyncSearchContext.class);
-
     private final SetOnce<SearchTask> searchTask;
-
     private volatile long expirationTimeMillis;
-
-    private volatile long startTimeMillis;
+    private long startTimeMillis;
     private final Boolean keepOnCompletion;
     private final TimeValue keepAlive;
     private final String nodeId;
@@ -64,7 +58,8 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
     private final SetOnce<Exception> error;
     private final SetOnce<SearchResponse> searchResponse;
     private final AtomicBoolean closed;
-    private final AsyncSearchContextPermits asyncSearchContextPermits;
+    @Nullable
+    private AsyncSearchContextPermits asyncSearchContextPermits;
     @Nullable
     private final User user;
 
@@ -72,7 +67,7 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
                                     TimeValue keepAlive, boolean keepOnCompletion,
                                     ThreadPool threadPool, LongSupplier currentTimeSupplier,
                                     AsyncSearchProgressListener searchProgressActionListener,
-                                    AsyncSearchContextListener asyncSearchContextListener, @Nullable User user) {
+                                    @Nullable User user) {
         super(asyncSearchContextId, currentTimeSupplier);
         this.keepOnCompletion = keepOnCompletion;
         this.error = new SetOnce<>();
@@ -82,10 +77,11 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
         this.asyncSearchProgressListener = searchProgressActionListener;
         this.searchTask = new SetOnce<>();
         this.asyncSearchId = new SetOnce<>();
-        this.asyncSearchContextListener = asyncSearchContextListener;
         this.completed = new AtomicBoolean(false);
         this.closed = new AtomicBoolean(false);
-        this.asyncSearchContextPermits = new AsyncSearchContextPermits(asyncSearchContextId, threadPool);
+        if (keepOnCompletion) {
+            this.asyncSearchContextPermits = new AsyncSearchContextPermits(asyncSearchContextId, threadPool);
+        }
         this.user = user;
     }
 
@@ -103,6 +99,10 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
     public void processSearchFailure(Exception e) {
         assert isAlive();
         if (completed.compareAndSet(false, true)) {
+            // we don't want to process stack traces
+            if (e.getCause() != null) {
+                e.getCause().setStackTrace(new StackTraceElement[0]);
+            }
             error.set(e);
         }
     }
@@ -110,6 +110,13 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
     public void processSearchResponse(SearchResponse response) {
         assert isAlive();
         if (completed.compareAndSet(false, true)) {
+            ShardSearchFailure [] shardSearchFailures = response.getShardFailures();
+            for(ShardSearchFailure shardSearchFailure : shardSearchFailures) {
+                // we don't want to process stack traces
+                if (shardSearchFailure.getCause() != null) {
+                    shardSearchFailure.getCause().setStackTrace(new StackTraceElement[0]);
+                }
+            }
             this.searchResponse.set(response);
         }
     }
@@ -161,11 +168,18 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
         return user;
     }
 
-    public void acquireContextPermit(final ActionListener<Releasable> onPermitAcquired, TimeValue timeout, String reason) {
-        asyncSearchContextPermits.asyncAcquirePermit(onPermitAcquired, timeout, reason);
+    public void acquireContextPermitIfRequired(final ActionListener<Releasable> onPermitAcquired, TimeValue timeout, String reason) {
+        if (asyncSearchContextPermits != null) {
+            asyncSearchContextPermits.asyncAcquirePermit(onPermitAcquired, timeout, reason);
+        } else {
+            onPermitAcquired.onResponse(() -> {});
+        }
     }
 
     public void acquireAllContextPermits(final ActionListener<Releasable> onPermitAcquired, TimeValue timeout, String reason) {
+        if (asyncSearchContextPermits == null) {
+            throw new IllegalStateException("Acquiring all permits is not allowed for asynchronous search id" + asyncSearchId.get());
+        }
         asyncSearchContextPermits.asyncAcquireAllPermits(onPermitAcquired, timeout, reason);
     }
 
@@ -180,7 +194,9 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            asyncSearchContextPermits.close();
+            if (asyncSearchContextPermits != null) {
+                asyncSearchContextPermits.close();
+            }
         }
     }
 }

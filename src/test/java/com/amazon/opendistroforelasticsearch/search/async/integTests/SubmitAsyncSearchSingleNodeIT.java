@@ -13,8 +13,11 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.integTests;
 
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
+import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchSingleNodeTestCase;
+import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
@@ -44,7 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchSingleNodeTestCase.SearchDelayPlugin.SCRIPT_NAME;
+import static com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchSingleNodeTestCase.SearchDelayPlugin.SCRIPT_NAME;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 
 public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase {
@@ -53,7 +56,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
 
     @Override
     protected Settings nodeSettings() {
-        return Settings.builder().put("async_search.max_running_context", asyncSearchConcurrentLimit).build();
+        return Settings.builder().put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), asyncSearchConcurrentLimit).build();
     }
 
     public void testSubmitAsyncSearchWithoutRetainedResponse() throws InterruptedException {
@@ -61,15 +64,15 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
         searchRequest.indices("index");
         searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
         SearchResponse searchResponse = client().search(searchRequest).actionGet();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(false);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentSubmits(submitAsyncSearchRequest, searchResponse, (numStartedAsyncSearch, numFailedAsyncSearch,
                                                                            numErrorResponseAsyncSearch) -> {
             assertEquals(concurrentRuns, numStartedAsyncSearch.get());
-            assertEquals(0,  numFailedAsyncSearch.get());
-            assertEquals(0,  numErrorResponseAsyncSearch.get());
+            assertEquals(0, numFailedAsyncSearch.get());
+            assertEquals(0, numErrorResponseAsyncSearch.get());
         }, concurrentRuns);
     }
 
@@ -78,15 +81,15 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
         searchRequest.indices("index");
         searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
         SearchResponse searchResponse = client().search(searchRequest).actionGet();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest =SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentSubmits(submitAsyncSearchRequest, searchResponse, (numStartedAsyncSearch, numFailedAsyncSearch,
                                                                            numErrorResponseAsyncSearch) -> {
             assertEquals(concurrentRuns, numStartedAsyncSearch.get());
-            assertEquals(0,  numFailedAsyncSearch.get());
-            assertEquals(0,  numErrorResponseAsyncSearch.get());
+            assertEquals(0, numFailedAsyncSearch.get());
+            assertEquals(0, numErrorResponseAsyncSearch.get());
         }, concurrentRuns);
     }
 
@@ -94,8 +97,8 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
         int concurrentRuns = randomIntBetween(asyncSearchConcurrentLimit + 10, asyncSearchConcurrentLimit + 20);
         assertConcurrentSubmitsForBlockedSearch((numStartedAsyncSearch, numFailedAsyncSearch, numRejectedAsyncSearch) -> {
             assertEquals(asyncSearchConcurrentLimit, numStartedAsyncSearch.get());
-            assertEquals(concurrentRuns - asyncSearchConcurrentLimit,  numFailedAsyncSearch.get());
-            assertEquals(concurrentRuns - asyncSearchConcurrentLimit,  numRejectedAsyncSearch.get());
+            assertEquals(concurrentRuns - asyncSearchConcurrentLimit, numFailedAsyncSearch.get());
+            assertEquals(concurrentRuns - asyncSearchConcurrentLimit, numRejectedAsyncSearch.get());
         }, concurrentRuns);
     }
 
@@ -118,7 +121,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
                     searchRequest.source(new SearchSourceBuilder());
                     searchRequest.source().query(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME,
                             Collections.emptyMap())));
-                    SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
+                    SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
                     submitAsyncSearchRequest.keepOnCompletion(false);
                     submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
                     executeSubmitAsyncSearch(client(), submitAsyncSearchRequest, new ActionListener<AsyncSearchResponse>() {
@@ -204,12 +207,14 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
 
                                     @Override
                                     public void onFailure(Exception e) {
-                                        fail("Search deletion failed for async search id "+ asyncSearchResponse.getId());
+                                        fail("Search deletion failed for async search id " + asyncSearchResponse.getId());
                                         finalCountDownLatch.countDown();
                                     }
                                 });
-                            };
+                            }
+                            ;
                         }
+
                         @Override
                         public void onFailure(Exception e) {
                             numFailedAsyncSearch.incrementAndGet();

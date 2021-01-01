@@ -34,15 +34,21 @@ public class AsyncSearchCountStats implements Writeable, ToXContentFragment {
     private final long completedCount;
     private final long failedCount;
     private final long throttledCount;
+    private final long initializedCount;
+    private final long cancelledCount;
+    private final long submittedCount;
 
     public AsyncSearchCountStats(long runningCount, long persistedCount, long completedCount, long failedCount, long throttledCount,
-                                 long persistFailedCount) {
+                                 long persistFailedCount, long initializedCount, long submittedCount, long cancelledCount) {
         this.runningCount = runningCount;
         this.persistedCount = persistedCount;
         this.persistFailedCount = persistFailedCount;
         this.completedCount = completedCount;
         this.failedCount = failedCount;
         this.throttledCount = throttledCount;
+        this.initializedCount = initializedCount;
+        this.cancelledCount = cancelledCount;
+        this.submittedCount = submittedCount;
     }
 
     public AsyncSearchCountStats(StreamInput in) throws IOException {
@@ -52,6 +58,9 @@ public class AsyncSearchCountStats implements Writeable, ToXContentFragment {
         this.failedCount = in.readVLong();
         this.throttledCount = in.readVLong();
         this.persistFailedCount = in.readVLong();
+        this.initializedCount = in.readVLong();
+        this.cancelledCount = in.readVLong();
+        this.submittedCount = in.readVLong();
     }
 
     @Override
@@ -62,17 +71,23 @@ public class AsyncSearchCountStats implements Writeable, ToXContentFragment {
         out.writeVLong(this.failedCount);
         out.writeVLong(this.throttledCount);
         out.writeVLong(this.persistFailedCount);
+        out.writeVLong(this.initializedCount);
+        out.writeVLong(this.cancelledCount);
+        out.writeVLong(this.submittedCount);
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject(Fields.ASYNC_SEARCH_STATS);
+        builder.field(Fields.SUBMITTED, submittedCount);
+        builder.field(Fields.INITIALIZED, initializedCount);
         builder.field(Fields.RUNNING, runningCount);
         builder.field(Fields.PERSISTED, persistedCount);
         builder.field(Fields.FAILED, failedCount);
         builder.field(Fields.COMPLETED, completedCount);
         builder.field(Fields.REJECTED, throttledCount);
         builder.field(Fields.PERSIST_FAILED, persistFailedCount);
+        builder.field(Fields.CANCELLED, cancelledCount);
         builder.endObject();
         return builder;
     }
@@ -82,9 +97,12 @@ public class AsyncSearchCountStats implements Writeable, ToXContentFragment {
         private static final String RUNNING = "running_current";
         private static final String PERSISTED = "persisted";
         private static final String PERSIST_FAILED = "persist_failed";
-        private static final String FAILED = "failed";
-        private static final String COMPLETED = "completed";
+        private static final String FAILED = "search_failed";
+        private static final String COMPLETED = "search_completed";
         private static final String REJECTED = "rejected";
+        private static final String SUBMITTED = "submitted";
+        private static final String INITIALIZED = "initialized";
+        private static final String CANCELLED = "cancelled";
     }
 
     public long getRunningCount() {
@@ -105,5 +123,17 @@ public class AsyncSearchCountStats implements Writeable, ToXContentFragment {
 
     public long getThrottledCount() {
         return throttledCount;
+    }
+
+    public long getInitializedCount() {
+        return initializedCount;
+    }
+
+    public long getCancelledCount() {
+        return cancelledCount;
+    }
+
+    public long getSubmittedCount() {
+        return submittedCount;
     }
 }

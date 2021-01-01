@@ -39,7 +39,7 @@ public class AsyncSearchTask extends SearchTask {
     private final AsyncSearchActiveContext asyncSearchActiveContext;
     private final SubmitAsyncSearchRequest request;
 
-    public static final String NAME = "indices:data/read/async_search";
+    public static final String NAME = "indices:data/read/opendistro/asynchronous_search";
 
     public AsyncSearchTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers,
                            AsyncSearchActiveContext asyncSearchContext, SubmitAsyncSearchRequest request,
@@ -54,7 +54,7 @@ public class AsyncSearchTask extends SearchTask {
 
     @Override
     protected void onCancelled() {
-        logger.warn("On Cancelled async search context for id {} due to [{}]", asyncSearchActiveContext.getAsyncSearchId(),
+        logger.debug("On Cancelled event received for async search context [{}] due to [{}]", asyncSearchActiveContext.getAsyncSearchId(),
                 getReasonCancelled());
         freeActiveContextConsumer.accept(asyncSearchActiveContext);
     }

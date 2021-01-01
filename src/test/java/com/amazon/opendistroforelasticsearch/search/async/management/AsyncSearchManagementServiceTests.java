@@ -1,6 +1,6 @@
 package com.amazon.opendistroforelasticsearch.search.async.management;
 
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
@@ -61,7 +61,7 @@ public class AsyncSearchManagementServiceTests extends ESTestCase {
     public void testSchedulesContextReaperAtRefreshIntervals() {
         long refreshInterval = randomLongBetween(100000, 200000);
         final Settings settings = Settings.builder()
-                .put(AsyncSearchManagementService.REAPER_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
+                .put(AsyncSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
                 .build();
         AsyncSearchManagementService managementService = new AsyncSearchManagementService(settings, Mockito.mock(ClusterService.class),
                 deterministicTaskQueue.getThreadPool(), Mockito.mock(AsyncSearchService.class), Mockito.mock(TransportService.class),
@@ -91,7 +91,7 @@ public class AsyncSearchManagementServiceTests extends ESTestCase {
     public void testSchedulesResponseCleanupAtRefreshIntervals() {
         long refreshInterval = randomLongBetween(60000, 120000);
         final Settings settings = Settings.builder()
-                .put(AsyncSearchManagementService.RESPONSE_CLEAN_UP_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
+                .put(AsyncSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
                 .build();
         DiscoveryNode localNode = new DiscoveryNode("local-node", buildNewFakeTransportAddress(),
                 Collections.singletonMap("asynchronous_search_enabled", "true"), Sets.newHashSet(DiscoveryNodeRole.DATA_ROLE),
@@ -121,7 +121,7 @@ public class AsyncSearchManagementServiceTests extends ESTestCase {
         ClusterState previousState = createSimpleClusterState();
         ClusterState newState = createState(numNodesInCluster, true, initialIndices);
         managementService.clusterChanged(new ClusterChangedEvent("_na_", newState, previousState));
-        assertFalse(deterministicTaskQueue.hasRunnableTasks());
+        assertTrue(deterministicTaskQueue.hasRunnableTasks());
         assertTrue(deterministicTaskQueue.hasDeferredTasks());
         int rescheduledCount = 0;
         for (int i = 1; i <= randomIntBetween(5, 10); i++) {

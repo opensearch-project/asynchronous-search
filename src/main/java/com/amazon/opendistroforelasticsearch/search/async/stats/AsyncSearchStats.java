@@ -40,7 +40,7 @@ public class AsyncSearchStats extends BaseNodeResponse implements ToXContentFrag
 
     public AsyncSearchStats(StreamInput in) throws IOException {
         super(in);
-        asyncSearchCountStats = in.readOptionalWriteable(AsyncSearchCountStats::new);
+        asyncSearchCountStats = in.readOptionalWriteable(in1 -> new AsyncSearchCountStats(in1));
     }
 
     public AsyncSearchStats(DiscoveryNode node, @Nullable AsyncSearchCountStats asyncSearchCountStats) {

@@ -15,8 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchAssertions;
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIntegTestCase;
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
+import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchIntegTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchResponse;
 import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
@@ -50,14 +50,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static com.amazon.opendistroforelasticsearch.search.async.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
+import static com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
 import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 
-@ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.SUITE)
+@ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.SUITE, transportClientRatio = 0)
 public class AsyncSearchCancellationIT extends AsyncSearchIntegTestCase {
 
     @Override
@@ -108,7 +108,7 @@ public class AsyncSearchCancellationIT extends AsyncSearchIntegTestCase {
                 .request();
         //We need a NodeClient to make sure the listener gets injected in the search request execution.
         //Randomized client randomly return NodeClient/TransportClient
-        testCase(internalCluster().smartClient(), searchRequest, plugins);
+        testCase(client(), searchRequest, plugins);
     }
 
 
@@ -119,7 +119,7 @@ public class AsyncSearchCancellationIT extends AsyncSearchIntegTestCase {
                 .addScriptField("test_field",
                         new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())
                 ).request();
-        testCase(internalCluster().smartClient(), searchRequest, plugins);
+        testCase(client(), searchRequest, plugins);
     }
 
     private void testCase(Client client, SearchRequest request, List<ScriptedBlockPlugin> plugins) throws Exception {

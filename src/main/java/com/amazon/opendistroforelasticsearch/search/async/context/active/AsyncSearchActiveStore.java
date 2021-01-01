@@ -35,8 +35,10 @@ public class AsyncSearchActiveStore {
 
     private static Logger logger = LogManager.getLogger(AsyncSearchActiveStore.class);
     private volatile int maxRunningContext;
+    public static final int DEFAULT_MAX_RUNNING_CONTEXTS = 50;
     public static final Setting<Integer> MAX_RUNNING_CONTEXT = Setting.intSetting(
-            "async_search.max_running_context", 100, 0, Setting.Property.Dynamic, Setting.Property.NodeScope);
+            "opendistro_asynchronous_search.max_running_searches", DEFAULT_MAX_RUNNING_CONTEXTS, 0, Setting.Property.Dynamic,
+            Setting.Property.NodeScope);
 
     private final ConcurrentMapLong<AsyncSearchActiveContext> activeContexts = newConcurrentMapLongWithAggressiveConcurrency();
 
@@ -79,7 +81,7 @@ public class AsyncSearchActiveStore {
     public boolean freeContext(AsyncSearchContextId asyncSearchContextId) {
         AsyncSearchActiveContext asyncSearchContext = activeContexts.get(asyncSearchContextId.getId());
         if (asyncSearchContext != null) {
-            logger.warn("Removing async search ID [{}] from active store", asyncSearchContext.getAsyncSearchId());
+            logger.debug("Removing async search [{}] from active store", asyncSearchContext.getAsyncSearchId());
             asyncSearchContext.close();
             activeContexts.remove(asyncSearchContextId.getId());
             return true;

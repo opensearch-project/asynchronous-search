@@ -6,18 +6,24 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.test.ESTestCase;
 
+import static org.hamcrest.Matchers.containsString;
+
 public class SubmitAsyncSearchRequestTests extends ESTestCase {
 
     public void testValidRequest() {
         SearchSourceBuilder source = new SearchSourceBuilder();
-        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(new SearchRequest(new String[]{"test"}, source));
+        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        searchRequest.setCcsMinimizeRoundtrips(false);
+        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         ValidationException validationException = request.validate();
         assertNull(validationException);
     }
 
     public void testSuggestOnlyQueryFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder().suggest(new SuggestBuilder());
-        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(new SearchRequest(new String[]{"test"}, source));
+        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        searchRequest.setCcsMinimizeRoundtrips(false);
+        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         ValidationException validationException = request.validate();
         assertNotNull(validationException);
         assertEquals(1, validationException.validationErrors().size());
@@ -27,11 +33,23 @@ public class SubmitAsyncSearchRequestTests extends ESTestCase {
     public void testSearchScrollFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder();
         SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        searchRequest.setCcsMinimizeRoundtrips(false);
         searchRequest.scroll(randomTimeValue());
-        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
+        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
         ValidationException validationException = request.validate();
         assertNotNull(validationException);
         assertEquals(1, validationException.validationErrors().size());
         assertEquals("scrolls are not supported", validationException.validationErrors().get(0));
+    }
+
+    public void testCcsMinimizeRoundtripsFlagFailsValidation() {
+        SearchSourceBuilder source = new SearchSourceBuilder();
+        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(
+                searchRequest);
+        ValidationException validationException = request.validate();
+        assertNotNull(validationException);
+        assertEquals(1, validationException.validationErrors().size());
+        assertThat(validationException.validationErrors().get(0), containsString("[ccs_minimize_roundtrips] must be false"));
     }
 }

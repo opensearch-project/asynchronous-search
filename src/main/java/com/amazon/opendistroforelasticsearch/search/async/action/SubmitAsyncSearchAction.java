@@ -20,7 +20,7 @@ import org.elasticsearch.action.ActionType;
 public class SubmitAsyncSearchAction extends ActionType<AsyncSearchResponse> {
 
     public static final SubmitAsyncSearchAction INSTANCE = new SubmitAsyncSearchAction();
-    public static final String NAME = "indices:data/read/submit_async_search";
+    public static final String NAME = "cluster:admin/opendistro/asynchronous_search/submit";
 
     private SubmitAsyncSearchAction() {
         super(NAME, AsyncSearchResponse::new);

@@ -15,11 +15,11 @@
 
 package com.amazon.opendistroforelasticsearch.search.async.state;
 
-import com.amazon.opendistroforelasticsearch.search.async.AsyncSearchTestCase;
+import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchTestCase;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
-import com.amazon.opendistroforelasticsearch.search.async.context.persistence.AsyncSearchPersistenceService;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchContextEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
@@ -29,12 +29,13 @@ import com.amazon.opendistroforelasticsearch.search.async.context.state.event.Se
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchFailureEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchStartedEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchSuccessfulEvent;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextListener;
+import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextEventListener;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
 import com.amazon.opendistroforelasticsearch.search.async.task.AsyncSearchTask;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
@@ -107,6 +108,7 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
                         AsyncSearchActiveStore.MAX_RUNNING_CONTEXT,
+                        AsyncSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsyncSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
@@ -134,11 +136,10 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
             AsyncSearchProgressListener asyncSearchProgressListener = mockAsyncSearchProgressListener(threadPool);
             AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
-            boolean keepOnCompletion = randomBoolean();
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
             AsyncSearchActiveContext context = new AsyncSearchActiveContext(asyncSearchContextId, discoveryNode.getId(),
-                    keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asyncSearchProgressListener, customContextListener, null);
+                    keepAlive, true, threadPool,
+                    threadPool::absoluteTimeInMillis, asyncSearchProgressListener, null);
             assertNull(context.getTask());
             assertEquals(context.getAsyncSearchState(), INIT);
             AsyncSearchStateMachine stateMachine = asyncSearchService.getStateMachine();
@@ -247,12 +248,12 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
             if (randomBoolean()) {
                 listener.onResponse(null);
             } else {
-                listener.onFailure(new RuntimeException("test"));
+                listener.onFailure(new ElasticsearchException(new RuntimeException("test")));
             }
         }
     }
 
-    static class CustomContextListener implements AsyncSearchContextListener {
+    static class CustomContextListener implements AsyncSearchContextEventListener {
 
         private final AtomicInteger runningCount = new AtomicInteger();
         private final AtomicInteger persistedCount = new AtomicInteger();
