@@ -26,7 +26,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -116,11 +115,14 @@ public class AsyncSearchPostProcessor {
                                                 asyncSearchStateMachine.trigger(new SearchResponsePersistedEvent(asyncSearchContext));
                                             } catch (AsyncSearchStateMachineClosedException ex) {
                                                 // this should never happen since we had checked after acquiring the all permits so a
-                                                // concurrent delete is not expected here
-                                                throw new IllegalStateException(String.format(Locale.ROOT,
-                                                        "Unexpected, context with id [%s] " +
-                                                                "closed while triggering event [$s]", asyncSearchContext.getAsyncSearchId(),
-                                                        SearchResponsePersistedEvent.class.getName()));
+                                                // concurrent delete is not expected here, however an external task cancellation
+                                                // can cause this
+                                                logger.warn("Unexpected state, possibly caused by external task cancellation," +
+                                                                " context with id [{}] closed while triggering event [{}]",
+                                                        asyncSearchContext.getAsyncSearchId(),
+                                                        SearchResponsePersistedEvent.class.getName());
+                                            } finally {
+                                                freeActiveContextConsumer.accept(asyncSearchContext);
                                             }
                                         },
 
@@ -129,12 +131,14 @@ public class AsyncSearchPostProcessor {
                                                 asyncSearchStateMachine.trigger(new SearchResponsePersistFailedEvent(asyncSearchContext));
                                             } catch (AsyncSearchStateMachineClosedException ex) {
                                                 //this should never happen since we had checked after acquiring the all permits so a
-                                                // concurrent delete is not expected here
-                                                throw new IllegalStateException(String.format(Locale.ROOT,
-                                                        "Unexpected, state machine for " +
-                                                                "context id [%s] closed while triggering event",
+                                                // concurrent delete is not expected here, however an external task cancellation
+                                                // can cause this
+                                                logger.warn("Unexpected state, possibly caused by external task cancellation," +
+                                                                " context with id [{}] closed while triggering event [{}]",
                                                         asyncSearchContext.getAsyncSearchId(),
-                                                        SearchResponsePersistFailedEvent.class.getName()));
+                                                        SearchResponsePersistFailedEvent.class.getName());
+                                            } finally {
+                                                freeActiveContextConsumer.accept(asyncSearchContext);
                                             }
                                             logger.error(() -> new ParameterizedMessage(
                                                     "Failed to persist final response for [{}] due to [{}]",

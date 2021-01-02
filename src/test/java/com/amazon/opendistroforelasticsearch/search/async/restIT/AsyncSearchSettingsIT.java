@@ -21,12 +21,12 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
 
     public void testMaxKeepAliveSetting() throws Exception {
         try {
-            SubmitAsyncSearchRequest validRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
+            SubmitAsyncSearchRequest validRequest = new SubmitAsyncSearchRequest(new SearchRequest());
             validRequest.keepAlive(TimeValue.timeValueDays(2));
             AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(validRequest);
             assertNotNull(asyncSearchResponse.getSearchResponse());
             updateClusterSettings(AsyncSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueDays(1));
-            SubmitAsyncSearchRequest invalidRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
+            SubmitAsyncSearchRequest invalidRequest = new SubmitAsyncSearchRequest(new SearchRequest());
             invalidRequest.keepAlive(TimeValue.timeValueDays(2));
             ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsyncSearch(invalidRequest));
             assertThat(responseException.getMessage(), containsString("Keep alive for async search (" +
@@ -39,12 +39,12 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
 
     public void testSubmitInvalidWaitForCompletion() throws Exception {
         try {
-            SubmitAsyncSearchRequest validRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
+            SubmitAsyncSearchRequest validRequest = new SubmitAsyncSearchRequest(new SearchRequest());
             validRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
             AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(validRequest);
             assertNotNull(asyncSearchResponse.getSearchResponse());
             updateClusterSettings(AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(), TimeValue.timeValueSeconds(2));
-            SubmitAsyncSearchRequest invalidRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
+            SubmitAsyncSearchRequest invalidRequest = new SubmitAsyncSearchRequest(new SearchRequest());
             invalidRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
             ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsyncSearch(invalidRequest));
             assertThat(responseException.getMessage(), containsString("Wait for completion timeout for async search (" +
@@ -64,7 +64,7 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
             for (int i = 0; i < numThreads; i++) {
                 threadsList.add(new Thread(() -> {
                     try {
-                        SubmitAsyncSearchRequest validRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
+                        SubmitAsyncSearchRequest validRequest = new SubmitAsyncSearchRequest(new SearchRequest());
                         validRequest.keepAlive(TimeValue.timeValueDays(1));
                         AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(validRequest);
                         assertNotNull(asyncSearchResponse.getSearchResponse());
@@ -92,7 +92,7 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
             for (int i = 0; i < numThreads; i++) {
                 threadsList.add(new Thread(() -> {
                     try {
-                        SubmitAsyncSearchRequest validRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest());
+                        SubmitAsyncSearchRequest validRequest = new SubmitAsyncSearchRequest(new SearchRequest());
                         validRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
                         AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(validRequest);
                     } catch (Exception e) {

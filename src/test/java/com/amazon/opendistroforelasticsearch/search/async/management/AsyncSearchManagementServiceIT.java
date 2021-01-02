@@ -94,7 +94,7 @@ public class AsyncSearchManagementServiceIT extends AsyncSearchIntegTestCase {
                 .request();
         //We need a NodeClient to make sure the listener gets injected in the search request execution.
         //Randomized client randomly return NodeClient/TransportClient
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
         testCase(internalCluster().smartClient(), submitAsyncSearchRequest, plugins);
@@ -108,7 +108,7 @@ public class AsyncSearchManagementServiceIT extends AsyncSearchIntegTestCase {
                 .addScriptField("test_field",
                         new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())
                 ).request();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
         testCase(internalCluster().smartClient(), submitAsyncSearchRequest, plugins);
@@ -138,7 +138,7 @@ public class AsyncSearchManagementServiceIT extends AsyncSearchIntegTestCase {
         final AtomicReference<AsyncSearchResponse> nonExpiredAsyncSearchResponseRef = new AtomicReference<>();
         final AtomicReference<Exception> exceptionRef = new AtomicReference<>();
         SearchRequest searchRequest = new SearchRequest(idx);
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
         CountDownLatch latch = new CountDownLatch(2);

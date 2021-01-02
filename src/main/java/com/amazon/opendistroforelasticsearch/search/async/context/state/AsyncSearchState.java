@@ -50,7 +50,7 @@ public enum AsyncSearchState {
     /**
      * The context has been persisted to system index
      */
-    PERSISTED,
+    PERSIST_SUCCEEDED,
 
     /**
      * The context has failed to persist to system index
@@ -60,5 +60,10 @@ public enum AsyncSearchState {
     /**
      * The context has been deleted
      */
-    DELETED;
+    CLOSED,
+
+    /**
+     * The context has been retrieved from asynchronous search response system index
+     */
+    STORE_RESIDENT
 }

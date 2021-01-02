@@ -108,7 +108,7 @@ public class AsyncSearchTaskCancellationIT extends AsyncSearchIntegTestCase {
                 .request();
         //We need a NodeClient to make sure the listener gets injected in the search request execution.
         //Randomized client randomly return NodeClient/TransportClient
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(false);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(10000));
         testCase(internalCluster().smartClient(), submitAsyncSearchRequest, plugins);
@@ -122,7 +122,7 @@ public class AsyncSearchTaskCancellationIT extends AsyncSearchIntegTestCase {
                 .addScriptField("test_field",
                         new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())
                 ).request();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(false);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(50000));
         testCase(internalCluster().smartClient(), submitAsyncSearchRequest, plugins);

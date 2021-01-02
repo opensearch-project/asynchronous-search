@@ -64,7 +64,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
         searchRequest.indices("index");
         searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
         SearchResponse searchResponse = client().search(searchRequest).actionGet();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(false);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
         int concurrentRuns = randomIntBetween(20, 50);
@@ -81,7 +81,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
         searchRequest.indices("index");
         searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
         SearchResponse searchResponse = client().search(searchRequest).actionGet();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest =SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest =new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
         int concurrentRuns = randomIntBetween(20, 50);
@@ -121,7 +121,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
                     searchRequest.source(new SearchSourceBuilder());
                     searchRequest.source().query(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME,
                             Collections.emptyMap())));
-                    SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+                    SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
                     submitAsyncSearchRequest.keepOnCompletion(false);
                     submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
                     executeSubmitAsyncSearch(client(), submitAsyncSearchRequest, new ActionListener<AsyncSearchResponse>() {

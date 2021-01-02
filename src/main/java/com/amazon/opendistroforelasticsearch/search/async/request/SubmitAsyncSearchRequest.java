@@ -40,7 +40,7 @@ public class SubmitAsyncSearchRequest extends ActionRequest {
     public static final TimeValue DEFAULT_KEEP_ALIVE = TimeValue.timeValueDays(5);
     public static final TimeValue DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT = TimeValue.timeValueSeconds(1);
     public static final Boolean DEFAULT_KEEP_ON_COMPLETION = Boolean.FALSE;
-    public static final Boolean CCS_MINIMIZE_ROUNDTRIPS = Boolean.FALSE;
+    public static final Boolean DEFAULT_CCS_MINIMIZE_ROUNDTRIPS = Boolean.FALSE;
     public static final Boolean DEFAULT_REQUEST_CACHE = Boolean.TRUE;
 
 
@@ -78,6 +78,7 @@ public class SubmitAsyncSearchRequest extends ActionRequest {
         if (searchRequest.getPreFilterShardSize() == null) {
             this.searchRequest.setPreFilterShardSize(DEFAULT_PRE_FILTER_SHARD_SIZE);
         }
+        this.searchRequest.setCcsMinimizeRoundtrips(DEFAULT_CCS_MINIMIZE_ROUNDTRIPS);
     }
 
     public SearchRequest getSearchRequest() {
@@ -190,11 +191,5 @@ public class SubmitAsyncSearchRequest extends ActionRequest {
             }
         };
         return submitAsyncSearchTask;
-    }
-
-    public static SubmitAsyncSearchRequest getRequestWithDefaults(SearchRequest searchRequest) {
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
-        searchRequest.setCcsMinimizeRoundtrips(CCS_MINIMIZE_ROUNDTRIPS);
-        return submitAsyncSearchRequest;
     }
 }

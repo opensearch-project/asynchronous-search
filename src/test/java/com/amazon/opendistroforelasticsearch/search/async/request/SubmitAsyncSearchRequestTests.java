@@ -14,7 +14,7 @@ public class SubmitAsyncSearchRequestTests extends ESTestCase {
         SearchSourceBuilder source = new SearchSourceBuilder();
         SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
-        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
         ValidationException validationException = request.validate();
         assertNull(validationException);
     }
@@ -23,7 +23,7 @@ public class SubmitAsyncSearchRequestTests extends ESTestCase {
         SearchSourceBuilder source = new SearchSourceBuilder().suggest(new SuggestBuilder());
         SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
-        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
         ValidationException validationException = request.validate();
         assertNotNull(validationException);
         assertEquals(1, validationException.validationErrors().size());
@@ -35,7 +35,7 @@ public class SubmitAsyncSearchRequestTests extends ESTestCase {
         SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
         searchRequest.scroll(randomTimeValue());
-        SubmitAsyncSearchRequest request = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(searchRequest);
         ValidationException validationException = request.validate();
         assertNotNull(validationException);
         assertEquals(1, validationException.validationErrors().size());
@@ -47,6 +47,7 @@ public class SubmitAsyncSearchRequestTests extends ESTestCase {
         SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
         SubmitAsyncSearchRequest request = new SubmitAsyncSearchRequest(
                 searchRequest);
+        searchRequest.setCcsMinimizeRoundtrips(true);
         ValidationException validationException = request.validate();
         assertNotNull(validationException);
         assertEquals(1, validationException.validationErrors().size());

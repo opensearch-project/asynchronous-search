@@ -211,8 +211,10 @@ public class AsyncSearchPersistenceService {
                                 "User doesn't have necessary roles to access the async search with id " + id, RestStatus.FORBIDDEN));
                         break;
                     case NOT_FOUND:
-                    case DELETED:
                         listener.onFailure(new ResourceNotFoundException(id));
+                        break;
+                    case DELETED:
+                        listener.onResponse(true);
                         break;
                 }
             }, onFailure));

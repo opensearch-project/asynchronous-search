@@ -50,6 +50,7 @@ public class InternalAsyncSearchStats implements AsyncSearchContextEventListener
         countStatsHolder.rejectedAsyncSearchCount.inc();
     }
 
+
     @Override
     public void onNewContext(AsyncSearchContextId contextId) {
         countStatsHolder.submittedAsyncSearchCount.inc();

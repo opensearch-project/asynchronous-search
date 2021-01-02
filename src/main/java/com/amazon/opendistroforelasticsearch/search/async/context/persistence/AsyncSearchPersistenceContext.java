@@ -124,7 +124,7 @@ public class AsyncSearchPersistenceContext extends AsyncSearchContext {
 
     @Override
     public AsyncSearchState getAsyncSearchState() {
-        return AsyncSearchState.PERSISTED;
+        return AsyncSearchState.STORE_RESIDENT;
     }
 
     @Override

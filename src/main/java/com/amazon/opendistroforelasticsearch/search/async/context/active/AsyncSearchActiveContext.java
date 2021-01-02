@@ -38,7 +38,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 
-import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.DELETED;
+import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.CLOSED;
 import static com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState.INIT;
 
 /**
@@ -139,6 +139,10 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
         return keepOnCompletion && isExpired() == false && isAlive();
     }
 
+    public boolean keepOnCompletion() {
+        return keepOnCompletion;
+    }
+
     public void setExpirationTimeMillis(long expirationTimeMillis) {
         assert isAlive();
         this.expirationTimeMillis = expirationTimeMillis;
@@ -185,7 +189,7 @@ public class AsyncSearchActiveContext extends AsyncSearchContext implements Clos
 
     public boolean isAlive() {
         if (closed.get()) {
-            assert getAsyncSearchState() == DELETED : "State must be closed for async search id " + getAsyncSearchId();
+            assert getAsyncSearchState() == CLOSED : "State must be closed for async search id " + getAsyncSearchId();
             return false;
         }
         return true;

@@ -35,7 +35,7 @@ public class MixedOperationSingleNodeIT extends AsyncSearchSingleNodeTestCase {
             SearchRequest searchRequest = new SearchRequest();
             searchRequest.indices("index");
             searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
             submitAsyncSearchRequest.keepOnCompletion(true);
             submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
             AsyncSearchResponse submitResponse = executeSubmitAsyncSearch(client(), submitAsyncSearchRequest).actionGet();

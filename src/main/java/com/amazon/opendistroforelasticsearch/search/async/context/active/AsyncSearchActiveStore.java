@@ -15,6 +15,8 @@
 package com.amazon.opendistroforelasticsearch.search.async.context.active;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
+import com.amazon.opendistroforelasticsearch.search.async.context.state.event.SearchDeletedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -24,9 +26,12 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ConcurrentMapLong;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.newConcurrentMapLongWithAggressiveConcurrency;
 
@@ -78,7 +83,14 @@ public class AsyncSearchActiveStore {
         return CollectionUtils.copyMap(activeContexts);
     }
 
+    /**
+     * Should strictly be executed from within the state machine for a {@link SearchDeletedEvent}
+     *
+     * @param asyncSearchContextId the context Id to be DELETED
+     * @return if the context could be DELETED
+     */
     public boolean freeContext(AsyncSearchContextId asyncSearchContextId) {
+        //TODO assert calledFromAsyncSearchStateMachine() : "Method should only ever be invoked by the state machine";
         AsyncSearchActiveContext asyncSearchContext = activeContexts.get(asyncSearchContextId.getId());
         if (asyncSearchContext != null) {
             logger.debug("Removing async search [{}] from active store", asyncSearchContext.getAsyncSearchId());
@@ -87,5 +99,23 @@ public class AsyncSearchActiveStore {
             return true;
         }
         return false;
+    }
+
+    private static boolean calledFromAsyncSearchStateMachine() {
+        List<StackTraceElement> frames = Stream.of(Thread.currentThread().getStackTrace()).
+                skip(1). //skip getStackTrace
+                limit(10). //limit depth of analysis to 10 frames, it should be enough
+                filter(f ->
+                {
+                    try {
+                        return AsyncSearchStateMachine.class.isAssignableFrom(Class.forName(f.getClassName()));
+                    } catch (Exception ignored) {
+                        return false;
+                    }
+                }
+        ).
+                collect(Collectors.toList());
+        //the list should contain trigger method of the state machine
+        return frames.stream().anyMatch(f -> f.getMethodName().equals("trigger"));
     }
 }

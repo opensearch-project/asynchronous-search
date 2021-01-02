@@ -90,7 +90,7 @@ public class AsyncSearchRejectionIT extends AsyncSearchIntegTestCase {
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(QueryBuilders.matchQuery("field", "1"))
                     .request();
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(request);
+            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(request);
             submitAsyncSearchRequest.keepOnCompletion(true);
                     client().execute(SubmitAsyncSearchAction.INSTANCE, submitAsyncSearchRequest,
                             new LatchedActionListener<>(new ActionListener<AsyncSearchResponse>() {

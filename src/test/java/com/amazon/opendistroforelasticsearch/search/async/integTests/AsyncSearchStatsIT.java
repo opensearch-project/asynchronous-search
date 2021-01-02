@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
@@ -56,7 +55,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                         .setSource("field1", "the quick brown fox jumps"),
                 client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
                 client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest(index));
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(index));
         submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
         submitAsyncSearchRequest.keepOnCompletion(true);
         List<DiscoveryNode> dataNodes = new LinkedList<>();
@@ -127,13 +126,13 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                         SubmitAsyncSearchRequest submitAsyncSearchRequest;
                         if (success) {
                             expectedNumSuccesses.getAndIncrement();
-                            submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest(index));
+                            submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(index));
                             submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
                             submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
 
                         } else {
                             expectedNumFailures.getAndIncrement();
-                            submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(new SearchRequest(
+                            submitAsyncSearchRequest = new SubmitAsyncSearchRequest(new SearchRequest(
                                     "non_existent_index"));
                             submitAsyncSearchRequest.keepOnCompletion(keepOnCompletion);
                         }
@@ -192,7 +191,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
                 scriptQuery(new Script(
                         ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
                 .request();
-        SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+        SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
         submitAsyncSearchRequest.keepOnCompletion(true);
         AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(client(), submitAsyncSearchRequest);
         AsyncSearchStatsResponse statsResponse = client().execute(AsyncSearchStatsAction.INSTANCE, new AsyncSearchStatsRequest()).get();
@@ -232,7 +231,6 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         });
         assertFalse(dataNodes.isEmpty());
         DiscoveryNode randomDataNode = dataNodes.get(randomInt(dataNodes.size() - 1));
-        AtomicBoolean throttlingOccured = new AtomicBoolean();
         int numThreads = 21;
         List<Thread> threads = new ArrayList<>();
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
@@ -243,7 +241,7 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         for (int i = 0; i < numThreads; i++) {
             Thread t = new Thread(() -> {
                 try {
-                    SubmitAsyncSearchRequest submitAsyncSearchRequest = SubmitAsyncSearchRequest.getRequestWithDefaults(searchRequest);
+                    SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
                     executeSubmitAsyncSearch(client(randomDataNode.getName()), submitAsyncSearchRequest);
                 } catch (ExecutionException e) {
                     assertThat(e.getMessage(), containsString("Trying to create too many running contexts"));
@@ -257,19 +255,15 @@ public class AsyncSearchStatsIT extends AsyncSearchIntegTestCase {
         for (Thread thread : threads) {
             thread.join();
         }
-        waitUntil(() -> verifyThrottlingFromStats(throttlingOccured));
+        assertTrue(verifyThrottlingFromStats());
         disableBlocks(plugins);
     }
 
-    private boolean verifyThrottlingFromStats(AtomicBoolean throttlingOccurred) {
-        if (throttlingOccurred.get()) {
-            return true;
-        }
+    private boolean verifyThrottlingFromStats() {
         try {
             AsyncSearchStatsResponse statsResponse = client().execute(AsyncSearchStatsAction.INSTANCE, new AsyncSearchStatsRequest()).get();
             for (AsyncSearchStats nodeStats : statsResponse.getNodes()) {
-                if (nodeStats.getAsyncSearchCountStats().getThrottledCount() > 0L) {
-                    throttlingOccurred.compareAndSet(false, true);
+                if (nodeStats.getAsyncSearchCountStats().getThrottledCount() == 1L) {
                     return true;
                 }
             }
