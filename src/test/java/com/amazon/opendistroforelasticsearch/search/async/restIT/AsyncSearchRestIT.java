@@ -1,7 +1,21 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.search.async.restIT;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
-import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.SubmitAsyncSearchRequest;
@@ -9,7 +23,6 @@ import com.amazon.opendistroforelasticsearch.search.async.response.AsyncSearchRe
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
@@ -85,47 +98,6 @@ public class AsyncSearchRestIT extends AsyncSearchRestTestCase {
         }
     }
 
-    /**
-     * Before {@linkplain AsyncSearchProgressListener} onListShards() is invoked we won't have a partial search response.
-     */
-    public void testSubmitWaitForCompletionTimeoutTriggeredBeforeOnListShardsEvent() throws IOException {
-        try {
-            SearchRequest searchRequest = new SearchRequest("test");
-            searchRequest.source(new SearchSourceBuilder());
-            SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
-            submitAsyncSearchRequest.keepOnCompletion(false);
-            submitAsyncSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(0));
-            AsyncSearchResponse submitResponse = executeSubmitAsyncSearch(submitAsyncSearchRequest);
-
-            assertEquals(AsyncSearchState.RUNNING, submitResponse.getState());
-            assertNotNull(submitResponse.getId());
-            assertNull(submitResponse.getError());
-            if (submitResponse.getSearchResponse() == null) {
-                assertEquals(submitResponse.status(), RestStatus.OK);
-            }
-            List<AsyncSearchState> legalStates = Arrays.asList(
-                    AsyncSearchState.RUNNING, AsyncSearchState.SUCCEEDED, AsyncSearchState.CLOSED);
-            assertTrue(legalStates.contains(submitResponse.getState()));
-            GetAsyncSearchRequest getAsyncSearchRequest = new GetAsyncSearchRequest(submitResponse.getId());
-            AsyncSearchResponse getResponse;
-            do {
-                getResponse = null;
-                try {
-                    getResponse = getAssertedAsyncSearchResponse(submitResponse, getAsyncSearchRequest);
-                    if (AsyncSearchState.SUCCEEDED.equals(getResponse.getState())
-                            || AsyncSearchState.CLOSED.equals(getResponse.getState())) {
-                        assertNotNull(getResponse.getSearchResponse());
-                        assertHitCount(getResponse.getSearchResponse(), 5L);
-                    }
-                } catch (Exception e) {
-                    assertRnf(e);
-                }
-            } while (getResponse != null && legalStates.contains(getResponse.getState()));
-        } finally {
-            deleteIndexIfExists();
-        }
-    }
-
     public void testSubmitSearchCompletesBeforeWaitForCompletionTimeout() throws IOException {
         try {
             SearchRequest searchRequest = new SearchRequest("test");
@@ -169,7 +141,7 @@ public class AsyncSearchRestIT extends AsyncSearchRestTestCase {
     public void testGetWithKeepAliveUpdate() throws IOException {
         try {
             SearchRequest searchRequest = new SearchRequest("test");
-            TimeValue keepAlive = TimeValue.timeValueDays(5);
+            TimeValue keepAlive = TimeValue.timeValueHours(5);
             searchRequest.source(new SearchSourceBuilder());
             SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
             submitAsyncSearchRequest.keepOnCompletion(true);

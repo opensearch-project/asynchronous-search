@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.search.async.rest;
 
 import com.amazon.opendistroforelasticsearch.search.async.action.DeleteAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
-import com.amazon.opendistroforelasticsearch.search.async.request.AsyncSearchRoutingRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -44,10 +43,6 @@ public class RestDeleteAsyncSearchAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         DeleteAsyncSearchRequest deleteRequest = new DeleteAsyncSearchRequest(request.param("id"));
-        if (request.hasParam("connection_timeout")) {
-            deleteRequest.connectionTimeout(request.paramAsTime("connection_timeout",
-                    AsyncSearchRoutingRequest.DEFAULT_CONNECTION_TIMEOUT));
-        }
         return channel -> {
             client.execute(DeleteAsyncSearchAction.INSTANCE, deleteRequest, new RestStatusToXContentListener<>(channel));
         };

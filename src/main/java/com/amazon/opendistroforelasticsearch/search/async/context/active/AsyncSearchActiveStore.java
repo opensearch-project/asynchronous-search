@@ -39,30 +39,31 @@ import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.new
 public class AsyncSearchActiveStore {
 
     private static Logger logger = LogManager.getLogger(AsyncSearchActiveStore.class);
-    private volatile int maxRunningContext;
-    public static final int DEFAULT_MAX_RUNNING_CONTEXTS = 50;
-    public static final Setting<Integer> MAX_RUNNING_CONTEXT = Setting.intSetting(
-            "opendistro_asynchronous_search.max_running_searches", DEFAULT_MAX_RUNNING_CONTEXTS, 0, Setting.Property.Dynamic,
+    private volatile int maxRunningSearches;
+    public static final int DEFAULT_MAX_RUNNING_SEARCHES = 20;
+    public static final Setting<Integer> MAX_RUNNING_SEARCHES_SETTING = Setting.intSetting(
+            "opendistro_asynchronous_search.max_running_searches", DEFAULT_MAX_RUNNING_SEARCHES, 0, Setting.Property.Dynamic,
             Setting.Property.NodeScope);
 
     private final ConcurrentMapLong<AsyncSearchActiveContext> activeContexts = newConcurrentMapLongWithAggressiveConcurrency();
 
     public AsyncSearchActiveStore(ClusterService clusterService) {
         Settings settings = clusterService.getSettings();
-        maxRunningContext = MAX_RUNNING_CONTEXT.get(settings);
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_RUNNING_CONTEXT, this::setMaxRunningContext);
+        maxRunningSearches = MAX_RUNNING_SEARCHES_SETTING.get(settings);
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_RUNNING_SEARCHES_SETTING, this::setMaxRunningSearches);
     }
 
-    private void setMaxRunningContext(int maxRunningContext) {
-        this.maxRunningContext = maxRunningContext;
+    private void setMaxRunningSearches(int maxRunningSearches) {
+        this.maxRunningSearches = maxRunningSearches;
     }
 
     public synchronized void putContext(AsyncSearchContextId asyncSearchContextId, AsyncSearchActiveContext asyncSearchContext,
                                         Consumer<AsyncSearchContextId> contextRejectionEventConsumer) {
-        if (activeContexts.size() >= maxRunningContext) {
+        if (activeContexts.size() >= maxRunningSearches) {
             contextRejectionEventConsumer.accept(asyncSearchContextId);
             throw new EsRejectedExecutionException("Trying to create too many running contexts. Must be less than or equal to: ["
-                    + maxRunningContext + "]. This limit can be set by changing the [" + MAX_RUNNING_CONTEXT.getKey() + "] setting.");
+                    + maxRunningSearches + "]. This limit can be set by changing the [" + MAX_RUNNING_SEARCHES_SETTING.getKey()
+                    + "] setting.");
         }
         activeContexts.put(asyncSearchContextId.getId(), asyncSearchContext);
     }

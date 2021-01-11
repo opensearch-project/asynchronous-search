@@ -329,42 +329,29 @@ public class AsyncSearchContextPermitsTests extends ESTestCase {
         operationExecutingLatch.await();
 
         final CountDownLatch onFailureLatch = new CountDownLatch(2);
-        permits.asyncAcquireAllPermits(ActionListener.wrap(releasable -> {
-                    try {
-                        releasable.close();
-                        fail("Permit acquisition attempt should have timed out");
-                    } finally {
-                        onFailureLatch.countDown();
-                    }
+        permits.asyncAcquireAllPermits(new LatchedActionListener<>(ActionListener.wrap(releasable -> {
+                    releasable.close();
+                    fail("Permit acquisition attempt should have timed out");
                 }, e -> {
-                    try {
-                        assertTrue(e instanceof TimeoutException);
-                        assertThat(e, hasToString(containsString("timed out")));
-                    } finally {
-                        onFailureLatch.countDown();
-                    }
-                }),
+                    assertTrue(e instanceof TimeoutException);
+                    assertThat(e, hasToString(containsString("timed out")));
+                }), onFailureLatch),
                 TimeValue.timeValueMillis(1), "");
 
         {
             final AtomicReference<Exception> reference = new AtomicReference<>();
-            permits.asyncAcquireAllPermits(new ActionListener<Releasable>() {
+            permits.asyncAcquireAllPermits(new LatchedActionListener<>(new ActionListener<Releasable>() {
                 @Override
                 public void onResponse(Releasable releasable) {
-                    try {
-                        releasable.close();
-                        fail("Permit acquisition attempt should have timed out.");
-                    } finally {
-                        onFailureLatch.countDown();
-                    }
+                    releasable.close();
+                    fail("Permit acquisition attempt should have timed out.");
                 }
 
                 @Override
                 public void onFailure(final Exception e) {
                     assertThat(e, hasToString(containsString("timed out")));
-                    onFailureLatch.countDown();
                 }
-            }, TimeValue.timeValueMillis(1), "");
+            }, onFailureLatch), TimeValue.timeValueMillis(1), "");
 
             onFailureLatch.await();
         }

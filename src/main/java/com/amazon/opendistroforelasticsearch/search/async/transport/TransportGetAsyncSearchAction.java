@@ -52,8 +52,8 @@ public class TransportGetAsyncSearchAction extends TransportAsyncSearchRoutingAc
     @Inject
     public TransportGetAsyncSearchAction(ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
                                          ActionFilters actionFilters, AsyncSearchService asyncSearchService, Client client) {
-        super(transportService, clusterService, threadPool, client, GetAsyncSearchAction.NAME, actionFilters, GetAsyncSearchRequest::new,
-                AsyncSearchResponse::new);
+        super(transportService, clusterService, threadPool, client, GetAsyncSearchAction.NAME, actionFilters, asyncSearchService,
+                GetAsyncSearchRequest::new, AsyncSearchResponse::new);
         this.threadPool = threadPool;
         this.asyncSearchService = asyncSearchService;
     }

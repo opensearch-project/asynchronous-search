@@ -1,3 +1,18 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.search.async.processor;
 
 import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchAssertions;
@@ -73,11 +88,11 @@ public class AsyncSearchPostProcessorTests extends ESTestCase {
         Settings settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
-                .put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), 10)
+                .put(AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 10)
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
-                        AsyncSearchActiveStore.MAX_RUNNING_CONTEXT,
+                        AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
                         AsyncSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsyncSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());

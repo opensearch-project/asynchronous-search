@@ -56,7 +56,7 @@ public class SubmitAsyncSearchSingleNodeIT extends AsyncSearchSingleNodeTestCase
 
     @Override
     protected Settings nodeSettings() {
-        return Settings.builder().put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), asyncSearchConcurrentLimit).build();
+        return Settings.builder().put(AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), asyncSearchConcurrentLimit).build();
     }
 
     public void testSubmitAsyncSearchWithoutRetainedResponse() throws InterruptedException {

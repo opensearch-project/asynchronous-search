@@ -19,7 +19,6 @@ import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchTes
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
-import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchContextEvent;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchStateMachine;
@@ -32,6 +31,7 @@ import com.amazon.opendistroforelasticsearch.search.async.context.state.event.Se
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchContextEventListener;
 import com.amazon.opendistroforelasticsearch.search.async.listener.AsyncSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
 import com.amazon.opendistroforelasticsearch.search.async.task.AsyncSearchTask;
 import org.apache.lucene.search.TotalHits;
@@ -73,6 +73,7 @@ import org.junit.Before;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
@@ -101,11 +102,11 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
         Settings settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
-                .put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), 10)
+                .put(AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 10)
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
-                        AsyncSearchActiveStore.MAX_RUNNING_CONTEXT,
+                        AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
                         AsyncSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsyncSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsyncSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
@@ -148,23 +149,23 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
                             "transport", SearchAction.NAME, TaskId.EMPTY_TASK_ID, emptyMap(), context, null,
                             (a) -> {
                             })),
-                    RUNNING, IllegalStateException.class);
+                    RUNNING, IllegalStateException.class, Optional.empty());
             assertNotNull(context.getTask());
             if (randomBoolean()) { //delete running context
                 doConcurrentStateMachineTrigger(stateMachine, new SearchDeletedEvent(context), CLOSED,
-                        AsyncSearchStateMachineClosedException.class);
+                        AsyncSearchStateMachineClosedException.class, Optional.empty());
             } else {
                 if (randomBoolean()) {//success or failure
                     doConcurrentStateMachineTrigger(stateMachine, new SearchSuccessfulEvent(context, getMockSearchResponse()), SUCCEEDED,
-                            IllegalStateException.class);
+                            IllegalStateException.class, Optional.empty());
                     numCompleted.getAndIncrement();
                 } else {
                     doConcurrentStateMachineTrigger(stateMachine, new SearchFailureEvent(context, new RuntimeException("test")), FAILED,
-                            IllegalStateException.class);
+                            IllegalStateException.class, Optional.empty());
                     numFailure.getAndIncrement();
                 }
                 doConcurrentStateMachineTrigger(stateMachine, new BeginPersistEvent(context), PERSISTING,
-                        IllegalStateException.class);
+                        IllegalStateException.class, Optional.of(AsyncSearchStateMachineClosedException.class));
                 waitUntil(() -> context.getAsyncSearchState().equals(CLOSED), 1, TimeUnit.MINUTES);
                 assertTrue(context.getAsyncSearchState().toString() + " numFailure : " + numFailure.get() + " numSuccess : "
                                 + numCompleted.get(),
@@ -193,9 +194,9 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
     }
 
 
-    private <T extends Throwable> void doConcurrentStateMachineTrigger(
+    private <T extends Exception, R extends Exception> void doConcurrentStateMachineTrigger(
             AsyncSearchStateMachine asyncSearchStateMachine, AsyncSearchContextEvent event, AsyncSearchState finalState,
-            Class<T> throwable) throws InterruptedException, BrokenBarrierException {
+            Class<T> throwable, Optional<Class<R>> terminalStateException) throws InterruptedException, BrokenBarrierException {
         int numThreads = 10;
         List<Thread> operationThreads = new ArrayList<>();
         AtomicInteger numTriggerSuccess = new AtomicInteger();
@@ -207,7 +208,11 @@ public class AsyncSearchStateMachineTests extends AsyncSearchTestCase {
                     assertEquals(state, finalState);
                     numTriggerSuccess.getAndIncrement();
                 } catch (Exception e) {
-                    assertTrue(throwable.isInstance(e));
+                    if (terminalStateException.isPresent()) {
+                        assertTrue(terminalStateException.get().isInstance(e) || throwable.isInstance(e));
+                    } else {
+                        assertTrue(throwable.isInstance(e));
+                    }
                 } finally {
                     try {
                         barrier.await();

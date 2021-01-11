@@ -33,10 +33,10 @@ public class AsyncSearchIdConverter {
     public static String buildAsyncId(AsyncSearchId asyncSearchId) {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.writeString(asyncSearchId.getNode());
-            out.writeLong(asyncSearchId.getTaskId());
+            out.writeString(String.valueOf(asyncSearchId.getTaskId()));
             out.writeString(asyncSearchId.getAsyncSearchContextId().getContextId());
-            out.writeLong(asyncSearchId.getAsyncSearchContextId().getId());
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(BytesReference.toBytes(out.bytes()));
+            out.writeString(String.valueOf(asyncSearchId.getAsyncSearchContextId().getId()));
+            return Base64.getUrlEncoder().encodeToString(BytesReference.toBytes(out.bytes()));
         } catch (IOException e) {
             throw new IllegalArgumentException("Cannot build async search id", e);
         }
@@ -54,9 +54,9 @@ public class AsyncSearchIdConverter {
             byte[] bytes = Base64.getUrlDecoder().decode(asyncSearchId);
             ByteArrayDataInput in = new ByteArrayDataInput(bytes);
             String node = in.readString();
-            long taskId = in.readLong();
+            long taskId = Long.parseLong(in.readString());
             String contextId = in.readString();
-            long id = in.readLong();
+            long id = Long.parseLong(in.readString());
             if (in.getPosition() != bytes.length) {
                 throw new IllegalArgumentException("Not all bytes were read");
             }

@@ -12,6 +12,7 @@
  *   express or implied. See the License for the specific language governing
  *   permissions and limitations under the License.
  */
+
 package com.amazon.opendistroforelasticsearch.search.async.listener;
 
 import com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSearchTestCase;

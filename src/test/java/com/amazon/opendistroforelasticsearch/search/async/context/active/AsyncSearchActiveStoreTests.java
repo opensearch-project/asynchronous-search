@@ -1,3 +1,18 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.search.async.context.active;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
@@ -42,18 +57,18 @@ import static com.amazon.opendistroforelasticsearch.search.async.commons.AsyncSe
 public class AsyncSearchActiveStoreTests extends ESTestCase {
     private ClusterSettings clusterSettings;
     private ExecutorBuilder<?> executorBuilder;
-    private int maxRunningContexts = 50;
+    private int maxRunningContexts = 20;
 
     @Before
     public void createObjects() {
         Settings settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
-                .put(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), maxRunningContexts) //TODO setting not working fix this
+                .put(AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), maxRunningContexts) //TODO setting not working fix this
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
-                        AsyncSearchActiveStore.MAX_RUNNING_CONTEXT)).collect(Collectors.toSet());
+                        AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
         executorBuilders.add(new ScalingExecutorBuilder(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,

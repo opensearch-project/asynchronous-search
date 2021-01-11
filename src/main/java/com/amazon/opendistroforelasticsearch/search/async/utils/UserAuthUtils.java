@@ -1,4 +1,4 @@
-package com.amazon.opendistroforelasticsearch.search.async;
+package com.amazon.opendistroforelasticsearch.search.async.utils;
 
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import org.elasticsearch.common.Nullable;

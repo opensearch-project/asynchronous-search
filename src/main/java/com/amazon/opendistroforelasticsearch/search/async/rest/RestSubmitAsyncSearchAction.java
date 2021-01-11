@@ -21,6 +21,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.rest.action.RestStatusToXContentListener;
 import org.elasticsearch.rest.action.search.RestSearchAction;
 
@@ -83,8 +84,9 @@ public class RestSubmitAsyncSearchAction extends BaseRestHandler {
                 SubmitAsyncSearchRequest.DEFAULT_BATCHED_REDUCE_SIZE));
 
         return channel -> {
-            //RestCancellableNodeClient cancelClient = new RestCancellableNodeClient(client, request.getHttpChannel());
-            client.execute(SubmitAsyncSearchAction.INSTANCE, submitAsyncSearchRequest, new RestStatusToXContentListener<>(channel));
+            RestCancellableNodeClient cancellableClient = new RestCancellableNodeClient(client, request.getHttpChannel());
+            cancellableClient.execute(SubmitAsyncSearchAction.INSTANCE, submitAsyncSearchRequest,
+                    new RestStatusToXContentListener<>(channel));
         };
     }
 

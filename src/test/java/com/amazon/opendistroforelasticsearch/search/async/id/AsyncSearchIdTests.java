@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.search.async.id;
 import com.amazon.opendistroforelasticsearch.search.async.context.AsyncSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
+import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.UUID;
@@ -25,28 +26,23 @@ import java.util.UUID;
 public class AsyncSearchIdTests extends ESTestCase {
 
     public void testAsyncSearchIdParsing() {
-        String node = UUID.randomUUID().toString();
+        String node = "node" + randomIntBetween(1, 50);
         long taskId = randomNonNegativeLong();
         AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(
-                UUID.randomUUID().toString(), randomNonNegativeLong());
+                UUIDs.base64UUID(), randomNonNegativeLong());
 
         AsyncSearchId original = new AsyncSearchId(node, taskId, asyncSearchContextId);
-
         //generate identifier to access the submitted async search
         String id = AsyncSearchIdConverter.buildAsyncId(original);
-
         //parse the AsyncSearchId object which will contain information regarding node running the search, the associated task and
-        // context id.
+        //context id.
         AsyncSearchId parsed = AsyncSearchIdConverter.parseAsyncId(id);
-
         assertEquals(original, parsed);
     }
 
 
     public void testAsyncSearchIdParsingFailure() {
         String id = UUID.randomUUID().toString();
-        //a possible precursor of ResourceNotFoundException(id), when a GET "/_opendistro/_asynchronous_search/{id}" is made
-        // with an illegal id
         expectThrows(IllegalArgumentException.class, () -> AsyncSearchIdConverter.parseAsyncId(id));
     }
 }

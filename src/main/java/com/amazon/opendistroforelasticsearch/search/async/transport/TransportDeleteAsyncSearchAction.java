@@ -21,6 +21,8 @@ import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.request.DeleteAsyncSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.async.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
@@ -35,12 +37,14 @@ import org.elasticsearch.transport.TransportService;
  */
 public class TransportDeleteAsyncSearchAction extends TransportAsyncSearchRoutingAction<DeleteAsyncSearchRequest, AcknowledgedResponse> {
 
+    private static final Logger logger = LogManager.getLogger(TransportAsyncSearchRoutingAction.class);
+
     private final AsyncSearchService asyncSearchService;
 
     @Inject
     public TransportDeleteAsyncSearchAction(ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
                                             ActionFilters actionFilters, AsyncSearchService asyncSearchService, Client client) {
-        super(transportService, clusterService, threadPool, client, DeleteAsyncSearchAction.NAME, actionFilters,
+        super(transportService, clusterService, threadPool, client, DeleteAsyncSearchAction.NAME, actionFilters, asyncSearchService,
                 DeleteAsyncSearchRequest::new, AcknowledgedResponse::new);
         this.asyncSearchService = asyncSearchService;
     }

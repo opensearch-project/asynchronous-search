@@ -32,10 +32,8 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper;
@@ -61,8 +59,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static com.amazon.opendistroforelasticsearch.search.async.UserAuthUtils.isUserValid;
-import static com.amazon.opendistroforelasticsearch.search.async.UserAuthUtils.parseUser;
+import static com.amazon.opendistroforelasticsearch.search.async.utils.UserAuthUtils.isUserValid;
+import static com.amazon.opendistroforelasticsearch.search.async.utils.UserAuthUtils.parseUser;
+import static org.elasticsearch.action.support.TransportActions.isShardNotAvailableException;
 import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
 
 /**
@@ -86,6 +85,7 @@ public class AsyncSearchPersistenceService {
      */
     public static final BackoffPolicy STORE_BACKOFF_POLICY =
             BackoffPolicy.exponentialBackoff(timeValueMillis(250), 14);
+    public static final String BACKEND_ROLES = "backend_roles";
 
     private final Client client;
     private final ClusterService clusterService;
@@ -243,13 +243,13 @@ public class AsyncSearchPersistenceService {
             source.put(EXPIRATION_TIME_MILLIS, expirationTimeMillis);
             updateRequest.doc(source, XContentType.JSON);
         } else {
-            //TODO- Remove hardcoded strings
+            //TODO - Remove hardcoded strings
             String scriptCode = "if (ctx._source.user == null || ctx._source.user.backend_roles == null || " +
                     "(params.backend_roles != null && params.backend_roles.containsAll(ctx._source.user.backend_roles))) " +
                     "{ ctx._source.expiration_time_millis = params.expiration_time_millis } else { ctx.op = 'none' }";
             Map<String, Object> params = new HashMap<>();
-            params.put("backend_roles", user.getBackendRoles());
-            params.put("expiration_time_millis", expirationTimeMillis);
+            params.put(BACKEND_ROLES, user.getBackendRoles());
+            params.put(EXPIRATION_TIME_MILLIS, expirationTimeMillis);
             Script conditionalUpdateScript = new Script(ScriptType.INLINE, "painless", scriptCode, params);
             updateRequest.script(conditionalUpdateScript);
         }
@@ -308,34 +308,34 @@ public class AsyncSearchPersistenceService {
         } else {
             DeleteByQueryRequest request = new DeleteByQueryRequest(ASYNC_SEARCH_RESPONSE_INDEX)
                     .setQuery(QueryBuilders.rangeQuery(EXPIRATION_TIME_MILLIS).lte(expirationTimeInMillis));
-            client.execute(DeleteByQueryAction.INSTANCE, request,
-                    ActionListener.wrap(
-                            deleteResponse -> {
-                                if ((deleteResponse.getBulkFailures() != null && deleteResponse.getBulkFailures().size() > 0) ||
-                                        (deleteResponse.getSearchFailures() != null && deleteResponse.getSearchFailures().size() > 0)) {
-                                    logger.error("Failed to delete expired async search responses with bulk failures[{}] / search " +
-                                            "failures [{}]", deleteResponse.getBulkFailures(), deleteResponse.getSearchFailures());
-                                    listener.onResponse(new AcknowledgedResponse(false));
+            client.execute(DeleteByQueryAction.INSTANCE, request, ActionListener.wrap(
+                deleteResponse -> {
+                    if ((deleteResponse.getBulkFailures() != null && deleteResponse.getBulkFailures().size() > 0) ||
+                            (deleteResponse.getSearchFailures() != null && deleteResponse.getSearchFailures().size() > 0)) {
+                        logger.error("Failed to delete expired async search responses with bulk failures[{}] / search " +
+                                "failures [{}]", deleteResponse.getBulkFailures(), deleteResponse.getSearchFailures());
+                        listener.onResponse(new AcknowledgedResponse(false));
 
-                                } else {
-                                    logger.debug("Successfully deleted expired responses");
-                                    listener.onResponse(new AcknowledgedResponse(true));
-                                }
-                            },
-                            (e) -> {
-                                logger.error(() -> new ParameterizedMessage("Failed to delete expired response for expiration time {}",
-                                        expirationTimeInMillis), e);
-                                final Throwable cause = ExceptionsHelper.unwrapCause(e);
-                                listener.onFailure(cause instanceof Exception ? (Exception) cause :
-                                        new NotSerializableExceptionWrapper(cause));
-                            }));
+                    } else {
+                        logger.debug("Successfully deleted expired responses");
+                        listener.onResponse(new AcknowledgedResponse(true));
+                    }
+                },
+                (e) -> {
+                    logger.error(() -> new ParameterizedMessage("Failed to delete expired response for expiration time {}",
+                            expirationTimeInMillis), e);
+                    final Throwable cause = ExceptionsHelper.unwrapCause(e);
+                    listener.onFailure(cause instanceof Exception ? (Exception) cause :
+                            new NotSerializableExceptionWrapper(cause));
+                })
+            );
         }
     }
 
     private void createIndexAndDoStoreResult(String id, AsyncSearchPersistenceModel persistenceModel,
                                              ActionListener<IndexResponse> listener) {
-        client.admin().indices().prepareCreate(ASYNC_SEARCH_RESPONSE_INDEX).addMapping(MAPPING_TYPE, mapping()).
-                setSettings(indexSettings()).execute(ActionListener.wrap(createIndexResponse -> doStoreResult(id, persistenceModel,
+        client.admin().indices().prepareCreate(ASYNC_SEARCH_RESPONSE_INDEX).addMapping(MAPPING_TYPE, mapping())
+                .setSettings(indexSettings()).execute(ActionListener.wrap(createIndexResponse -> doStoreResult(id, persistenceModel,
                 listener), exception -> {
             if (ExceptionsHelper.unwrapCause(exception) instanceof ResourceAlreadyExistsException) {
                 try {
@@ -373,8 +373,7 @@ public class AsyncSearchPersistenceService {
             @Override
             public void onFailure(Exception e) {
                 final Throwable cause = ExceptionsHelper.unwrapCause(e);
-                if (((cause instanceof EsRejectedExecutionException || cause instanceof ClusterBlockException
-                        || TransportActions.isShardNotAvailableException(e))) && backoff.hasNext()) {
+                if (((cause instanceof EsRejectedExecutionException || isShardNotAvailableException(e))) && backoff.hasNext()) {
                     TimeValue wait = backoff.next();
                     logger.warn(() -> new ParameterizedMessage("failed to store async search response [{}], retrying in [{}]",
                             indexRequestBuilder.request().id(), wait), e);
@@ -393,6 +392,7 @@ public class AsyncSearchPersistenceService {
                 .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 5)
                 .put(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.getKey(), "0-1")
                 .put(IndexMetadata.SETTING_PRIORITY, Integer.MAX_VALUE)
+                .put(IndexMetadata.SETTING_INDEX_HIDDEN, true)
                 .build();
     }
 

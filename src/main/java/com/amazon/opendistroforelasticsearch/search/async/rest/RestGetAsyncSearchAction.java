@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.search.async.rest;
 
 import com.amazon.opendistroforelasticsearch.search.async.action.GetAsyncSearchAction;
 import com.amazon.opendistroforelasticsearch.search.async.plugin.AsyncSearchPlugin;
-import com.amazon.opendistroforelasticsearch.search.async.request.AsyncSearchRoutingRequest;
 import com.amazon.opendistroforelasticsearch.search.async.request.GetAsyncSearchRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -50,9 +49,6 @@ public class RestGetAsyncSearchAction extends BaseRestHandler {
         }
         if (request.hasParam("keep_alive")) {
             getRequest.setKeepAlive(request.paramAsTime("keep_alive", null));
-        }
-        if (request.hasParam("connection_timeout")) {
-            getRequest.connectionTimeout(request.paramAsTime("connection_timeout", AsyncSearchRoutingRequest.DEFAULT_CONNECTION_TIMEOUT));
         }
         return channel -> {
             client.execute(GetAsyncSearchAction.INSTANCE, getRequest, new RestStatusToXContentListener<>(channel));

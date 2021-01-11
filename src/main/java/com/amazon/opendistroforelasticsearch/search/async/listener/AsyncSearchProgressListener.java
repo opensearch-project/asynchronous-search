@@ -222,7 +222,7 @@ public class AsyncSearchProgressListener extends SearchProgressActionListener {
             this.clusters = new SetOnce<>();
             this.delayedInternalAggregations = new AtomicReference<>();
             this.relativeStartMillis = relativeStartMillis;
-            this.successfulShardIds = new HashSet<>();
+            this.successfulShardIds = new HashSet<>(1);
             this.relativeTimeSupplier = relativeTimeSupplier;
             this.reduceContextBuilder = reduceContextBuilder;
         }

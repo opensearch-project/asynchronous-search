@@ -73,18 +73,19 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
     private final ClusterService clusterService;
     private final AsyncSearchPersistenceService asyncSearchPersistenceService;
     private final ThreadPool threadPool;
-    private volatile Scheduler.Cancellable taskReaperScheduledFuture;
+    private volatile Scheduler.Cancellable activeContextReaperScheduledFuture;
     private static final String RESPONSE_CLEANUP_SCHEDULING_EXECUTOR = ThreadPool.Names.MANAGEMENT;
-    private AtomicReference<ResponseCleanUpAndRescheduleRunnable> activeResponseCleanUpRunnable = new AtomicReference<>();
+    private AtomicReference<PersistedResponseCleanUpAndRescheduleRunnable> persistedResponseCleanUpRunnable = new AtomicReference<>();
     private AsyncSearchService asyncSearchService;
     private TransportService transportService;
-    private TimeValue taskCancellationInterval;
-    private TimeValue responseCleanUpInterval;
+    private TimeValue activeContextReaperInterval;
+    private TimeValue persistedResponseCleanUpInterval;
 
-    public static final String CLEANUP_ACTION_NAME = "indices:data/read/opendistro/asynchronous_search/response_cleanup";
+    public static final String PERSISTED_RESPONSE_CLEANUP_ACTION_NAME =
+            "indices:data/read/opendistro/asynchronous_search/response_cleanup";
 
     public static final Setting<TimeValue> ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING =
-            Setting.timeSetting("opendistro_asynchronous_search.expired.task.reaper_interval", TimeValue.timeValueMinutes(5),
+            Setting.timeSetting("opendistro_asynchronous_search.active.context.reaper_interval", TimeValue.timeValueMinutes(5),
                     TimeValue.timeValueSeconds(5),
                     Setting.Property.NodeScope);
     public static final Setting<TimeValue> PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING =
@@ -102,49 +103,48 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
         this.asyncSearchService = asyncSearchService;
         this.transportService = transportService;
         this.asyncSearchPersistenceService = asyncSearchPersistenceService;
-        this.taskCancellationInterval = ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.get(settings);
-        this.responseCleanUpInterval = PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.get(settings);
+        this.activeContextReaperInterval = ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.get(settings);
+        this.persistedResponseCleanUpInterval = PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.get(settings);
 
-        transportService.registerRequestHandler(CLEANUP_ACTION_NAME, ThreadPool.Names.SAME, false, false,
-                AsyncSearchCleanUpRequest::new, new ResponseCleanUpTransportHandler());
+        transportService.registerRequestHandler(PERSISTED_RESPONSE_CLEANUP_ACTION_NAME, ThreadPool.Names.SAME, false, false,
+                AsyncSearchCleanUpRequest::new, new PersistedResponseCleanUpTransportHandler());
     }
 
-    class ResponseCleanUpTransportHandler implements TransportRequestHandler<AsyncSearchCleanUpRequest> {
+    class PersistedResponseCleanUpTransportHandler implements TransportRequestHandler<AsyncSearchCleanUpRequest> {
 
         @Override
         public void messageReceived(AsyncSearchCleanUpRequest request, TransportChannel channel, Task task) {
-            asyncCleanUpOperation(request, task,
-                    ActionListener.wrap(channel::sendResponse, e -> {
-                        try {
-                            channel.sendResponse(e);
-                        } catch (IOException ex) {
-                            logger.warn(() -> new ParameterizedMessage(
-                                    "Failed to send cleanup error response for request [{}]", request), ex);
-                        }
-                    }));
+            asyncCleanUpOperation(request, task, ActionListener.wrap(channel::sendResponse, e -> {
+                try {
+                    channel.sendResponse(e);
+                } catch (IOException ex) {
+                    logger.warn(() -> new ParameterizedMessage(
+                            "Failed to send cleanup error response for request [{}]", request), ex);
+                }
+            }));
         }
     }
 
     private void asyncCleanUpOperation(AsyncSearchCleanUpRequest request, Task task, ActionListener<AcknowledgedResponse> listener) {
         transportService.getThreadPool().executor(AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME)
-                .execute(() -> performCleanUpAction(request, listener));
+                .execute(() -> performPersistedResponseCleanUpAction(request, listener));
     }
 
-    private void performCleanUpAction(AsyncSearchCleanUpRequest request, ActionListener<AcknowledgedResponse> listener) {
+    private void performPersistedResponseCleanUpAction(AsyncSearchCleanUpRequest request, ActionListener<AcknowledgedResponse> listener) {
         asyncSearchPersistenceService.deleteExpiredResponses(listener, request.absoluteTimeInMillis);
     }
 
     @Override
     public void clusterChanged(ClusterChangedEvent event) {
-        if (event.localNodeMaster() && activeResponseCleanUpRunnable.get() == null) {
+        if (event.localNodeMaster() && persistedResponseCleanUpRunnable.get() == null) {
             logger.trace("elected as master, triggering response cleanup tasks");
             triggerCleanUp(event.state(), "became master");
 
-            final ResponseCleanUpAndRescheduleRunnable newRunnable = new ResponseCleanUpAndRescheduleRunnable();
-            activeResponseCleanUpRunnable.set(newRunnable);
-            threadPool.scheduleUnlessShuttingDown(responseCleanUpInterval, RESPONSE_CLEANUP_SCHEDULING_EXECUTOR, newRunnable);
+            final PersistedResponseCleanUpAndRescheduleRunnable newRunnable = new PersistedResponseCleanUpAndRescheduleRunnable();
+            persistedResponseCleanUpRunnable.set(newRunnable);
+            threadPool.scheduleUnlessShuttingDown(persistedResponseCleanUpInterval, RESPONSE_CLEANUP_SCHEDULING_EXECUTOR, newRunnable);
         } else if (event.localNodeMaster() == false) {
-            activeResponseCleanUpRunnable.set(null);
+            persistedResponseCleanUpRunnable.set(null);
             return;
         }
     }
@@ -158,23 +158,23 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
 
     @Override
     protected void doStart() {
-        taskReaperScheduledFuture = threadPool.scheduleWithFixedDelay(new ContextReaper(), taskCancellationInterval,
+        activeContextReaperScheduledFuture = threadPool.scheduleWithFixedDelay(new ActiveContextReaper(), activeContextReaperInterval,
                 AsyncSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME);
     }
 
     @Override
     protected void doStop() {
-        activeResponseCleanUpRunnable.set(null);
-        taskReaperScheduledFuture.cancel();
+        persistedResponseCleanUpRunnable.set(null);
+        activeContextReaperScheduledFuture.cancel();
     }
 
     @Override
     protected void doClose() {
-        activeResponseCleanUpRunnable.set(null);
-        taskReaperScheduledFuture.cancel();
+        persistedResponseCleanUpRunnable.set(null);
+        activeContextReaperScheduledFuture.cancel();
     }
 
-    class ContextReaper implements Runnable {
+    class ActiveContextReaper implements Runnable {
 
         @Override
         public void run() {
@@ -182,16 +182,16 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
                 Set<AsyncSearchContext> toFree = asyncSearchService.getContextsToReap();
                 // don't block on response
                 toFree.forEach(
-                        context -> asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(),
-                                null, ActionListener.wrap(
-                                        (response) -> logger.debug("Successfully freed up context [{}] running duration [{}]",
-                                                context.getAsyncSearchId(), context.getExpirationTimeMillis()
-                                                        - context.getStartTimeMillis()),
-                                        (exception -> logger.debug(() -> new ParameterizedMessage(
-                                                "Failed to cleanup async search context [{}] running duration [{}] due to ",
-                                                context.getAsyncSearchId(),
-                                                context.getExpirationTimeMillis() - context.getStartTimeMillis()), exception))
-                                )));
+                    context -> asyncSearchService.freeContext(context.getAsyncSearchId(), context.getContextId(),
+                        null, ActionListener.wrap(
+                            (response) -> logger.debug("Successfully freed up context [{}] running duration [{}]",
+                                context.getAsyncSearchId(), context.getExpirationTimeMillis() - context.getStartTimeMillis()),
+                            (exception) -> logger.debug(() -> new ParameterizedMessage(
+                                "Failed to cleanup async search context [{}] running duration [{}] due to ",
+                                context.getAsyncSearchId(),context.getExpirationTimeMillis() - context.getStartTimeMillis()), exception)
+                        )
+                    )
+                );
             } catch (Exception ex) {
                 logger.error("Failed to free up overrunning async searches due to ", ex);
             }
@@ -212,7 +212,7 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
             }
             int pos = Randomness.get().nextInt(nodes.size());
             DiscoveryNode randomNode = nodes.get(pos);
-            transportService.sendRequest(randomNode, CLEANUP_ACTION_NAME,
+            transportService.sendRequest(randomNode, PERSISTED_RESPONSE_CLEANUP_ACTION_NAME,
                     new AsyncSearchCleanUpRequest(threadPool.absoluteTimeInMillis()),
                     new TransportResponseHandler<AcknowledgedResponse>() {
 
@@ -230,7 +230,7 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
                         @Override
                         public void handleException(TransportException e) {
                             logger.error(() -> new ParameterizedMessage("Exception executing action [{}]",
-                                    CLEANUP_ACTION_NAME), e);
+                                    PERSISTED_RESPONSE_CLEANUP_ACTION_NAME), e);
                         }
 
                         @Override
@@ -276,14 +276,14 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
     }
 
 
-    private class ResponseCleanUpAndRescheduleRunnable extends ResponseCleanUpRunnable {
-        ResponseCleanUpAndRescheduleRunnable() {
+    private class PersistedResponseCleanUpAndRescheduleRunnable extends ResponseCleanUpRunnable {
+        PersistedResponseCleanUpAndRescheduleRunnable() {
             super("scheduled");
         }
 
         @Override
         protected void doRun() {
-            if (this == activeResponseCleanUpRunnable.get()) {
+            if (this == persistedResponseCleanUpRunnable.get()) {
                 super.doRun();
             } else {
                 logger.trace("master changed, scheduled cleanup job is stale");
@@ -292,9 +292,9 @@ public class AsyncSearchManagementService extends AbstractLifecycleComponent imp
 
         @Override
         public void onAfter() {
-            if (this == activeResponseCleanUpRunnable.get()) {
-                logger.trace("scheduling next clean up job in [{}]", responseCleanUpInterval);
-                threadPool.scheduleUnlessShuttingDown(responseCleanUpInterval, RESPONSE_CLEANUP_SCHEDULING_EXECUTOR, this);
+            if (this == persistedResponseCleanUpRunnable.get()) {
+                logger.trace("scheduling next clean up job in [{}]", persistedResponseCleanUpInterval);
+                threadPool.scheduleUnlessShuttingDown(persistedResponseCleanUpInterval, RESPONSE_CLEANUP_SCHEDULING_EXECUTOR, this);
             }
         }
     }

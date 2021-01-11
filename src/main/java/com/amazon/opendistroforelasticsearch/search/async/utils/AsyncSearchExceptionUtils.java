@@ -13,14 +13,16 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.async.context.state.event;
+package com.amazon.opendistroforelasticsearch.search.async.utils;
 
-import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveContext;
-import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchContextEvent;
+import org.elasticsearch.ResourceNotFoundException;
 
-public class SearchDeletedEvent extends AsyncSearchContextEvent {
+import java.util.Locale;
 
-    public SearchDeletedEvent(AsyncSearchActiveContext asyncSearchActiveContext) {
-        super(asyncSearchActiveContext);
+public class AsyncSearchExceptionUtils {
+
+    public static ResourceNotFoundException buildResourceNotFoundException(String id) {
+        return new ResourceNotFoundException(String.format(
+                Locale.ROOT, "Either the resource [%s] does not exist or you do not have access", id));
     }
 }

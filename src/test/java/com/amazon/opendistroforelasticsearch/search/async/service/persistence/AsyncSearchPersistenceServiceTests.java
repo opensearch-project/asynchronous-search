@@ -45,6 +45,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -53,13 +54,17 @@ import org.junit.After;
 import org.junit.Assert;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.elasticsearch.common.unit.TimeValue.timeValueDays;
+import static org.hamcrest.Matchers.greaterThan;
 
 public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTestCase {
 
@@ -70,7 +75,9 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         super.setUp();
         threadPool = new TestThreadPool("persistenceServiceTests");
     }
-
+    public void setThreadPool(ThreadPool threadPool) {
+        this.threadPool = threadPool;
+    }
     public void testCreateAndGetAndDelete() throws IOException, InterruptedException {
         AsyncSearchPersistenceService persistenceService = getInstanceFromNode(AsyncSearchPersistenceService.class);
         TransportService transportService = getInstanceFromNode(TransportService.class);
@@ -273,7 +280,8 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         assertEquals(600000L, total);
     }
 
-    public void testAsyncSearchExpirationUpdateOnBlockedPersistence() throws Exception {
+    //TODO write test where retry occurs, now that we don't retry on cluster block
+    public void testCreateResponseFailureOnClusterBlock() throws Exception {
         AsyncSearchPersistenceService persistenceService = getInstanceFromNode(AsyncSearchPersistenceService.class);
         AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUIDs.base64UUID(), randomInt(100));
         AsyncSearchId newAsyncSearchId = new AsyncSearchId(getInstanceFromNode(TransportService.class).getLocalNode().getId(), 1,
@@ -289,24 +297,11 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         request.keepOnCompletion(true);
         request.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
         AsyncSearchResponse asyncSearchResponse = TestClientUtils.blockingSubmitAsyncSearch(client(), request);
-        waitUntil(() -> verifyAsyncSearchState(client(), asyncSearchResponse.getId(), AsyncSearchState.PERSISTING));
-        // This is needed to ensure we are able to acquire a permit for post processing before we try a GET operation
-        waitUntil(() -> getRequestTimesOut(asyncSearchResponse.getId(), AsyncSearchState.PERSISTING));
-        DeleteAsyncSearchRequest deleteAsyncSearchRequest = new DeleteAsyncSearchRequest(asyncSearchResponse.getId());
-        try {
-            executeDeleteAsyncSearch(client(), deleteAsyncSearchRequest).actionGet();
-            fail("Expected timeout");
-        } catch (Exception e) {
-            assertThat(e, instanceOf(ElasticsearchTimeoutException.class));
-        }
+        waitUntil(() -> assertRnf(() -> TestClientUtils.blockingGetAsyncSearchResponse(client(),
+                new GetAsyncSearchRequest(asyncSearchResponse.getId()))));
+        assertRnf(() -> TestClientUtils.blockingGetAsyncSearchResponse(client(), new GetAsyncSearchRequest(id)));
         client().admin().indices().prepareUpdateSettings(AsyncSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX)
                 .setSettings(Settings.builder().putNull(IndexMetadata.SETTING_READ_ONLY_ALLOW_DELETE).build()).execute().actionGet();
-        waitUntil(() -> verifyAsyncSearchState(client(), asyncSearchResponse.getId(), AsyncSearchState.STORE_RESIDENT));
-        CountDownLatch deleteLatch = new CountDownLatch(1);
-        persistenceService.deleteResponse(asyncSearchResponse.getId(), null,
-                new LatchedActionListener<>(ActionListener.wrap(Assert::assertTrue, e -> fail("Unexpected failure " + e.getMessage()))
-                        , deleteLatch));
-        deleteLatch.await();
     }
 
     public void testDeleteExpiredResponse() throws InterruptedException, IOException {
@@ -349,6 +344,155 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         deleteLatch.await();
     }
 
+    public void testConcurrentDeletes() throws InterruptedException {
+        AsyncSearchPersistenceService persistenceService = getInstanceFromNode(AsyncSearchPersistenceService.class);
+        AsyncSearchResponse asyncSearchResponse = submitAndGetPersistedAsyncSearchResponse();
+
+        int numThreads = 100;
+        List<Thread> threads = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(numThreads);
+        AtomicInteger numSuccess = new AtomicInteger();
+        AtomicInteger numRnf = new AtomicInteger();
+        AtomicInteger numFailure = new AtomicInteger();
+        for (int i = 0; i < numThreads; i++) {
+            Thread t = new Thread(() -> {
+                persistenceService.deleteResponse(asyncSearchResponse.getId(), null, new LatchedActionListener<>(ActionListener.wrap(
+                        r -> {
+                            if (r) {
+                                numSuccess.getAndIncrement();
+                            } else {
+                                numFailure.getAndIncrement();
+                            }
+                        }, e -> {
+                            if (e instanceof ResourceNotFoundException) {
+                                numRnf.getAndIncrement();
+                            } else {
+                                numFailure.getAndIncrement();
+                            }
+                        }), latch));
+            });
+            threads.add(t);
+        }
+        threads.forEach(Thread::start);
+        latch.await();
+        assertEquals(numSuccess.get(), 1);
+        assertEquals(numFailure.get(), 0);
+        assertEquals(numRnf.get(), numThreads - 1);
+        for (Thread t : threads) {
+            t.join();
+        }
+    }
+
+    public void testConcurrentUpdates() throws InterruptedException {
+        AsyncSearchPersistenceService persistenceService = getInstanceFromNode(AsyncSearchPersistenceService.class);
+        AsyncSearchResponse asyncSearchResponse = submitAndGetPersistedAsyncSearchResponse();
+        int numThreads = 100;
+        List<Thread> threads = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(numThreads);
+        AtomicInteger numSuccess = new AtomicInteger();
+        AtomicInteger numNoOp = new AtomicInteger();
+        AtomicInteger numVersionConflictException = new AtomicInteger();
+        AtomicInteger numFailure = new AtomicInteger();
+        for (int i = 0; i < numThreads; i++) {
+            Thread t = new Thread(() -> {
+                long expirationTimeMillis = System.currentTimeMillis() + timeValueDays(10).millis();
+                persistenceService.updateExpirationTime(asyncSearchResponse.getId(),
+                        expirationTimeMillis, null,
+                        new LatchedActionListener<>(ActionListener.wrap(
+                                r -> {
+                                    if (r.getExpirationTimeMillis() == expirationTimeMillis) {
+                                        numSuccess.getAndIncrement();
+                                    } else if (r.getExpirationTimeMillis() == asyncSearchResponse.getExpirationTimeMillis()) {
+                                        numNoOp.getAndIncrement();
+                                    } else {
+                                        numFailure.getAndIncrement();
+                                    }
+                                }, e -> {
+                                    if (e instanceof VersionConflictEngineException) {
+                                        numVersionConflictException.getAndIncrement();
+                                    } else {
+                                        numFailure.getAndIncrement();
+                                    }
+                                }), latch));
+            });
+            threads.add(t);
+        }
+        threads.forEach(Thread::start);
+        latch.await();
+        assertEquals(numFailure.get(), 0);
+        assertThat(numVersionConflictException.get(), greaterThan(0));
+        assertEquals(numVersionConflictException.get() + numSuccess.get() + numNoOp.get(), numThreads);
+        for (Thread t : threads) {
+            t.join();
+        }
+        executeDeleteAsyncSearch(client(), new DeleteAsyncSearchRequest(asyncSearchResponse.getId())).actionGet();
+    }
+
+    public void testConcurrentUpdatesAndDeletesRace() throws InterruptedException {
+        AsyncSearchPersistenceService persistenceService = getInstanceFromNode(AsyncSearchPersistenceService.class);
+        AsyncSearchResponse asyncSearchResponse = submitAndGetPersistedAsyncSearchResponse();
+        int numThreads = 200;
+        List<Thread> threads = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(numThreads);
+        AtomicInteger numDelete = new AtomicInteger();
+        AtomicInteger numFailure = new AtomicInteger();
+        AtomicInteger numDeleteAttempts = new AtomicInteger();
+        AtomicInteger numDeleteFailedAttempts = new AtomicInteger();
+        for (int i = 0; i < numThreads; i++) {
+            final int iter = i;
+            Thread t = new Thread(() -> {
+
+                if (iter % 2 == 0 || iter < 20) /*letting few updates to queue up before starting to fire deletes*/ {
+                    long expirationTimeMillis = System.currentTimeMillis() + timeValueDays(10).millis();
+                    persistenceService.updateExpirationTime(asyncSearchResponse.getId(),
+                            expirationTimeMillis, null,
+                            new LatchedActionListener<>(ActionListener.wrap(
+                                    r -> {
+                                        if (r.getExpirationTimeMillis() != expirationTimeMillis
+                                                && r.getExpirationTimeMillis() != asyncSearchResponse.getExpirationTimeMillis()) {
+                                            numFailure.getAndIncrement();
+                                        }
+                                    }, e -> {
+                                        // only version conflict from a concurrent update or RNF due to a concurrent delete is acceptable.
+                                        // rest all failures are unexpected
+                                        if (!(e instanceof VersionConflictEngineException) && !(e instanceof ResourceNotFoundException)) {
+                                            numFailure.getAndIncrement();
+                                        }
+                                    }), latch));
+                } else {
+                    numDeleteAttempts.getAndIncrement();
+                    persistenceService.deleteResponse(asyncSearchResponse.getId(), null, new LatchedActionListener<>(ActionListener.wrap(
+                            r -> {
+                                if (r) {
+                                    numDelete.getAndIncrement();
+                                } else {
+                                    numFailure.getAndIncrement();
+                                }
+                            }, e -> {
+                                //only a failure due to concurrent delete causing RNF or concurrent update causing IllegalState is
+                                // acceptable. rest all failures are unexpected
+                                if (e instanceof ResourceNotFoundException || e instanceof IllegalStateException) {
+                                    numDeleteFailedAttempts.getAndIncrement();
+                                } else {
+                                    numFailure.getAndIncrement();
+                                }
+                            }), latch));
+                }
+            });
+            threads.add(t);
+        }
+        threads.forEach(Thread::start);
+        latch.await();
+        assertEquals(numFailure.get(), 0);
+        assertEquals(numDeleteAttempts.get() - 1, numDeleteFailedAttempts.get());
+        assertEquals(numDelete.get(), 1);
+        for (Thread t : threads) {
+            t.join();
+        }
+        expectThrows(ResourceNotFoundException.class, () -> executeDeleteAsyncSearch(client(),
+                new DeleteAsyncSearchRequest(asyncSearchResponse.getId())).actionGet());
+    }
+
     private void createDoc(AsyncSearchPersistenceService persistenceService, AsyncSearchResponse asyncSearchResponse, User user)
             throws IOException, InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
@@ -373,6 +517,16 @@ public class AsyncSearchPersistenceServiceTests extends AsyncSearchSingleNodeTes
         return TestClientUtils.blockingGetAsyncSearchResponse(client(), new GetAsyncSearchRequest(asyncSearchResponse.getId()));
     }
 
+    private boolean assertRnf(Runnable runnable) {
+        try {
+            runnable.run();
+            return false;
+        } catch (ResourceNotFoundException e) {
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
     private AsyncSearchId generateNewAsyncSearchId(TransportService transportService) {
         AsyncSearchContextId asyncSearchContextId = new AsyncSearchContextId(UUIDs.base64UUID(), randomInt(100));
         return new AsyncSearchId(transportService.getLocalNode().getId(), randomInt(100), asyncSearchContextId);

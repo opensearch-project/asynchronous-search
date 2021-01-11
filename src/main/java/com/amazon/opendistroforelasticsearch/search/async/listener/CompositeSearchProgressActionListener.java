@@ -33,7 +33,7 @@ public class CompositeSearchProgressActionListener<T> implements ActionListener<
     private volatile boolean complete;
 
     CompositeSearchProgressActionListener() {
-        this.actionListeners = new ArrayList<>();
+        this.actionListeners = new ArrayList<>(1);
     }
 
     /***

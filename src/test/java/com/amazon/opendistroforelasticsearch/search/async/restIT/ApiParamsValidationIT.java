@@ -1,3 +1,18 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.search.async.restIT;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.state.AsyncSearchState;
@@ -49,8 +64,8 @@ public class ApiParamsValidationIT extends AsyncSearchRestTestCase {
             AsyncSearchResponse submitResponse = executeSubmitAsyncSearch(submitAsyncSearchRequest);
             List<AsyncSearchState> legalStates = Arrays.asList(AsyncSearchState.SUCCEEDED, AsyncSearchState.CLOSED);
             assertTrue(legalStates.contains(submitResponse.getState()));
-            assertTrue((submitResponse.getExpirationTimeMillis() > System.currentTimeMillis() + TimeValue.timeValueDays(4).getMillis()) &&
-                    (submitResponse.getExpirationTimeMillis() < System.currentTimeMillis() + +TimeValue.timeValueDays(5).getMillis()));
+            assertTrue((submitResponse.getExpirationTimeMillis() > System.currentTimeMillis() + TimeValue.timeValueHours(11).getMillis()) &&
+                    (submitResponse.getExpirationTimeMillis() < System.currentTimeMillis() + +TimeValue.timeValueHours(12).getMillis()));
             assertHitCount(submitResponse.getSearchResponse(), 5);
         } finally {
             deleteIndexIfExists();
@@ -102,11 +117,9 @@ public class ApiParamsValidationIT extends AsyncSearchRestTestCase {
     public void testGetWithInvalidKeepAliveUpdate() throws IOException {
         try {
             SearchRequest searchRequest = new SearchRequest("test");
-            TimeValue keepAlive = TimeValue.timeValueDays(5);
             searchRequest.source(new SearchSourceBuilder());
             SubmitAsyncSearchRequest submitAsyncSearchRequest = new SubmitAsyncSearchRequest(searchRequest);
             submitAsyncSearchRequest.keepOnCompletion(true);
-            submitAsyncSearchRequest.keepAlive(keepAlive);
             AsyncSearchResponse submitResponse = executeSubmitAsyncSearch(submitAsyncSearchRequest);
             GetAsyncSearchRequest getAsyncSearchRequest = new GetAsyncSearchRequest(submitResponse.getId());
             getAsyncSearchRequest.setKeepAlive(TimeValue.timeValueDays(100));

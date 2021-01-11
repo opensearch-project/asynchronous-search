@@ -37,7 +37,7 @@ public class SubmitAsyncSearchRequest extends ActionRequest {
     public static long MIN_KEEP_ALIVE = TimeValue.timeValueMinutes(1).millis();
     public static final int DEFAULT_PRE_FILTER_SHARD_SIZE = 1;
     public static final int DEFAULT_BATCHED_REDUCE_SIZE = 5;
-    public static final TimeValue DEFAULT_KEEP_ALIVE = TimeValue.timeValueDays(5);
+    public static final TimeValue DEFAULT_KEEP_ALIVE = TimeValue.timeValueHours(12); //TODO change to 1 day
     public static final TimeValue DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT = TimeValue.timeValueSeconds(1);
     public static final Boolean DEFAULT_KEEP_ON_COMPLETION = Boolean.FALSE;
     public static final Boolean DEFAULT_CCS_MINIMIZE_ROUNDTRIPS = Boolean.FALSE;

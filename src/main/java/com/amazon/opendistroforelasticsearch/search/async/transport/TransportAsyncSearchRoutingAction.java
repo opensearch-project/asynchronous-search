@@ -20,8 +20,11 @@ import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchId;
 import com.amazon.opendistroforelasticsearch.search.async.id.AsyncSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.async.request.AsyncSearchRoutingRequest;
+import com.amazon.opendistroforelasticsearch.search.async.service.AsyncSearchService;
+import com.amazon.opendistroforelasticsearch.search.async.utils.AsyncSearchExceptionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.ActionResponse;
@@ -29,7 +32,6 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper;
@@ -53,16 +55,20 @@ import org.elasticsearch.transport.TransportService;
 public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSearchRoutingRequest<Request>, Response extends ActionResponse>
         extends HandledTransportAction<Request, Response> {
 
+    private static final Logger logger = LogManager.getLogger(TransportAsyncSearchRoutingAction.class);
+
     private final TransportService transportService;
     private final ClusterService clusterService;
     private final Writeable.Reader<Response> responseReader;
     private final String actionName;
     private final ThreadPool threadPool;
     private final Client client;
+    private final AsyncSearchService asyncSearchService;
 
     public TransportAsyncSearchRoutingAction(TransportService transportService, ClusterService clusterService, ThreadPool threadPool,
                                              Client client, String actionName, ActionFilters actionFilters,
-                                             Writeable.Reader<Request> requestReader, Writeable.Reader<Response> responseReader) {
+                                             AsyncSearchService asyncSearchService, Writeable.Reader<Request> requestReader,
+                                             Writeable.Reader<Response> responseReader) {
         super(actionName, transportService, actionFilters, requestReader);
         this.transportService = transportService;
         this.clusterService = clusterService;
@@ -70,6 +76,7 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
         this.actionName = actionName;
         this.threadPool = threadPool;
         this.client = client;
+        this.asyncSearchService = asyncSearchService;
     }
 
     @Override
@@ -87,7 +94,6 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
 
         private final ActionListener<Response> listener;
         private final Request request;
-        private volatile ClusterStateObserver observer;
         private DiscoveryNode targetNode;
         private AsyncSearchId asyncSearchId;
 
@@ -97,12 +103,10 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
 
                 this.request = request;
                 this.listener = listener;
-                this.observer = new ClusterStateObserver(clusterService.state(), clusterService, request.connectionTimeout(),
-                        logger, threadPool.getThreadContext());
                 this.targetNode = clusterService.state().nodes().get(asyncSearchId.getNode());
             } catch (IllegalArgumentException e) { // failure in parsing async search
                 logger.error(() -> new ParameterizedMessage("Failed to parse async search ID [{}]", request.getId()), e);
-                listener.onFailure(new ResourceNotFoundException(request.getId()));
+                listener.onFailure(AsyncSearchExceptionUtils.buildResourceNotFoundException(request.getId()));
                 throw e;
             }
         }
@@ -116,11 +120,12 @@ public abstract class TransportAsyncSearchRoutingAction<Request extends AsyncSea
 
         @Override
         protected void doRun() {
-            ClusterState state = observer.setAndGetObservedState();
+            ClusterState state = clusterService.state();
             // forward request only if the local node isn't the node coordinating the search and the node coordinating
             // the search exists in the cluster
-            TransportRequestOptions requestOptions = TransportRequestOptions.builder().withTimeout(request.connectionTimeout()).build();
-            if (state.nodes().getLocalNode().equals(targetNode) == false && state.nodes().nodeExists(targetNode)) {
+            TransportRequestOptions requestOptions = TransportRequestOptions.builder().withTimeout(
+                    asyncSearchService.getMaxWaitForCompletionTimeout()).build();
+            if (targetNode != null && state.nodes().getLocalNode().equals(targetNode) == false && state.nodes().nodeExists(targetNode)) {
                 logger.debug("Forwarding async search id [{}] request to target node [{}]", request.getId(), targetNode);
                 transportService.sendRequest(targetNode, actionName, request, requestOptions,
                         new ActionListenerResponseHandler<Response>(listener, responseReader) {

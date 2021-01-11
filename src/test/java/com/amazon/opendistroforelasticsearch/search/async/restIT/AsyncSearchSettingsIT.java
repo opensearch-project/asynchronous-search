@@ -1,3 +1,18 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.search.async.restIT;
 
 import com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore;
@@ -14,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore.DEFAULT_MAX_RUNNING_CONTEXTS;
+import static com.amazon.opendistroforelasticsearch.search.async.context.active.AsyncSearchActiveStore.DEFAULT_MAX_RUNNING_SEARCHES;
 import static org.hamcrest.Matchers.containsString;
 
 public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
@@ -22,16 +37,16 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
     public void testMaxKeepAliveSetting() throws Exception {
         try {
             SubmitAsyncSearchRequest validRequest = new SubmitAsyncSearchRequest(new SearchRequest());
-            validRequest.keepAlive(TimeValue.timeValueDays(2));
+            validRequest.keepAlive(TimeValue.timeValueHours(7));
             AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(validRequest);
             assertNotNull(asyncSearchResponse.getSearchResponse());
-            updateClusterSettings(AsyncSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueDays(1));
+            updateClusterSettings(AsyncSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(6));
             SubmitAsyncSearchRequest invalidRequest = new SubmitAsyncSearchRequest(new SearchRequest());
-            invalidRequest.keepAlive(TimeValue.timeValueDays(2));
+            invalidRequest.keepAlive(TimeValue.timeValueHours(7));
             ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsyncSearch(invalidRequest));
             assertThat(responseException.getMessage(), containsString("Keep alive for async search (" +
                     invalidRequest.getKeepAlive().getMillis() + ") is too large"));
-            updateClusterSettings(AsyncSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueDays(10));
+            updateClusterSettings(AsyncSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(24));
         } finally {
             deleteIndexIfExists();
         }
@@ -65,7 +80,7 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
                 threadsList.add(new Thread(() -> {
                     try {
                         SubmitAsyncSearchRequest validRequest = new SubmitAsyncSearchRequest(new SearchRequest());
-                        validRequest.keepAlive(TimeValue.timeValueDays(1));
+                        validRequest.keepAlive(TimeValue.timeValueHours(1));
                         AsyncSearchResponse asyncSearchResponse = executeSubmitAsyncSearch(validRequest);
                         assertNotNull(asyncSearchResponse.getSearchResponse());
                     } catch (IOException e) {
@@ -86,7 +101,7 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
                 thread.join();
             }
 
-            updateClusterSettings(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), 0);
+            updateClusterSettings(AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 0);
             threadsList.clear();
             AtomicInteger numFailures = new AtomicInteger();
             for (int i = 0; i < numThreads; i++) {
@@ -116,7 +131,7 @@ public class AsyncSearchSettingsIT extends AsyncSearchRestTestCase {
                 thread.join();
             }
             assertEquals(numFailures.get(), 50);
-            updateClusterSettings(AsyncSearchActiveStore.MAX_RUNNING_CONTEXT.getKey(), DEFAULT_MAX_RUNNING_CONTEXTS);
+            updateClusterSettings(AsyncSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), DEFAULT_MAX_RUNNING_SEARCHES);
         } finally {
             deleteIndexIfExists();
         }

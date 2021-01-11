@@ -45,17 +45,23 @@ public class AsyncSearchContextPermits implements Closeable {
     private static final int TOTAL_PERMITS = Integer.MAX_VALUE;
 
     final Semaphore semaphore;
-    private final AsyncSearchContextId asyncSearchContextId;
+    protected final AsyncSearchContextId asyncSearchContextId;
     private volatile String lockDetails;
     private final ThreadPool threadPool;
-    private volatile boolean closed;
+    protected volatile boolean closed;
 
-    private static final Logger logger = LogManager.getLogger(AsyncSearchContextPermits.class);
+    protected static final Logger logger = LogManager.getLogger(AsyncSearchContextPermits.class);
 
     public AsyncSearchContextPermits(AsyncSearchContextId asyncSearchContextId, ThreadPool threadPool) {
         this.asyncSearchContextId = asyncSearchContextId;
         this.threadPool = threadPool;
         this.semaphore = new Semaphore(TOTAL_PERMITS, true);
+    }
+
+    public AsyncSearchContextPermits(AsyncSearchContextId asyncSearchContextId, ThreadPool threadPool, Semaphore semaphore) {
+        this.asyncSearchContextId = asyncSearchContextId;
+        this.threadPool = threadPool;
+        this.semaphore = semaphore;
     }
 
     private Releasable acquirePermits(int permits, TimeValue timeout, final String details) throws AsyncSearchContextClosedException,
