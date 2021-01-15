@@ -66,8 +66,8 @@ public class ApiParamsValidationIT extends AsynchronousSearchRestTestCase {
             List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.CLOSED);
             assertTrue(legalStates.contains(submitResponse.getState()));
             assertTrue((submitResponse.getExpirationTimeMillis()
-                    > System.currentTimeMillis() + TimeValue.timeValueHours(11).getMillis()) &&
-                    (submitResponse.getExpirationTimeMillis() < System.currentTimeMillis() + +TimeValue.timeValueHours(12).getMillis()));
+                    > System.currentTimeMillis() + TimeValue.timeValueHours(23).getMillis() + TimeValue.timeValueMinutes(59).millis())   &&
+                    (submitResponse.getExpirationTimeMillis() < System.currentTimeMillis() + +TimeValue.timeValueHours(24).getMillis()));
             assertHitCount(submitResponse.getSearchResponse(), 5);
         } finally {
             deleteIndexIfExists();
