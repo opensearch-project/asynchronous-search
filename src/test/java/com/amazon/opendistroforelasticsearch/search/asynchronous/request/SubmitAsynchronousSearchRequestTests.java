@@ -15,11 +15,16 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.request;
 
+import com.amazon.opendistroforelasticsearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.common.ValidationException;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.test.ESTestCase;
+
+import java.util.HashMap;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -32,6 +37,10 @@ public class SubmitAsynchronousSearchRequestTests extends ESTestCase {
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         ValidationException validationException = request.validate();
         assertNull(validationException);
+        assertEquals(request, new SubmitAsynchronousSearchRequest(searchRequest));
+        String description = request.createTask(randomNonNegativeLong(), "type", SubmitAsynchronousSearchAction.NAME,
+                new TaskId("test", -1), new HashMap<>()).getDescription();
+        assertThat(description, containsString("indices[test]"));
     }
 
     public void testSuggestOnlyQueryFailsValidation() {
@@ -67,5 +76,25 @@ public class SubmitAsynchronousSearchRequestTests extends ESTestCase {
         assertNotNull(validationException);
         assertEquals(1, validationException.validationErrors().size());
         assertThat(validationException.validationErrors().get(0), containsString("[ccs_minimize_roundtrips] must be false"));
+    }
+
+    public void testInvalidKeepAliveFailsValidation() {
+        SearchSourceBuilder source = new SearchSourceBuilder();
+        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        searchRequest.setCcsMinimizeRoundtrips(false);
+        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
+        request.keepAlive(TimeValue.timeValueSeconds(59));
+        ValidationException validationException = request.validate();
+        assertEquals(1, validationException.validationErrors().size());
+    }
+
+    public void testInvalidWaitForCompletionFailsValidation() {
+        SearchSourceBuilder source = new SearchSourceBuilder();
+        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        searchRequest.setCcsMinimizeRoundtrips(false);
+        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
+        request.waitForCompletionTimeout(TimeValue.timeValueMillis(-1));
+        ValidationException validationException = request.validate();
+        assertEquals(1, validationException.validationErrors().size());
     }
 }

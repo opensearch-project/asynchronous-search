@@ -15,7 +15,6 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.context.active;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchStateMachine;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.event.SearchDeletedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,12 +25,9 @@ import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ConcurrentMapLong;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.newConcurrentMapLongWithAggressiveConcurrency;
 
@@ -101,23 +97,5 @@ public class AsynchronousSearchActiveStore {
             return true;
         }
         return false;
-    }
-
-    private static boolean calledFromAsynchronousSearchStateMachine() {
-        List<StackTraceElement> frames = Stream.of(Thread.currentThread().getStackTrace()).
-                skip(1). //skip getStackTrace
-                limit(10). //limit depth of analysis to 10 frames, it should be enough
-                filter(f ->
-                {
-                    try {
-                        return AsynchronousSearchStateMachine.class.isAssignableFrom(Class.forName(f.getClassName()));
-                    } catch (Exception ignored) {
-                        return false;
-                    }
-                }
-        ).
-                collect(Collectors.toList());
-        //the list should contain trigger method of the state machine
-        return frames.stream().anyMatch(f -> f.getMethodName().equals("trigger"));
     }
 }

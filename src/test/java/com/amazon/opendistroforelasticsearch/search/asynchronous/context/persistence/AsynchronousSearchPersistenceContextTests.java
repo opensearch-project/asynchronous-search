@@ -59,6 +59,9 @@ public class AsynchronousSearchPersistenceContextTests extends ESTestCase {
                 new AsynchronousSearchPersistenceContext(id, asContextId, new AsynchronousSearchPersistenceModel(startTimeMillis,
                         expirationTimeMillis, searchResponse, null, user), System::currentTimeMillis,
                         new NamedWriteableRegistry(Collections.emptyList()));
+        assertEquals(asPersistenceContext, new AsynchronousSearchPersistenceContext(id, asContextId,
+                new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
+                System::currentTimeMillis, new NamedWriteableRegistry(Collections.emptyList())));
         assertEquals(
                 asPersistenceContext.getAsynchronousSearchResponse(),
                 new AsynchronousSearchResponse(id, asPersistenceContext.getAsynchronousSearchState(), startTimeMillis,

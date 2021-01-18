@@ -35,6 +35,7 @@ import static org.elasticsearch.action.ValidateActions.addValidationError;
 public class SubmitAsynchronousSearchRequest extends ActionRequest {
 
     public static long MIN_KEEP_ALIVE = TimeValue.timeValueMinutes(1).millis();
+    public static long MIN_WAIT_FOR_COMPLETION_TIMEOUT = TimeValue.timeValueMillis(0).millis();
     public static final int DEFAULT_PRE_FILTER_SHARD_SIZE = 1;
     public static final int DEFAULT_BATCHED_REDUCE_SIZE = 5;
     public static final TimeValue DEFAULT_KEEP_ALIVE = TimeValue.timeValueDays(1);
@@ -143,6 +144,10 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
         if (keepAlive != null && keepAlive.getMillis() < MIN_KEEP_ALIVE) {
             validationException = addValidationError(
                     "[keep_alive] must be greater than 1 minute, got: " + keepAlive.toString(), validationException);
+        }
+        if (waitForCompletionTimeout != null && waitForCompletionTimeout.getMillis() < MIN_WAIT_FOR_COMPLETION_TIMEOUT) {
+            validationException = addValidationError("[wait_for_completion_timeout] must be greater than 0 milliseconds, got: "
+                    + waitForCompletionTimeout.toString(), validationException);
         }
         return validationException != null ? validationException : searchRequest.validate();
     }

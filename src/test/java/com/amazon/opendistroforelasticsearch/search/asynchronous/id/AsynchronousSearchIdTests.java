@@ -36,6 +36,7 @@ public class AsynchronousSearchIdTests extends ESTestCase {
         //context id.
         AsynchronousSearchId parsed = AsynchronousSearchIdConverter.parseAsyncId(id);
         assertEquals(original, parsed);
+        assertEquals(parsed.toString(), "[" + node + "][" + taskId + "][" + asContextId + "]");
     }
 
 
@@ -43,4 +44,5 @@ public class AsynchronousSearchIdTests extends ESTestCase {
         String id = UUID.randomUUID().toString();
         expectThrows(IllegalArgumentException.class, () -> AsynchronousSearchIdConverter.parseAsyncId(id));
     }
+
 }

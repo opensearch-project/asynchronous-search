@@ -86,6 +86,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             TestClientUtils.assertResponsePersistence(client(), asResponse.getId());
             AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
                     new AsynchronousSearchStatsRequest()).get();
+            String responseAsString = statsResponse.toString();
+            for (DiscoveryNode dataNode : dataNodes) {
+                assertThat(responseAsString, containsString(dataNode.getId()));
+            }
             statsResponse.getNodes().forEach(nodeStats -> {
                 AsynchronousSearchCountStats asCountStats = nodeStats.getAsynchronousSearchCountStats();
                 if (nodeStats.getNode().equals(randomDataNode)) {
