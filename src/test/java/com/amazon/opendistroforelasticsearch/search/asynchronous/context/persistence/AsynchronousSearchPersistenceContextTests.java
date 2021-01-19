@@ -28,8 +28,10 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.search.profile.SearchProfileShardResults;
@@ -49,16 +51,16 @@ public class AsynchronousSearchPersistenceContextTests extends ESTestCase {
     public void testSerializationRoundTripWithSearchResponse() throws IOException {
         AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong());
         String id = AsynchronousSearchIdConverter.buildAsyncId(new AsynchronousSearchId(UUID.randomUUID().toString(),
-                randomNonNegativeLong(),
-                asContextId));
+                randomNonNegativeLong(), asContextId));
         long expirationTimeMillis = randomNonNegativeLong();
         long startTimeMillis = randomNonNegativeLong();
         SearchResponse searchResponse = getMockSearchResponse();
         User user = TestClientUtils.randomUserOrNull();
+        SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
         AsynchronousSearchPersistenceContext asPersistenceContext =
                 new AsynchronousSearchPersistenceContext(id, asContextId, new AsynchronousSearchPersistenceModel(startTimeMillis,
                         expirationTimeMillis, searchResponse, null, user), System::currentTimeMillis,
-                        new NamedWriteableRegistry(Collections.emptyList()));
+                        new NamedWriteableRegistry(searchModule.getNamedWriteables()));
         assertEquals(asPersistenceContext, new AsynchronousSearchPersistenceContext(id, asContextId,
                 new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
                 System::currentTimeMillis, new NamedWriteableRegistry(Collections.emptyList())));
@@ -85,10 +87,11 @@ public class AsynchronousSearchPersistenceContextTests extends ESTestCase {
         SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
                 new ShardSearchFailure[] {shardSearchFailure});
         User user = TestClientUtils.randomUser();
+        SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
         AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(id, asContextId,
                 new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user),
                 System::currentTimeMillis,
-                new NamedWriteableRegistry(Collections.emptyList()));
+                new NamedWriteableRegistry(searchModule.getNamedWriteables()));
         ElasticsearchException deserializedException = asPersistenceContext.getAsynchronousSearchResponse().getError();
         assertTrue(deserializedException instanceof SearchPhaseExecutionException);
         assertEquals("phase", ((SearchPhaseExecutionException) deserializedException).getPhaseName());

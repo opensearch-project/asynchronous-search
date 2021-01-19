@@ -22,6 +22,7 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.A
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
@@ -91,6 +92,7 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
                             asynchronousSearchPersistenceModel.getResponse())));
             try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
                     namedWriteableRegistry)) {
+                wrapperStreamInput.setVersion(Version.readVersion(wrapperStreamInput));
                 return new SearchResponse(wrapperStreamInput);
             } catch (IOException e) {
                 logger.error(() -> new ParameterizedMessage("Failed to parse search response for asynchronous search [{}] Response : [{}] ",
@@ -110,6 +112,7 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
                         .decode(asynchronousSearchPersistenceModel.getError())));
         try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
                 namedWriteableRegistry)) {
+            wrapperStreamInput.setVersion(Version.readVersion(wrapperStreamInput));
             return wrapperStreamInput.readException();
         } catch (IOException e) {
             logger.error(() -> new ParameterizedMessage("Failed to parse search error for asynchronous search [{}] Error : [{}] ",

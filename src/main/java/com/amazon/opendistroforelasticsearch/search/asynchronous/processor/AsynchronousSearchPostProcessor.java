@@ -60,10 +60,10 @@ public class AsynchronousSearchPostProcessor {
     private final ThreadPool threadPool;
 
     public AsynchronousSearchPostProcessor(AsynchronousSearchPersistenceService asynchronousSearchPersistenceService,
-                                    AsynchronousSearchActiveStore asynchronousSearchActiveStore,
+                                           AsynchronousSearchActiveStore asynchronousSearchActiveStore,
                                            AsynchronousSearchStateMachine stateMachine,
-                                    Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer,
-                                    ThreadPool threadPool) {
+                                           Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer,
+                                           ThreadPool threadPool) {
         this.asynchronousSearchActiveStore = asynchronousSearchActiveStore;
         this.asynchronousSearchPersistenceService = asynchronousSearchPersistenceService;
         this.asynchronousSearchStateMachine = stateMachine;

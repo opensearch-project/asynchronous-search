@@ -44,9 +44,18 @@ import org.elasticsearch.rest.action.document.RestIndexAction;
 import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.containsString;
@@ -113,6 +122,45 @@ public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
     Response executeDeleteAsynchronousSearch(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) throws IOException {
         Request request = RestTestUtils.buildHttpRequest(deleteAsynchronousSearchRequest);
         return client().performRequest(request);
+    }
+
+    /**
+     * We need to be able to dump the jacoco coverage before cluster is shut down.
+     * The new internal testing framework removed some of the gradle tasks we were listening to
+     * to choose a good time to do it. This will dump the executionData to file after each test.
+     * TODO: This is also currently just overwriting integTest.exec with the updated execData without
+     * resetting after writing each time. This can be improved to either write an exec file per test
+     * or by letting jacoco append to the file
+     */
+    public interface IProxy {
+        byte[] getExecutionData(boolean reset);
+
+        void dump(boolean reset);
+
+        void reset();
+    }
+
+
+    @AfterClass
+    public static void dumpCoverage() throws IOException, MalformedObjectNameException {
+        // jacoco.dir is set in esplugin-coverage.gradle, if it doesn't exist we don't
+        // want to collect coverage so we can return early
+        String jacocoBuildPath = System.getProperty("jacoco.dir");
+        if (Strings.isNullOrEmpty(jacocoBuildPath)) {
+            return;
+        }
+
+        String serverUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:7777/jmxrmi";
+        try (JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl))) {
+            IProxy proxy = MBeanServerInvocationHandler.newProxyInstance(
+                    connector.getMBeanServerConnection(), new ObjectName("org.jacoco:type=Runtime"), IProxy.class,
+                    false);
+
+            Path path = org.elasticsearch.common.io.PathUtils.get(jacocoBuildPath + "/integTestRunner.exec");
+            Files.write(path, proxy.getExecutionData(false));
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to dump coverage: " + ex);
+        }
     }
 
     @After

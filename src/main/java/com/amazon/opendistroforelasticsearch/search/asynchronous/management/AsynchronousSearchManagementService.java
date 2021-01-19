@@ -32,7 +32,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.Booleans;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
@@ -207,7 +206,7 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             threadContext.markAsSystemContext();
             ImmutableOpenMap<String, DiscoveryNode> dataNodes = clusterService.state().nodes().getDataNodes();
             List<DiscoveryNode> nodes = Stream.of(dataNodes.values().toArray(DiscoveryNode.class))
-                    .filter((node) -> isAsynchronousSearchEnabledNode(node)).collect(Collectors.toList());
+                    .collect(Collectors.toList());
             if (nodes == null || nodes.isEmpty()) {
                 logger.debug("Found empty data nodes with asynchronous search enabled attribute [{}] for response clean up", dataNodes);
                 return;
@@ -244,11 +243,6 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
         } catch (Exception ex) {
             logger.error("Failed to schedule asynchronous search cleanup", ex);
         }
-    }
-
-    // TODO: only here temporarily for BWC development, remove once complete
-    private boolean isAsynchronousSearchEnabledNode(DiscoveryNode discoveryNode) {
-        return Booleans.isTrue(discoveryNode.getAttributes().getOrDefault("asynchronous_search_enabled", "true"));
     }
 
 

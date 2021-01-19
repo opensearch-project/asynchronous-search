@@ -133,9 +133,9 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     public AsynchronousSearchService(AsynchronousSearchPersistenceService asynchronousSearchPersistenceService,
                                      AsynchronousSearchActiveStore asynchronousSearchActiveStore, Client client,
                                      ClusterService clusterService, ThreadPool threadPool,
-                                     AsynchronousSearchContextEventListener contextListener,
+                                     AsynchronousSearchContextEventListener contextEventListener,
                                      NamedWriteableRegistry namedWriteableRegistry) {
-        this.contextEventListener = contextListener;
+        this.contextEventListener = contextEventListener;
         this.client = client;
         Settings settings = clusterService.getSettings();
         clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_KEEP_ALIVE_SETTING, this::setKeepAlive);

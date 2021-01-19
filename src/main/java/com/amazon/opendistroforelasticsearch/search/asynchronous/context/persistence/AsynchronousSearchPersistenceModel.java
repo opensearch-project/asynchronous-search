@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.context.persis
 
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
@@ -57,6 +58,7 @@ public class AsynchronousSearchPersistenceModel {
             return null;
         }
         try (BytesStreamOutput out = new BytesStreamOutput()) {
+            Version.writeVersion(Version.CURRENT, out);
             response.writeTo(out);
             byte[] bytes = BytesReference.toBytes(out.bytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -76,6 +78,7 @@ public class AsynchronousSearchPersistenceModel {
             return null;
         }
         try (BytesStreamOutput out = new BytesStreamOutput()) {
+            Version.writeVersion(Version.CURRENT, out);
             out.writeException(error instanceof ElasticsearchException ? error : new ElasticsearchException(error));
             byte[] bytes = BytesReference.toBytes(out.bytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
