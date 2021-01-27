@@ -116,7 +116,7 @@ public class TestClientUtils {
             @Override
             public void onFailure(Exception e) {
                 try {
-                    if (!backoff.hasNext()) {
+                    if (backoff.hasNext() == false) {
                         latch.countDown();
                         Assert.fail("Failed to persist asynchronous search response");
                     } else {

@@ -28,6 +28,7 @@ apply plugin: 'elasticsearch.esplugin'
 
 checkstyle {
     toolVersion = '8.24'
+    configFile file("checkstyle/checkstyle.xml")
 }
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
@@ -64,6 +65,11 @@ dependencies {
     compileOnly "org.elasticsearch.plugin:transport-netty4-client:${es_version}"
     compileOnly "org.elasticsearch:elasticsearch:${es_version}"
     compile "com.amazon.opendistroforelasticsearch:common-utils:${opendistroVersion}"
+    configurations.all {
+        resolutionStrategy {
+            force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
+        }
+    }
 }
 compileTestJava {
     classpath = classpath.filter{ File file ->
