@@ -189,6 +189,10 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
         return true;
     }
 
+    public boolean isCompleted() {
+        return completed.get();
+    }
+
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {

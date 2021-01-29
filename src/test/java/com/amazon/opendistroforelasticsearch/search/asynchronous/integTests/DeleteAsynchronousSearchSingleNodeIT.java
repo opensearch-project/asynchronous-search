@@ -32,6 +32,7 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.hamcrest.Matchers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,8 +58,8 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentDeletes(submitResponse.getId(),
                 (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertEquals(1, numDeleteAcknowledged.get());
-                    assertEquals(concurrentRuns - 1, numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
                 }, concurrentRuns);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
@@ -112,9 +113,9 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentDeletes(submitResponse.getId(),
                 (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertEquals(1, numDeleteAcknowledged.get());
+                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
                     assertEquals(0, numDeleteUnAcknowledged.get());
-                    assertEquals(concurrentRuns - 1, numResourceNotFound.get());
+                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
                 }, concurrentRuns);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
@@ -132,8 +133,8 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         int concurrentRuns = randomIntBetween(10, 20);
         assertConcurrentDeletesForBlockedSearch(submitResponse.getId(),
                 (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertEquals(1, numDeleteAcknowledged.get());
-                    assertEquals(concurrentRuns - 1, numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
                 }, concurrentRuns, plugins);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
@@ -151,8 +152,8 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         int concurrentRuns = randomIntBetween(10, 20);
         assertConcurrentDeletesForBlockedSearch(submitResponse.getId(),
                 (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertEquals(1, numDeleteAcknowledged.get());
-                    assertEquals(concurrentRuns - 1, numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
                 }, concurrentRuns, plugins);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }

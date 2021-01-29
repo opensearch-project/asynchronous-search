@@ -28,6 +28,7 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.stats.InternalA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.task.AsynchronousSearchTask;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
@@ -63,6 +64,7 @@ import org.elasticsearch.threadpool.ExecutorBuilder;
 import org.elasticsearch.threadpool.ScalingExecutorBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.junit.Assert;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -87,7 +89,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
 
     private ClusterSettings clusterSettings;
     private ExecutorBuilder<?> executorBuilder;
-
+    static boolean blockPersistence;
     @Before
     public void createObjects() {
         Settings settings = Settings.builder()
@@ -107,6 +109,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
                 Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30)));
         executorBuilder = executorBuilders.get(0);
         clusterSettings = new ClusterSettings(settings, settingsSet);
+        blockPersistence = false;
     }
 
     public void testFindContext() throws InterruptedException {
@@ -144,8 +147,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
-                    emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {
-            });
+                    emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {});
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(asActiveContext.getTask(), task);
             assertEquals(asActiveContext.getStartTimeMillis(), task.getStartTime());
@@ -194,6 +196,63 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
         }
     }
 
+    public void testUpdateExpirationTimesOutBlockedOnPersistence() throws InterruptedException {
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        ThreadPool testThreadPool = null;
+        try {
+            testThreadPool = new TestThreadPool(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                    executorBuilder);
+            ClusterService mockClusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode,
+                    clusterSettings);
+            FakeClient fakeClient = new FakeClient(testThreadPool);
+            AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(fakeClient,
+                    mockClusterService, testThreadPool);
+
+            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, fakeClient,
+                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+
+            TimeValue keepAlive = timeValueHours(9);
+            boolean keepOnCompletion = true;
+            SearchRequest searchRequest = new SearchRequest();
+            SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
+            submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
+            submitAsynchronousSearchRequest.keepAlive(keepAlive);
+            AsynchronousSearchContext context = asService.createAndStoreContext(submitAsynchronousSearchRequest, System.currentTimeMillis(),
+                    () -> null, null);
+            assertTrue(context instanceof AsynchronousSearchActiveContext);
+            AsynchronousSearchActiveContext asActiveContext = (AsynchronousSearchActiveContext) context;
+            assertNull(asActiveContext.getTask());
+            assertNull(asActiveContext.getAsynchronousSearchId());
+            assertEquals(asActiveContext.getAsynchronousSearchState(), INIT);
+            //bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
+                    TaskId.EMPTY_TASK_ID,
+                    emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {});
+
+            asService.bootstrapSearch(task, context.getContextId());
+            assertEquals(asActiveContext.getTask(), task);
+            assertEquals(asActiveContext.getStartTimeMillis(), task.getStartTime());
+            long originalExpirationTimeMillis = asActiveContext.getExpirationTimeMillis();
+            assertEquals(originalExpirationTimeMillis, task.getStartTime() + keepAlive.millis());
+            assertEquals(asActiveContext.getAsynchronousSearchState(), RUNNING);
+            blockPersistence = true;
+            context.getAsynchronousSearchProgressListener().onResponse(getMockSearchResponse());
+            CountDownLatch updateLatch = new CountDownLatch(1);
+            TimeValue newKeepAlive = timeValueHours(10);
+            fakeClient.awaitBlock();
+            asService.updateKeepAliveAndGetContext(asActiveContext.getAsynchronousSearchId(), newKeepAlive,
+                    asActiveContext.getContextId(), null, new LatchedActionListener<>(wrap(r -> fail("expected update req to timeout"),
+                            e -> assertTrue("expected timeout got " + e.getClass(), e instanceof ElasticsearchTimeoutException)),
+                            updateLatch));
+            updateLatch.await();
+            fakeClient.releaseBlock();
+        } finally {
+            ThreadPool.terminate(testThreadPool, 200, TimeUnit.MILLISECONDS);
+        }
+    }
+
     public void testUpdateExpirationOnRunningSearch() throws InterruptedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
@@ -226,8 +285,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
-                    emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {
-            });
+                    emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {});
 
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(asActiveContext.getTask(), task);
@@ -282,9 +340,9 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             ActionListener<AsynchronousSearchContext> failureExpectingListener = new LatchedActionListener<>(wrap(r -> fail(),
                     e -> assertTrue(e instanceof ResourceNotFoundException)), findContextLatch);
             asService.findContext("nonExistentId", new AsynchronousSearchContextId(randomAlphaOfLength(10),
-                            randomNonNegativeLong()), null, failureExpectingListener);
+                    randomNonNegativeLong()), null, failureExpectingListener);
             asService.findContext("nonExistentId", new AsynchronousSearchContextId(randomAlphaOfLength(10),
-                            randomNonNegativeLong()), user1, failureExpectingListener);
+                    randomNonNegativeLong()), user1, failureExpectingListener);
             findContextLatch.await();
         } finally {
             ThreadPool.terminate(testThreadPool, 200, TimeUnit.MILLISECONDS);
@@ -351,7 +409,6 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = randomBoolean();
             User user1 = TestClientUtils.randomUser();
-            User user2 = TestClientUtils.randomUser();
             SearchRequest searchRequest = new SearchRequest();
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
@@ -366,7 +423,12 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             assertEquals(asActiveContext.getUser(), user1);
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {});
+                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {}) {
+                @Override
+                public boolean isCancelled() {
+                    return true;
+                }
+            };
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(asActiveContext.getTask(), task);
             assertEquals(asActiveContext.getStartTimeMillis(), task.getStartTime());
@@ -402,7 +464,6 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = randomBoolean();
             User user1 = TestClientUtils.randomUser();
-            User user2 = TestClientUtils.randomUser();
             SearchRequest searchRequest = new SearchRequest();
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
@@ -417,7 +478,12 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             assertEquals(asActiveContext.getUser(), user1);
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {});
+                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {}) {
+                @Override
+                public boolean isCancelled() {
+                    return true;
+                }
+            };
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(asActiveContext.getTask(), task);
             assertEquals(asActiveContext.getStartTimeMillis(), task.getStartTime());
@@ -425,7 +491,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             assertEquals(asActiveContext.getAsynchronousSearchState(), RUNNING);
             CountDownLatch latch = new CountDownLatch(1);
             asService.freeContext(context.getAsynchronousSearchId(), context.getContextId(), user1,
-                    new LatchedActionListener<>(wrap(r -> assertTrue(r), e -> fail()), latch));
+                    new LatchedActionListener<>(wrap(Assert::assertTrue, e -> fail()), latch));
             latch.await();
         } finally {
             ThreadPool.terminate(testThreadPool, 200, TimeUnit.MILLISECONDS);
@@ -471,10 +537,12 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     private static class FakeClient extends NoOpClient {
 
         Integer persistenceCount;
+        Boolean block;
 
         FakeClient(ThreadPool threadPool) {
             super(threadPool);
             persistenceCount = 0;
+            block = false;
         }
 
         @Override
@@ -483,8 +551,23 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
                                                                                                   ActionListener<Response> listener) {
             if (action instanceof IndexAction) {
                 persistenceCount++;
+                if (blockPersistence) {
+                    try {
+                        block = true;
+                        waitUntil(() -> block == false);
+                    } catch (InterruptedException e) {
+                        logger.error("block failed due to " + e.getMessage());
+                    }
+                }
             }
             listener.onResponse(null);
+        }
+        public void awaitBlock() throws InterruptedException {
+            waitUntil(() -> block);
+        }
+
+        public void releaseBlock() {
+            block = false;
         }
     }
 

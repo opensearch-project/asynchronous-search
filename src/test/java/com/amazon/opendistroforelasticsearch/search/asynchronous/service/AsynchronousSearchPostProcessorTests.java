@@ -13,22 +13,21 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.search.asynchronous.processor;
+package com.amazon.opendistroforelasticsearch.search.asynchronous.service;
 
-import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchStateMachine;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchStateMachineClosedException;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.event.SearchDeletedEvent;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.event.SearchStartedEvent;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.processor.AsynchronousSearchPostProcessor;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.stats.InternalAsynchronousSearchStats;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
@@ -150,7 +149,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
         }
     }
 
-    public void testProcessSearchResponseBeginPersistence() throws AsynchronousSearchStateMachineClosedException {
+    public void testProcessSearchResponseBeginPersistence() throws AsynchronousSearchStateMachineClosedException, InterruptedException {
         DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         AtomicBoolean activeContextCleanUpConsumerInvocation = new AtomicBoolean();
@@ -185,7 +184,8 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             assertEquals(AsynchronousSearchState.PERSISTING, asResponse.getState());
             AsynchronousSearchAssertions.assertSearchResponses(mockSearchResponse, asResponse.getSearchResponse());
             assertFalse(activeContextCleanUpConsumerInvocation.get());
-            assertEquals(0, fakeClient.persistenceCount);
+            waitUntil(() -> fakeClient.persistenceCount == 1);
+            assertEquals(1, fakeClient.persistenceCount);
         } finally {
             ThreadPool.terminate(testThreadPool, 200, TimeUnit.MILLISECONDS);
         }

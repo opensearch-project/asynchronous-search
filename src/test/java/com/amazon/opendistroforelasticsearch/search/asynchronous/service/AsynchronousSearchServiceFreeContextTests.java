@@ -92,7 +92,6 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
     private ExecutorBuilder<?> executorBuilder;
     private static boolean persisted = false;
     private static boolean userMatches = false;
-    private static boolean cancelTaskSuccess = false;
     private static boolean simulateTimedOut = false;
     private static boolean simulateUncheckedException = false;
 
@@ -118,7 +117,6 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
         clusterSettings = new ClusterSettings(settings, settingsSet);
         persisted = false;
         userMatches = false;
-        cancelTaskSuccess = false;
         simulateTimedOut = false;
         simulateUncheckedException = false;
     }
@@ -154,7 +152,7 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
     }
 
     public void testFreePersistedContextUserNotMatches() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+            DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -218,8 +216,12 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
-                    emptyMap(), asActiveContext, null, (c) -> {
-            });
+                    emptyMap(), asActiveContext, null, (c) -> {}) {
+                @Override
+                public boolean isCancelled() {
+                    return true;
+                }
+            };
             asActiveContext.setTask(task);
             asActiveContext.setState(AsynchronousSearchState.RUNNING);
             when(mockStore.getContext(any())).thenReturn(Optional.of(asActiveContext));
@@ -227,62 +229,6 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
             User user = randomBoolean() ? null : user1; //user
             //task cancellation fails
             CountDownLatch latch = new CountDownLatch(1);
-            cancelTaskSuccess = true;
-            asService.freeContext(asActiveContext.getAsynchronousSearchId(), asActiveContext.getContextId(),
-                    user, new LatchedActionListener<>(ActionListener.wrap(
-                            Assert::assertTrue,
-                            e -> {
-                                fail("active context should have been deleted");
-                            }
-                    ), latch));
-            latch.await();
-            mockClusterService.stop();
-
-
-        } finally {
-            ThreadPool.terminate(testThreadPool, 30, TimeUnit.SECONDS);
-        }
-    }
-
-    public void testFreeContextRunningTaskCancellationFails() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
-        ThreadPool testThreadPool = null;
-        try {
-            testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
-            ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
-            MockClient mockClient = new MockClient(testThreadPool);
-            AsynchronousSearchActiveStore mockStore = mock(AsynchronousSearchActiveStore.class);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, mockStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
-
-            TimeValue keepAlive = timeValueDays(9);
-            boolean keepOnCompletion = true;
-            User user1 = randomBoolean() ? randomUser() : null;
-            SearchRequest searchRequest = new SearchRequest();
-            SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
-            submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
-            submitAsynchronousSearchRequest.keepAlive(keepAlive);
-            AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(testThreadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
-            AsynchronousSearchActiveContext asActiveContext = new AsynchronousSearchActiveContext(asContextId, discoveryNode.getId(),
-                    keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1);
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID,
-                    emptyMap(), asActiveContext, null, (c) -> {
-            });
-            asActiveContext.setTask(task);
-            asActiveContext.setState(AsynchronousSearchState.RUNNING);
-            when(mockStore.getContext(any())).thenReturn(Optional.of(asActiveContext));
-            persisted = false;
-            User user = randomBoolean() ? null : user1; //user
-            //task cancellation fails
-            CountDownLatch latch = new CountDownLatch(1);
-            cancelTaskSuccess = false;
             asService.freeContext(asActiveContext.getAsynchronousSearchId(), asActiveContext.getContextId(),
                     user, new LatchedActionListener<>(ActionListener.wrap(
                             Assert::assertTrue,
@@ -594,7 +540,12 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
-                    emptyMap(), asActiveContext, null, (c) -> {});
+                    emptyMap(), asActiveContext, null, (c) -> {}) {
+                @Override
+                public boolean isCancelled() {
+                    return true;
+                }
+            };
             asActiveContext.setTask(task);
             asActiveContext.setState(AsynchronousSearchState.RUNNING);
             when(mockStore.getContext(any())).thenReturn(Optional.of(asActiveContext));
@@ -669,11 +620,8 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
                         1L, 1L, 1L, persisted);
                 listener.onResponse((Response) deleteResponse);
             } else if (action instanceof CancelTasksAction) {
-                if (cancelTaskSuccess) {
-                    listener.onResponse(null);
-                } else {
                     listener.onFailure(new RuntimeException("message"));
-                }
+
             } else {
                 listener.onResponse(null);
             }

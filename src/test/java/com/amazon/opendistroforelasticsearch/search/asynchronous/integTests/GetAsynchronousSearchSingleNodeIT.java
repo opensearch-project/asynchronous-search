@@ -207,7 +207,7 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         AtomicInteger numVersionConflictFailures = new AtomicInteger();
         TestThreadPool testThreadPool = null;
         try {
-            testThreadPool = new TestThreadPool(DeleteAsynchronousSearchSingleNodeIT.class.getName());
+            testThreadPool = new TestThreadPool(GetAsynchronousSearchSingleNodeIT.class.getName());
             int numThreads = concurrentRuns;
             long lowerKeepAliveMillis = 5 * 1000 * 60 * 60 ;
             long higherKeepAliveMillis = 10 * 1000 * 60 * 60;

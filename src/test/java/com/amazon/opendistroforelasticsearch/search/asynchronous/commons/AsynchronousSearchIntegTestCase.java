@@ -22,9 +22,12 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.Asynchro
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.task.AsynchronousSearchTask;
 import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.NoShardAvailableActionException;
+import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksAction;
+import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksRequest;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -211,5 +214,11 @@ public abstract class AsynchronousSearchIntegTestCase extends ESIntegTestCase {
     @Override
     protected boolean ignoreExternalCluster() {
         return true;
+    }
+
+    protected void waitForAsyncSearchTasksToComplete() throws InterruptedException {
+        ListTasksRequest listTasksRequest = new ListTasksRequest();
+        listTasksRequest.setActions(AsynchronousSearchTask.NAME);
+        waitUntil(() -> client().execute(ListTasksAction.INSTANCE, listTasksRequest).actionGet().getTasks().isEmpty());
     }
 }

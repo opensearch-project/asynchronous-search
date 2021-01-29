@@ -194,6 +194,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             assertEquals(expectedNumPersisted.get(), actualNumPersisted.get());
             assertEquals(expectedNumFailures.get(), actualNumFailures.get());
             assertEquals(expectedNumSuccesses.get(), actualNumSuccesses.get());
+            waitForAsyncSearchTasksToComplete();
         } finally {
             ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
         }
@@ -279,6 +280,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         }
         assertTrue(verifyThrottlingFromStats());
         disableBlocks(plugins);
+        waitForAsyncSearchTasksToComplete();
     }
 
     private boolean verifyThrottlingFromStats() {

@@ -15,6 +15,7 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.context.active;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchStateMachine;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.event.SearchDeletedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +29,7 @@ import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.newConcurrentMapLongWithAggressiveConcurrency;
 
@@ -88,7 +90,7 @@ public class AsynchronousSearchActiveStore {
      * @return if the context could be DELETED
      */
     public boolean freeContext(AsynchronousSearchContextId asynchronousSearchContextId) {
-        //TODO assert calledFromAsynchronousSearchStateMachine() : "Method should only ever be invoked by the state machine";
+        assert calledFromAsynchronousSearchStateMachine() : "Method should only ever be invoked by the state machine";
         AsynchronousSearchActiveContext asynchronousSearchContext = activeContexts.get(asynchronousSearchContextId.getId());
         if (asynchronousSearchContext != null) {
             logger.debug("Removing asynchronous search [{}] from active store", asynchronousSearchContext.getAsynchronousSearchId());
@@ -97,5 +99,23 @@ public class AsynchronousSearchActiveStore {
             return true;
         }
         return false;
+    }
+
+    private static boolean calledFromAsynchronousSearchStateMachine() {
+        return Stream.of(Thread.currentThread().getStackTrace()).
+                skip(1). //skip getStackTrace
+                limit(10). //limit depth of analysis to 10 frames, it should be enough
+                anyMatch(f ->
+                {
+                    try {
+                        boolean isTestMethodInvocation = f.getClassName().contains("AsynchronousSearchActiveStoreTests");
+                        boolean isStateMachineTriggerMethodInvocation = AsynchronousSearchStateMachine.class
+                                .isAssignableFrom(Class.forName(f.getClassName())) && f.getMethodName().equals("trigger");
+                        return isTestMethodInvocation || isStateMachineTriggerMethodInvocation;
+                    } catch (Exception ignored) {
+                        return false;
+                    }
+                }
+        );
     }
 }

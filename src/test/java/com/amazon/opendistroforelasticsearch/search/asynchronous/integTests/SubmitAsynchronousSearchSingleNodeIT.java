@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.integTests;
 
+import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;
@@ -25,6 +26,7 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.ClusterState;
@@ -59,7 +61,8 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         return Settings.builder().put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), asConcurrentLimit).build();
     }
 
-    public void testSubmitAsynchronousSearchWithoutRetainedResponse() throws InterruptedException {
+    public void
+    testSubmitAsynchronousSearchWithoutRetainedResponse() throws InterruptedException {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices("index");
         searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
@@ -74,6 +77,8 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             assertEquals(0, numFailedAsynchronousSearch.get());
             assertEquals(0, numErrorResponseAsynchronousSearch.get());
         }, concurrentRuns);
+        AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
+        waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty,30, TimeUnit.SECONDS);
     }
 
     public void testSubmitAsynchronousSearchWithRetainedResponse() throws InterruptedException {
@@ -91,6 +96,8 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             assertEquals(0, numFailedAsynchronousSearch.get());
             assertEquals(0, numErrorResponseAsynchronousSearch.get());
         }, concurrentRuns);
+        AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
+        waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty,30, TimeUnit.SECONDS);
     }
 
     public void testSubmitAsynchronousSearchWithNoRetainedResponseBlocking() throws Exception {
@@ -101,6 +108,8 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             assertEquals(concurrentRuns - asConcurrentLimit, numFailedAsynchronousSearch.get());
             assertEquals(concurrentRuns - asConcurrentLimit, numRejectedAsynchronousSearch.get());
         }, concurrentRuns);
+        AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
+        waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty,30, TimeUnit.SECONDS);
     }
 
     private void assertConcurrentSubmitsForBlockedSearch(TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
@@ -124,7 +133,7 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
                             Collections.emptyMap())));
                     SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
                     submitAsynchronousSearchRequest.keepOnCompletion(false);
-                    submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
+                    submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(100));
                     executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest,
                             new ActionListener<AsynchronousSearchResponse>() {
                         @Override
@@ -201,20 +210,18 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
                             if (submitAsynchronousSearchRequest.getKeepOnCompletion()) {
                                 DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
                                         asResponse.getId());
-                                executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest,
+                                executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest,new LatchedActionListener<>(
                                         new ActionListener<AcknowledgedResponse>() {
                                     @Override
                                     public void onResponse(AcknowledgedResponse acknowledgedResponse) {
                                         assertTrue(acknowledgedResponse.isAcknowledged());
-                                        finalCountDownLatch.countDown();
                                     }
 
                                     @Override
                                     public void onFailure(Exception e) {
-                                        fail("Search deletion failed for asynchronous search id " + asResponse.getId());
-                                        finalCountDownLatch.countDown();
+                                        fail("Search deletion failed for asynchronous search id " + e.getMessage());
                                     }
-                                });
+                                }, finalCountDownLatch));
                             }
                             ;
                         }

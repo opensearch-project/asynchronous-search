@@ -78,7 +78,9 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends ESSingleNodeT
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        assertTrue(getInstanceFromNode(AsynchronousSearchService.class).getAllActiveContexts().isEmpty());
+        Map<Long, AsynchronousSearchActiveContext> allActiveContexts = getInstanceFromNode(AsynchronousSearchService.class)
+                .getAllActiveContexts();
+        assertTrue(allActiveContexts.toString(),allActiveContexts.isEmpty());
         createIndex(TEST_INDEX, Settings.builder().put("index.refresh_interval", -1).build());
         for (int i = 0; i < 10; i++)
             client().prepareIndex(TEST_INDEX, "type", String.valueOf(i)).setSource("field", "value" + i)

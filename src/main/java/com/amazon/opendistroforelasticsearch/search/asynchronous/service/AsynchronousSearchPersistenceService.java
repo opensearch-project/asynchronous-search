@@ -61,7 +61,6 @@ import java.util.function.Consumer;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.UserAuthUtils.isUserValid;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.UserAuthUtils.parseUser;
-import static org.elasticsearch.action.support.TransportActions.isShardNotAvailableException;
 import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
 
 /**
@@ -86,6 +85,8 @@ public class AsynchronousSearchPersistenceService {
     public static final BackoffPolicy STORE_BACKOFF_POLICY =
             BackoffPolicy.exponentialBackoff(timeValueMillis(250), 14);
     public static final String BACKEND_ROLES = "backend_roles";
+    public static final String SETTING_INDEX_CODEC = "index.codec";
+    public static final String BEST_COMPRESSION_CODEC = "best_compression";
 
     private final Client client;
     private final ClusterService clusterService;
@@ -246,7 +247,6 @@ public class AsynchronousSearchPersistenceService {
             source.put(EXPIRATION_TIME_MILLIS, expirationTimeMillis);
             updateRequest.doc(source, XContentType.JSON);
         } else {
-            //TODO - Remove hardcoded strings
             String scriptCode = "if (ctx._source.user == null || ctx._source.user.backend_roles == null || " +
                     "(params.backend_roles != null && params.backend_roles.containsAll(ctx._source.user.backend_roles))) " +
                     "{ ctx._source.expiration_time_millis = params.expiration_time_millis } else { ctx.op = 'none' }";
@@ -376,7 +376,7 @@ public class AsynchronousSearchPersistenceService {
             @Override
             public void onFailure(Exception e) {
                 final Throwable cause = ExceptionsHelper.unwrapCause(e);
-                if (((cause instanceof EsRejectedExecutionException || isShardNotAvailableException(e))) && backoff.hasNext()) {
+                if ((cause instanceof EsRejectedExecutionException) && backoff.hasNext()) {
                     TimeValue wait = backoff.next();
                     logger.warn(() -> new ParameterizedMessage("failed to store asynchronous search response [{}], retrying in [{}]",
                             indexRequestBuilder.request().id(), wait), e);
@@ -396,6 +396,7 @@ public class AsynchronousSearchPersistenceService {
                 .put(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.getKey(), "0-1")
                 .put(IndexMetadata.SETTING_PRIORITY, Integer.MAX_VALUE)
                 .put(IndexMetadata.SETTING_INDEX_HIDDEN, true)
+                .put(SETTING_INDEX_CODEC, BEST_COMPRESSION_CODEC)
                 .build();
     }
 
