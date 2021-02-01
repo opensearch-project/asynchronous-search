@@ -44,7 +44,7 @@ public class AsynchronousSearchTask extends SearchTask {
     public AsynchronousSearchTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers,
                            AsynchronousSearchActiveContext asynchronousSearchContext, SubmitAsynchronousSearchRequest request,
                            Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer) {
-        super(id, type, action, null, parentTaskId, headers);
+        super(id, type, action, () -> description(request), parentTaskId, headers);
         Objects.requireNonNull(asynchronousSearchContext);
         Objects.requireNonNull(freeActiveContextConsumer);
         this.freeActiveContextConsumer = freeActiveContextConsumer;
@@ -59,8 +59,7 @@ public class AsynchronousSearchTask extends SearchTask {
         freeActiveContextConsumer.accept(asynchronousSearchActiveContext);
     }
 
-    @Override
-    public String getDescription() {
+    private static String description(SubmitAsynchronousSearchRequest request) {
         StringBuilder sb = new StringBuilder("[asynchronous search] :");
         sb.append("indices[");
         Strings.arrayToDelimitedString(request.getSearchRequest().indices(), ",", sb);
@@ -69,6 +68,7 @@ public class AsynchronousSearchTask extends SearchTask {
         Strings.arrayToDelimitedString(request.getSearchRequest().types(), ",", sb);
         sb.append("], ");
         sb.append("search_type[").append(request.getSearchRequest().searchType()).append("], ");
+        sb.append("keep_on_completion[").append(request.getKeepOnCompletion()).append("], ");
         sb.append("keep_alive[").append(request.getKeepAlive()).append("], ");
         if (request.getSearchRequest().source() != null) {
             sb.append("source[").append(request.getSearchRequest().source()

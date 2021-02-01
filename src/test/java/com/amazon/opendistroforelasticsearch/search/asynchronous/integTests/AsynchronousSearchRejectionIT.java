@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.integTests;
 
-import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.DeleteAsynchronousSearchAction;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase;
@@ -25,6 +24,7 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.DeleteA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
@@ -94,34 +94,40 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
             submitAsynchronousSearchRequest.keepOnCompletion(true);
                     client().execute(SubmitAsynchronousSearchAction.INSTANCE, submitAsynchronousSearchRequest,
                             new LatchedActionListener<>(new ActionListener<AsynchronousSearchResponse>() {
-                        @Override
-                        public void onResponse(AsynchronousSearchResponse asResponse) {
-                            if (asResponse.getSearchResponse() == null) {
-                                responses.add(asResponse.getError());
-                            } else {
-                                responses.add(asResponse.getSearchResponse());
-                            }
-                            DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
-                                    asResponse.getId());
-                            client().execute(DeleteAsynchronousSearchAction.INSTANCE, deleteAsynchronousSearchRequest,
-                                    new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
                                 @Override
-                                public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                                    assertTrue(acknowledgedResponse.isAcknowledged());
-                                }
-
-                                @Override
-                                public void onFailure(Exception e) {
-                                    Throwable cause = ExceptionsHelper.unwrapCause(e);
-                                    if (cause instanceof EsRejectedExecutionException) {
-                                        numRejections.incrementAndGet();
-                                    } else if (cause instanceof ElasticsearchTimeoutException) {
-                                        numTimeouts.incrementAndGet();
+                                public void onResponse(AsynchronousSearchResponse asynchronousSearchResponse) {
+                                    if (asynchronousSearchResponse.getSearchResponse() == null) {
+                                        responses.add(asynchronousSearchResponse.getError());
                                     } else {
-                                        numFailures.incrementAndGet();
+                                        responses.add(asynchronousSearchResponse.getSearchResponse());
                                     }
-                                }
-                            }, latch));
+                                    if (asynchronousSearchResponse.getId() == null) {
+                                        // task cancelled by the time we process final response/error due to during partial merge failure.
+                                        // no  delete required
+                                        latch.countDown();
+                                    } else {
+                                        DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest
+                                                = new DeleteAsynchronousSearchRequest(asynchronousSearchResponse.getId());
+                                        client().execute(DeleteAsynchronousSearchAction.INSTANCE, deleteAsynchronousSearchRequest,
+                                                new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
+                                                    @Override
+                                                    public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                                                        assertTrue(acknowledgedResponse.isAcknowledged());
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(Exception e) {
+                                                        Throwable cause = ExceptionsHelper.unwrapCause(e);
+                                                        if (cause instanceof EsRejectedExecutionException) {
+                                                            numRejections.incrementAndGet();
+                                                        } else if (cause instanceof ElasticsearchTimeoutException) {
+                                                            numTimeouts.incrementAndGet();
+                                                        } else {
+                                                            numFailures.incrementAndGet();
+                                                        }
+                                                    }
+                                                }, latch));
+                                    }
                         }
                         @Override
                         public void onFailure(Exception e) {
@@ -149,6 +155,8 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                     SearchPhaseExecutionException e = (SearchPhaseExecutionException) unwrap;
                     for (ShardSearchFailure failure : e.shardFailures()) {
                         assertTrue("got unexpected reason..." + failure.reason(),
+                        // task cancellation can occur due to partial merge failures
+                                failure.reason().toLowerCase(Locale.ENGLISH).contains("cancelled") ||
                                 failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected"));
                     }
                 } else if ((unwrap instanceof EsRejectedExecutionException) == false) {

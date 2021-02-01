@@ -51,7 +51,7 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
 
     @Override
     public String getName() {
-        return "async_search_action";
+        return "submit_asynchronous_search_action";
     }
 
     @Override
@@ -67,7 +67,7 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
 
         IntConsumer setSize = size -> searchRequest.source().size(size);
         request.withContentOrSourceParamParserOrNull(parser ->
-                RestSearchAction.parseSearchRequest(searchRequest, request, parser, setSize));
+                RestSearchAction.parseSearchRequest(searchRequest, request, parser, client.getNamedWriteableRegistry(), setSize));
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
 
         submitAsynchronousSearchRequest.waitForCompletionTimeout(request.paramAsTime("wait_for_completion_timeout",

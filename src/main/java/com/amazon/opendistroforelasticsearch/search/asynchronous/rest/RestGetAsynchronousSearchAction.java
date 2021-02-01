@@ -33,7 +33,7 @@ public class RestGetAsynchronousSearchAction extends BaseRestHandler {
 
     @Override
     public String getName() {
-        return "get_async_search";
+        return "get_asynchronous_search";
     }
 
     @Override

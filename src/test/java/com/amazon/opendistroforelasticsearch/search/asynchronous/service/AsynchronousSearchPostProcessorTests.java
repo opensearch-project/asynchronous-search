@@ -133,7 +133,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
                     new ShardSearchFailure[]{shardSearchFailure});
             asStateMachine.trigger(new SearchStartedEvent(context,
-                    new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
+                    new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap())));
             asStateMachine.trigger(new SearchDeletedEvent(context));
             AsynchronousSearchResponse asResponse = postProcessor.processSearchFailure(exception, context.getContextId());
             assertNull(asResponse.getId());
@@ -176,7 +176,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
                     submitAsynchronousSearchRequest,
                     System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asStateMachine.trigger(new SearchStartedEvent(context,
-                    new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
+                    new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap())));
             SearchResponse mockSearchResponse = getMockSearchResponse();
             AsynchronousSearchResponse asResponse = postProcessor.processSearchResponse(mockSearchResponse, context.getContextId());
             assertNotNull(asResponse.getId());
@@ -218,7 +218,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
                     submitAsynchronousSearchRequest,
                     System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asStateMachine.trigger(new SearchStartedEvent(context,
-                    new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
+                    new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap())));
             SearchResponse mockSearchResponse = getMockSearchResponse();
             AsynchronousSearchResponse asResponse = postProcessor.processSearchResponse(mockSearchResponse, context.getContextId());
             assertNotNull(asResponse.getId());
@@ -263,7 +263,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
                     submitAsynchronousSearchRequest,
                     System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asStateMachine.trigger(new SearchStartedEvent(context,
-                    new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
+                    new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap())));
             SearchResponse mockSearchResponse = getMockSearchResponse();
             waitUntil(() -> context.isExpired());
             AsynchronousSearchResponse asResponse = postProcessor.processSearchResponse(mockSearchResponse, context.getContextId());
@@ -306,7 +306,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
                     submitAsynchronousSearchRequest,
                     System.currentTimeMillis(), () -> InternalAggregationTestCase.emptyReduceContextBuilder(), null);
             asStateMachine.trigger(new SearchStartedEvent(context,
-                    new SearchTask(0, "n/a", "n/a", "test", null, Collections.emptyMap())));
+                    new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap())));
             asStateMachine.trigger(new SearchDeletedEvent(context));
             SearchResponse mockSearchResponse = getMockSearchResponse();
             AsynchronousSearchResponse asResponse = postProcessor.processSearchResponse(mockSearchResponse, context.getContextId());

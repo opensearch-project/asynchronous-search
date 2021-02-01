@@ -122,15 +122,18 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
                     threadPool::absoluteTimeInMillis, asProgressListener, user);
             SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest("test"));
             request.keepAlive(keepAlive);
+            request.keepOnCompletion(keepOnCompletion);
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport",
                     SearchAction.NAME, TaskId.EMPTY_TASK_ID, emptyMap(), context, request, (c) -> {});
             context.setTask(task);
             assertEquals(task, context.getTask());
             assertEquals(task.getStartTime(), context.getStartTimeMillis());
             assertEquals(task.getStartTime() + keepAlive.getMillis(), context.getExpirationTimeMillis());
-            assertThat(task.getDescription(), containsString("[asynchronous search]"));
-            assertThat(task.getDescription(), containsString("indices[test]"));
-            assertThat(task.getDescription(), containsString("keep_alive[" + keepAlive + "]"));
+            String description = task.getDescription();
+            assertThat(description, containsString("[asynchronous search]"));
+            assertThat(description, containsString("indices[test]"));
+            assertThat(description, containsString("keep_alive[" + keepAlive + "]"));
+            assertThat(description, containsString("keep_on_completion[" + keepOnCompletion + "]"));
             assertTrue(context.isAlive());
             assertFalse(context.isExpired());
             expectThrows(SetOnce.AlreadySetException.class, () -> context.setTask(task));

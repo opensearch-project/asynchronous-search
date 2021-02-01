@@ -24,7 +24,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchShard;
 import org.elasticsearch.action.search.SearchTask;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.io.stream.DelayableWriteable;
 import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.BucketOrder;
@@ -148,7 +147,7 @@ public class AsynchronousSearchPartialResponseIT extends ESIntegTestCase {
 
                 @Override
                 protected void onPartialReduce(List<SearchShard> shards, TotalHits totalHits,
-                                               DelayableWriteable.Serialized<InternalAggregations> aggs, int reducePhase) {
+                                               InternalAggregations aggs, int reducePhase) {
                     super.onPartialReduce(shards, totalHits, aggs, reducePhase);
                     Terms terms = this.partialResponse().getAggregations().get("keys");
                     List<? extends Terms.Bucket> buckets = terms.getBuckets();

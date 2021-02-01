@@ -238,13 +238,13 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     }
 
     public static AsynchronousSearchResponse fromXContent(XContentParser parser) throws IOException {
-        ensureExpectedToken(XContentParser.Token.START_OBJECT, parser.nextToken(), parser::getTokenLocation);
+        ensureExpectedToken(XContentParser.Token.START_OBJECT, parser.nextToken(), parser);
         parser.nextToken();
         return innerFromXContent(parser);
     }
 
     public static AsynchronousSearchResponse innerFromXContent(XContentParser parser) throws IOException {
-        ensureExpectedToken(XContentParser.Token.FIELD_NAME, parser.currentToken(), parser::getTokenLocation);
+        ensureExpectedToken(XContentParser.Token.FIELD_NAME, parser.currentToken(), parser);
         String id = null;
         AsynchronousSearchState status = null;
         long startTimeMillis = -1;
@@ -256,7 +256,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
             currentFieldName = parser.currentName();
             if (RESPONSE.match(currentFieldName, parser.getDeprecationHandler())) {
                 if (token == XContentParser.Token.START_OBJECT) {
-                    ensureExpectedToken(XContentParser.Token.FIELD_NAME, parser.nextToken(), parser::getTokenLocation);
+                    ensureExpectedToken(XContentParser.Token.FIELD_NAME, parser.nextToken(), parser);
                     searchResponse = SearchResponse.innerFromXContent(parser);
                 }
             } else if (ERROR.match(currentFieldName, parser.getDeprecationHandler())) {

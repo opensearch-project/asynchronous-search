@@ -35,7 +35,6 @@ import static org.hamcrest.Matchers.containsString;
 public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase {
 
     public void testMaxKeepAliveSetting() throws Exception {
-        try {
             SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             validRequest.keepAlive(TimeValue.timeValueHours(7));
             AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
@@ -48,13 +47,9 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
             assertThat(responseException.getMessage(), containsString("Keep alive for asynchronous search (" +
                     invalidRequest.getKeepAlive().getMillis() + ") is too large"));
             updateClusterSettings(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(24));
-        } finally {
-            deleteIndexIfExists();
-        }
     }
 
     public void testSubmitInvalidWaitForCompletion() throws Exception {
-        try {
             SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             validRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
             AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
@@ -69,14 +64,9 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
                     validRequest.getWaitForCompletionTimeout().getMillis() + ") is too large"));
             updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
                     TimeValue.timeValueSeconds(60));
-        } finally {
-            deleteIndexIfExists();
-        }
-
     }
 
     public void testMaxRunningAsynchronousSearchContexts() throws Exception {
-        try {
             int numThreads = 50;
             List<Thread> threadsList = new LinkedList<>();
             CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
@@ -136,8 +126,5 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
             }
             assertEquals(numFailures.get(), 50);
             updateClusterSettings(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), DEFAULT_MAX_RUNNING_SEARCHES);
-        } finally {
-            deleteIndexIfExists();
-        }
     }
 }

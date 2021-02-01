@@ -35,7 +35,7 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
 
     private static final Logger LOG = LogManager.getLogger(RestAsynchronousSearchStatsAction.class);
 
-    private static final String NAME = "async_search_stats_action";
+    private static final String NAME = "asynchronous_search_stats_action";
 
     public RestAsynchronousSearchStatsAction() {
     }

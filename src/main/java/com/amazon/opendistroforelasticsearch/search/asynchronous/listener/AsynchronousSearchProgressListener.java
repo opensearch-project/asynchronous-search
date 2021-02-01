@@ -22,7 +22,6 @@ import org.elasticsearch.action.search.SearchProgressActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchShard;
 import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.io.stream.DelayableWriteable;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.aggregations.InternalAggregation;
@@ -86,11 +85,10 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
     }
 
     @Override
-    protected void onPartialReduce(List<SearchShard> shards, TotalHits totalHits,
-                                   DelayableWriteable.Serialized<InternalAggregations> aggs, int reducePhase) {
+    protected void onPartialReduce(List<SearchShard> shards, TotalHits totalHits, InternalAggregations aggs, int reducePhase) {
         assert reducePhase > partialResultsHolder.reducePhase.get() : "reduce phase " + reducePhase + "less than previous phase"
                 + partialResultsHolder.reducePhase.get();
-        partialResultsHolder.delayedInternalAggregations.set(aggs);
+        partialResultsHolder.partialInternalAggregations.set(aggs);
         partialResultsHolder.reducePhase.set(reducePhase);
         partialResultsHolder.totalHits.set(totalHits);
     }
@@ -101,21 +99,19 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
                 + partialResultsHolder.reducePhase.get();
         partialResultsHolder.internalAggregations.set(aggs);
         //we don't need to hold its reference beyond this point
-        partialResultsHolder.delayedInternalAggregations.set(null);
+        partialResultsHolder.partialInternalAggregations.set(null);
         partialResultsHolder.reducePhase.set(reducePhase);
         partialResultsHolder.totalHits.set(totalHits);
     }
 
     @Override
     protected void onFetchFailure(int shardIndex, SearchShardTarget shardTarget, Exception exc) {
-        assert partialResultsHolder.hasFetchPhase.get() : "Fetch failure without fetch phase";
         assert shardIndex < partialResultsHolder.totalShards.get();
         onSearchFailure(shardIndex, shardTarget, exc);
     }
 
     @Override
     protected void onFetchResult(int shardIndex) {
-        assert partialResultsHolder.hasFetchPhase.get() : "Fetch result without fetch phase";
         assert shardIndex < partialResultsHolder.totalShards.get();
         onShardResult(shardIndex);
     }
@@ -204,7 +200,7 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
         final AtomicInteger successfulShards;
         final AtomicReference<TotalHits> totalHits;
         final AtomicReference<InternalAggregations> internalAggregations;
-        final AtomicReference<DelayableWriteable.Serialized<InternalAggregations>> delayedInternalAggregations;
+        final AtomicReference<InternalAggregations> partialInternalAggregations;
         final long relativeStartMillis;
         final LongSupplier relativeTimeSupplier;
         final Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder;
@@ -221,7 +217,7 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
             this.hasFetchPhase = new SetOnce<>();
             this.totalHits = new AtomicReference<>();
             this.clusters = new SetOnce<>();
-            this.delayedInternalAggregations = new AtomicReference<>();
+            this.partialInternalAggregations = new AtomicReference<>();
             this.relativeStartMillis = relativeStartMillis;
             this.successfulShardIds = new HashSet<>(1);
             this.relativeTimeSupplier = relativeTimeSupplier;
@@ -237,8 +233,8 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
                     finalAggregation = internalAggregations.get();
                     //before final reduce phase ensure we do a top-level final reduce to get reduced aggregation results
                     //else we might be returning back all the partial results aggregated so far
-                } else if (delayedInternalAggregations.get() != null) {
-                    finalAggregation = InternalAggregations.topLevelReduce(Arrays.asList(delayedInternalAggregations.get().expand()),
+                } else if (partialInternalAggregations.get() != null) {
+                    finalAggregation = InternalAggregations.topLevelReduce(Arrays.asList(partialInternalAggregations.get()),
                             reduceContextBuilder.get().forFinalReduction());
                 }
                 InternalSearchResponse internalSearchResponse = new InternalSearchResponse(searchHits,

@@ -32,7 +32,7 @@ public class RestDeleteAsynchronousSearchAction extends BaseRestHandler {
 
     @Override
     public String getName() {
-        return "delete_async_search";
+        return "delete_asynchronous_search";
     }
 
     @Override
