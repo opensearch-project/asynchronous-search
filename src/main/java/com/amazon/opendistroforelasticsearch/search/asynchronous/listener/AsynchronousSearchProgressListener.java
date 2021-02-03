@@ -28,7 +28,7 @@ import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.internal.InternalSearchResponse;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,7 +44,7 @@ import java.util.function.Supplier;
  * The implementation of {@link CompositeSearchProgressActionListener} responsible for updating the partial results of a single asynchronous
  * search request. All partial results are updated atomically.
  */
-public class AsynchronousSearchProgressListener extends SearchProgressActionListener {
+public class AsynchronousSearchProgressListener extends SearchProgressActionListener implements PartialResponseProvider {
 
     private PartialResultsHolder partialResultsHolder;
     private final CompositeSearchProgressActionListener<AsynchronousSearchResponse> searchProgressActionListener;
@@ -53,7 +53,7 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
     private final ExecutorService executor;
 
     public AsynchronousSearchProgressListener(long relativeStartMillis, Function<SearchResponse,
-            AsynchronousSearchResponse> successFunction,
+                                       AsynchronousSearchResponse> successFunction,
                                        Function<Exception, AsynchronousSearchResponse> failureFunction,
                                        ExecutorService executor, LongSupplier relativeTimeSupplier,
                                        Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder) {
@@ -69,6 +69,7 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
      * Returns the partial response for the search response.
      * @return the partial search response
      */
+    @Override
     public SearchResponse partialResponse() {
         return partialResultsHolder.partialResponse();
     }
@@ -234,7 +235,7 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
                     //before final reduce phase ensure we do a top-level final reduce to get reduced aggregation results
                     //else we might be returning back all the partial results aggregated so far
                 } else if (partialInternalAggregations.get() != null) {
-                    finalAggregation = InternalAggregations.topLevelReduce(Arrays.asList(partialInternalAggregations.get()),
+                    finalAggregation = InternalAggregations.topLevelReduce(Collections.singletonList(partialInternalAggregations.get()),
                             reduceContextBuilder.get().forFinalReduction());
                 }
                 InternalSearchResponse internalSearchResponse = new InternalSearchResponse(searchHits,

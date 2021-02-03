@@ -45,13 +45,9 @@ import org.elasticsearch.threadpool.ScalingExecutorBuilder;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.CLOSED;
 import static java.util.Collections.emptyMap;
@@ -83,8 +79,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             User user = TestClientUtils.randomUser();
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
             AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
-                    keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, user);
+                    keepAlive, keepOnCompletion, threadPool, threadPool::absoluteTimeInMillis, asProgressListener, user, () -> true);
             assertEquals(AsynchronousSearchState.INIT, context.getAsynchronousSearchState());
             assertNull(context.getTask());
             assertNull(context.getAsynchronousSearchId());
@@ -119,7 +114,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
             AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
                     keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, user);
+                    threadPool::absoluteTimeInMillis, asProgressListener, user, () -> true);
             SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest("test"));
             request.keepAlive(keepAlive);
             request.keepOnCompletion(keepOnCompletion);
@@ -172,38 +167,29 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
             AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
                     keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, null);
+            threadPool::absoluteTimeInMillis, asProgressListener, null, () -> true);
+            if (randomBoolean()) {
+                SearchResponse mockSearchResponse = getMockSearchResponse();
+                try {
+                    context.processSearchResponse(mockSearchResponse);
+                } catch (Exception ex) {
+                    fail("Unexpected exception "+ ex);
+                }
+                if (mockSearchResponse.equals(context.getSearchResponse())) {
+                    assertNull(context.getSearchError());
+                }
+            } else {
+                RuntimeException e = new RuntimeException(UUID.randomUUID().toString());
+                try {
+                    context.processSearchFailure(e);
+                } catch (Exception ex) {
+                    fail("Unexpected exception "+ ex);
+                }
+                if (e.equals(context.getSearchError())) {
+                    assertNull(context.getSearchResponse());
+                }
+            }
 
-            int numThreads = 10;
-            AtomicInteger numSuccesses = new AtomicInteger();
-            List<Runnable> runnables = new ArrayList<>();
-            CountDownLatch countDownLatch = new CountDownLatch(numThreads);
-            for (int i = 0; i < numThreads; i++) {
-                Runnable runnable = () -> {
-                    if (randomBoolean()) {
-                        SearchResponse mockSearchResponse = getMockSearchResponse();
-                        context.processSearchResponse(mockSearchResponse);
-                        if (mockSearchResponse.equals(context.getSearchResponse())) {
-                            numSuccesses.getAndIncrement();
-                            assertNull(context.getSearchError());
-                        }
-                    } else {
-                        RuntimeException e = new RuntimeException(UUID.randomUUID().toString());
-                        context.processSearchFailure(e);
-                        if (e.equals(context.getSearchError())) {
-                            numSuccesses.getAndIncrement();
-                            assertNull(context.getSearchResponse());
-                        }
-                    }
-                    countDownLatch.countDown();
-                };
-                runnables.add(runnable);
-            }
-            for (Runnable r : runnables) {
-                threadPool.executor(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME).execute(r);
-            }
-            countDownLatch.await();
-            assertEquals(numSuccesses.get(), 1);
         } finally {
             ThreadPool.terminate(threadPool, 30, TimeUnit.SECONDS);
         }
@@ -234,7 +220,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
             AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
                     keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, null);
+                    threadPool::absoluteTimeInMillis, asProgressListener, null, () -> true);
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport",
                     SearchAction.NAME, TaskId.EMPTY_TASK_ID, emptyMap(), context, null, (c) -> {
             });

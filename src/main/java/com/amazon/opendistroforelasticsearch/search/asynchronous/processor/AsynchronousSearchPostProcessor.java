@@ -37,6 +37,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -63,13 +64,12 @@ public class AsynchronousSearchPostProcessor {
                                            AsynchronousSearchActiveStore asynchronousSearchActiveStore,
                                            AsynchronousSearchStateMachine stateMachine,
                                            Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer,
-                                           ThreadPool threadPool) {
+                                           ThreadPool threadPool, ClusterService clusterService) {
         this.asynchronousSearchActiveStore = asynchronousSearchActiveStore;
         this.asynchronousSearchPersistenceService = asynchronousSearchPersistenceService;
         this.asynchronousSearchStateMachine = stateMachine;
         this.freeActiveContextConsumer = freeActiveContextConsumer;
         this.threadPool = threadPool;
-
     }
 
     public AsynchronousSearchResponse processSearchFailure(Exception exception, AsynchronousSearchContextId asynchronousSearchContextId) {

@@ -92,6 +92,7 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
                         AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
+                        AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
@@ -120,9 +121,10 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, fakeClient,
                     mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsynchronousSearchStateMachine asStateMachine = asService.getStateMachine();
+            ClusterService clusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
             AsynchronousSearchPostProcessor postProcessor = new AsynchronousSearchPostProcessor(persistenceService,
                     asActiveStore, asStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool, clusterService);
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             submitAsynchronousSearchRequest.keepOnCompletion(true);
             submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueHours(1));
@@ -166,9 +168,10 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, fakeClient,
                     mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsynchronousSearchStateMachine asStateMachine = asService.getStateMachine();
+            ClusterService clusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
             AsynchronousSearchPostProcessor postProcessor = new AsynchronousSearchPostProcessor(persistenceService,
                     asActiveStore, asStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool, clusterService);
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             submitAsynchronousSearchRequest.keepOnCompletion(true);
             submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueHours(1));
@@ -208,9 +211,10 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, fakeClient,
                     mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsynchronousSearchStateMachine asStateMachine = asService.getStateMachine();
+            ClusterService clusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
             AsynchronousSearchPostProcessor postProcessor = new AsynchronousSearchPostProcessor(persistenceService,
                     asActiveStore, asStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool, clusterService);
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             submitAsynchronousSearchRequest.keepOnCompletion(true);
             submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueHours(1));
@@ -253,9 +257,10 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, fakeClient,
                     mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsynchronousSearchStateMachine asStateMachine = asService.getStateMachine();
+            ClusterService clusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
             AsynchronousSearchPostProcessor postProcessor = new AsynchronousSearchPostProcessor(persistenceService,
                     asActiveStore, asStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool, clusterService);
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             submitAsynchronousSearchRequest.keepOnCompletion(true);
             submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueMillis(1));
@@ -296,9 +301,10 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
             AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, fakeClient,
                     mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
             AsynchronousSearchStateMachine asStateMachine = asService.getStateMachine();
+            ClusterService clusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
             AsynchronousSearchPostProcessor postProcessor = new AsynchronousSearchPostProcessor(persistenceService,
                     asActiveStore, asStateMachine,
-                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool);
+                    (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true), testThreadPool, clusterService);
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
             submitAsynchronousSearchRequest.keepOnCompletion(true);
             submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueHours(1));

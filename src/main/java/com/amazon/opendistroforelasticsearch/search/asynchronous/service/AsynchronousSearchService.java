@@ -20,6 +20,7 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.Asynchr
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveContext;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.context.permits.AsynchronousSearchContextPermits;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.persistence.AsynchronousSearchPersistenceContext;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchStateMachine;
@@ -116,6 +117,10 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
             "opendistro_asynchronous_search.max_wait_for_completion_timeout", timeValueMinutes(1), Setting.Property.NodeScope,
             Setting.Property.Dynamic);
 
+    public static final Setting<Boolean> PERSIST_SEARCH_FAILURES_SETTING =
+            Setting.boolSetting("opendistro_asynchronous_search.persist_search_failures", false,
+                    Setting.Property.NodeScope, Setting.Property.Dynamic);
+
     private volatile long maxKeepAlive;
     private volatile long maxWaitForCompletionTimeout;
     private volatile long maxSearchRunningTime;
@@ -130,6 +135,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     private final AsynchronousSearchStateMachine asynchronousSearchStateMachine;
     private final NamedWriteableRegistry namedWriteableRegistry;
     private final AsynchronousSearchContextEventListener contextEventListener;
+    private volatile boolean persistSearchFailure;
 
     public AsynchronousSearchService(AsynchronousSearchPersistenceService asynchronousSearchPersistenceService,
                                      AsynchronousSearchActiveStore asynchronousSearchActiveStore, Client client,
@@ -146,6 +152,8 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
         setMaxWaitForCompletionTimeout(MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.get(settings));
         clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_SEARCH_RUNNING_TIME_SETTING, this::setMaxSearchRunningTime);
         setMaxSearchRunningTime(MAX_SEARCH_RUNNING_TIME_SETTING.get(settings));
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(PERSIST_SEARCH_FAILURES_SETTING, this::setPersistSearchFailure);
+        setPersistSearchFailure(PERSIST_SEARCH_FAILURES_SETTING.get(clusterService.getSettings()));
         this.threadPool = threadPool;
         this.clusterService = clusterService;
         this.persistenceService = asynchronousSearchPersistenceService;
@@ -153,8 +161,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
         this.asynchronousSearchActiveStore = asynchronousSearchActiveStore;
         this.asynchronousSearchStateMachine = initStateMachine();
         this.asynchronousSearchPostProcessor = new AsynchronousSearchPostProcessor(persistenceService, asynchronousSearchActiveStore,
-                asynchronousSearchStateMachine,
-                this::freeActiveContext, threadPool);
+                asynchronousSearchStateMachine, this::freeActiveContext, threadPool, clusterService);
         this.namedWriteableRegistry = namedWriteableRegistry;
     }
 
@@ -192,8 +199,8 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
                 threadPool::relativeTimeInMillis,
                 reduceContextBuilder);
         AsynchronousSearchActiveContext asynchronousSearchContext = new AsynchronousSearchActiveContext(asynchronousSearchContextId,
-                clusterService.localNode().getId(),
-                request.getKeepAlive(), request.getKeepOnCompletion(), threadPool, currentTimeSupplier, progressActionListener, user);
+                clusterService.localNode().getId(), request.getKeepAlive(), request.getKeepOnCompletion(), threadPool, currentTimeSupplier,
+                progressActionListener, user, () -> persistSearchFailure);
         asynchronousSearchActiveStore.putContext(asynchronousSearchContextId, asynchronousSearchContext,
                 contextEventListener::onContextRejected);
         contextEventListener.onContextInitialized(asynchronousSearchContextId);
@@ -477,7 +484,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
 
     /**
      * If an active context is found, a permit is acquired from
-     * {@linkplain com.amazon.opendistroforelasticsearch.search.asynchronous.context.permits.AsynchronousSearchContextPermits}
+     * {@linkplain AsynchronousSearchContextPermits}
      * and on acquisition of permit, a check is performed to see if response has been persisted in system index. If true, we update
      * expiration in index. Else we update expiration field in {@linkplain AsynchronousSearchActiveContext}.
      *
@@ -694,5 +701,9 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
         } else {
             return e;
         }
+    }
+
+    private void setPersistSearchFailure(boolean persistSearchFailure) {
+        this.persistSearchFailure = persistSearchFailure;
     }
 }

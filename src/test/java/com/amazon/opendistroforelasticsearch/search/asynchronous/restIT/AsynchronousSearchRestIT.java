@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestUtils.getResponseAsMap;
 import static org.hamcrest.Matchers.greaterThan;
 
 public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
@@ -97,7 +98,7 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueHours(5));
-        submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(1));
+        submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMinutes(1));
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.SUCCEEDED,
                 AsynchronousSearchState.PERSIST_SUCCEEDED,
@@ -106,7 +107,7 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         assertHitCount(submitResponse.getSearchResponse(), 5L);
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
         AsynchronousSearchResponse getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest);
-        assertEquals(getResponse, submitResponse);
+        assertEquals(getResponseAsMap(getResponse.getSearchResponse()), getResponseAsMap(submitResponse.getSearchResponse()));
         executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()));
     }
 

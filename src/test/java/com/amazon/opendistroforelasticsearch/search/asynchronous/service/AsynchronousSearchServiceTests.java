@@ -79,6 +79,7 @@ import java.util.stream.Stream;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.CLOSED;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.INIT;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.RUNNING;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestUtils.createClusterService;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.elasticsearch.action.ActionListener.wrap;
@@ -88,19 +89,22 @@ import static org.hamcrest.Matchers.greaterThan;
 public class AsynchronousSearchServiceTests extends ESTestCase {
 
     private ClusterSettings clusterSettings;
+    private Settings settings;
     private ExecutorBuilder<?> executorBuilder;
     static boolean blockPersistence;
     @Before
     public void createObjects() {
-        Settings settings = Settings.builder()
+        settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
                 .put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 10)
+                .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
                         AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
                         AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
+                        AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
@@ -119,7 +123,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
         try {
             testThreadPool = new TestThreadPool(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
                     executorBuilder);
-            ClusterService mockClusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
+            ClusterService mockClusterService = createClusterService(settings, testThreadPool, discoveryNode, clusterSettings);
             FakeClient fakeClient = new FakeClient(testThreadPool);
             AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
             AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(fakeClient,

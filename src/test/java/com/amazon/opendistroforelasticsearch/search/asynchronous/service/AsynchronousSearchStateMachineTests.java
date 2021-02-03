@@ -31,8 +31,6 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.e
 import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.AsynchronousSearchContextEventListener;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.task.AsynchronousSearchTask;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ElasticsearchException;
@@ -61,7 +59,6 @@ import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.search.profile.SearchProfileShardResults;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.client.NoOpClient;
 import org.elasticsearch.threadpool.ExecutorBuilder;
@@ -89,6 +86,7 @@ import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.PERSISTING;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.RUNNING;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.SUCCEEDED;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestUtils.createClusterService;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -96,18 +94,21 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
 
     private ClusterSettings clusterSettings;
     private ExecutorBuilder<?> executorBuilder;
+    private Settings settings;
 
     @Before
     public void createObjects() {
-        Settings settings = Settings.builder()
+        settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
                 .put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 10)
+                .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
                         AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
                         AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
+                        AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
@@ -124,7 +125,7 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
         TestThreadPool threadPool = null;
         try {
             threadPool = new TestThreadPool("test", executorBuilder);
-            ClusterService mockClusterService = ClusterServiceUtils.createClusterService(threadPool, discoveryNode, clusterSettings);
+            ClusterService mockClusterService = createClusterService(settings, threadPool, discoveryNode, clusterSettings);
             FakeClient fakeClient = new FakeClient(threadPool);
             AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
             AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(fakeClient,
@@ -139,7 +140,7 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
             AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, discoveryNode.getId(),
                     keepAlive, true, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, null);
+                    threadPool::absoluteTimeInMillis, asProgressListener, null, () -> true);
             assertNull(context.getTask());
             assertEquals(context.getAsynchronousSearchState(), INIT);
             AsynchronousSearchStateMachine stateMachine = asService.getStateMachine();
@@ -150,19 +151,20 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
                     randomNonNegativeLong(), "transport", SearchAction.NAME, TaskId.EMPTY_TASK_ID, emptyMap(), context, null,
                             (a) -> {})),
                     RUNNING, IllegalStateException.class, Optional.empty());
+            boolean success = randomBoolean();
             assertNotNull(context.getTask());
             if (randomBoolean()) { //delete running context
                 doConcurrentStateMachineTrigger(stateMachine, new SearchDeletedEvent(context), CLOSED,
                         AsynchronousSearchStateMachineClosedException.class, Optional.empty());
             } else {
-                if (randomBoolean()) {//success or failure
-                    doConcurrentStateMachineTrigger(stateMachine, new SearchSuccessfulEvent(context, getMockSearchResponse()), SUCCEEDED,
-                            IllegalStateException.class, Optional.empty());
-                    numCompleted.getAndIncrement();
-                } else {
+                if (success) {
                     doConcurrentStateMachineTrigger(stateMachine, new SearchFailureEvent(context, new RuntimeException("test")), FAILED,
                             IllegalStateException.class, Optional.empty());
                     numFailure.getAndIncrement();
+                } else {//success or failure
+                    doConcurrentStateMachineTrigger(stateMachine, new SearchSuccessfulEvent(context, getMockSearchResponse()), SUCCEEDED,
+                            IllegalStateException.class, Optional.empty());
+                    numCompleted.getAndIncrement();
                 }
                 doConcurrentStateMachineTrigger(stateMachine, new BeginPersistEvent(context), PERSISTING,
                         IllegalStateException.class, Optional.of(AsynchronousSearchStateMachineClosedException.class));
@@ -174,7 +176,7 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
             }
             assertEquals(numCompleted.get(), customContextListener.getCompletedCount());
             assertEquals(numFailure.get(), customContextListener.getFailedCount());
-            assertEquals(0, customContextListener.getRunningCount());
+            assertEquals("success:" + success, 0, customContextListener.getRunningCount());
             assertEquals(1, customContextListener.getDeletedCount());
         } finally {
             ThreadPool.terminate(threadPool, 100, TimeUnit.MILLISECONDS);

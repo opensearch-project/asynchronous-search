@@ -24,9 +24,11 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.DeleteA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.LatchedActionListener;
 import org.elasticsearch.action.search.SearchAction;
@@ -43,6 +45,7 @@ import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -71,15 +74,17 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                 .put("thread_pool.write.queue_size", 10)
                 .put("thread_pool.get.size", 1)
                 .put("thread_pool.get.queue_size", 10)
+                .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
                 .build();
     }
 
-
+    @TestLogging(value = "_root:DEBUG", reason = "flaky")
     public void testSimulatedSearchRejectionLoad() throws Throwable {
         for (int i = 0; i < 10; i++) {
             client().prepareIndex("test", "type", Integer.toString(i)).setSource("field", "1").get();
         }
         AtomicInteger numRejections = new AtomicInteger();
+        AtomicInteger numRnf = new AtomicInteger();
         AtomicInteger numTimeouts = new AtomicInteger();
         AtomicInteger numFailures = new AtomicInteger();
         int numberOfAsyncOps = randomIntBetween(100, 200);
@@ -122,6 +127,9 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                                                             numRejections.incrementAndGet();
                                                         } else if (cause instanceof ElasticsearchTimeoutException) {
                                                             numTimeouts.incrementAndGet();
+                                                        } else if(cause instanceof ResourceNotFoundException) {
+                                                            // deletion is in race with task cancellation due to partial merge failure
+                                                            numRnf.getAndIncrement();
                                                         } else {
                                                             numFailures.incrementAndGet();
                                                         }

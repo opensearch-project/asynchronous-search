@@ -107,6 +107,7 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
                         AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
                         AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
+                        AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
@@ -212,7 +213,7 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
             AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             AsynchronousSearchActiveContext asActiveContext = new AsynchronousSearchActiveContext(asContextId, discoveryNode.getId(),
-                    keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1);
+                    keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1, () -> true);
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
@@ -270,7 +271,7 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
             AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             AsynchronousSearchActiveContext asActiveContext = new AsynchronousSearchActiveContext(asContextId, discoveryNode.getId(),
-                    keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1);
+                    keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1, () -> true);
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
@@ -536,7 +537,7 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
             AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
                     randomNonNegativeLong());
             AsynchronousSearchActiveContext asActiveContext = new AsynchronousSearchActiveContext(asContextId, discoveryNode.getId(),
-                    keepAlive, false, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1);
+                    keepAlive, false, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1, () -> true);
             //bootstrap search
             AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
                     TaskId.EMPTY_TASK_ID,
@@ -654,7 +655,7 @@ public class AsynchronousSearchServiceFreeContextTests extends ESTestCase {
                                             boolean keepOnCompletion, ThreadPool threadPool, LongSupplier currentTimeSupplier,
                                             AsynchronousSearchProgressListener searchProgressActionListener, User user) {
             super(asContextId, nodeId, keepAlive, keepOnCompletion, threadPool, currentTimeSupplier, searchProgressActionListener,
-                    user);
+                    user, () -> true);
         }
 
 
