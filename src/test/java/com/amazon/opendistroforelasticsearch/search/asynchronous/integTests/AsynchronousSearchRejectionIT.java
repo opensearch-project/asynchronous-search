@@ -39,6 +39,7 @@ import org.elasticsearch.action.search.SearchTask;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchService;
@@ -96,15 +97,17 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                     .setQuery(QueryBuilders.matchQuery("field", "1"))
                     .request();
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(request);
-            submitAsynchronousSearchRequest.keepOnCompletion(true);
+            submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMinutes(1));
+            boolean keepOnCompletion = randomBoolean();
+            submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
                     client().execute(SubmitAsynchronousSearchAction.INSTANCE, submitAsynchronousSearchRequest,
                             new LatchedActionListener<>(new ActionListener<AsynchronousSearchResponse>() {
                                 @Override
                                 public void onResponse(AsynchronousSearchResponse asynchronousSearchResponse) {
-                                    if (asynchronousSearchResponse.getSearchResponse() == null) {
-                                        responses.add(asynchronousSearchResponse.getError());
-                                    } else {
+                                    if (asynchronousSearchResponse.getSearchResponse() != null) {
                                         responses.add(asynchronousSearchResponse.getSearchResponse());
+                                    } else if(asynchronousSearchResponse.getError() != null){
+                                        responses.add(asynchronousSearchResponse.getError());
                                     }
                                     if (asynchronousSearchResponse.getId() == null) {
                                         // task cancelled by the time we process final response/error due to during partial merge failure.
@@ -167,8 +170,9 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                                 failure.reason().toLowerCase(Locale.ENGLISH).contains("cancelled") ||
                                 failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected"));
                     }
-                } else if ((unwrap instanceof EsRejectedExecutionException) == false) {
-                    throw new AssertionError("unexpected failure", (Throwable) response);
+                    // we have have null responses if submit completes before search starts
+                } else if (unwrap instanceof EsRejectedExecutionException == false) {
+                    throw new AssertionError("unexpected failure + ", (Throwable) response);
                 }
             }
         }
