@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.stats;
 
 import org.elasticsearch.action.support.nodes.BaseNodeResponse;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -25,7 +24,6 @@ import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Class represents all stats the plugin keeps track of on a single node
@@ -56,24 +54,6 @@ public class AsynchronousSearchStats extends BaseNodeResponse implements ToXCont
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.field("name", getNode().getName());
-        builder.field("transport_address", getNode().getAddress().toString());
-        builder.field("host", getNode().getHostName());
-        builder.field("ip", getNode().getAddress());
-
-        builder.startArray("roles");
-        for (DiscoveryNodeRole role : getNode().getRoles()) {
-            builder.value(role.roleName());
-        }
-        builder.endArray();
-
-        if (getNode().getAttributes().isEmpty() == false) {
-            builder.startObject("attributes");
-            for (Map.Entry<String, String> attrEntry : getNode().getAttributes().entrySet()) {
-                builder.field(attrEntry.getKey(), attrEntry.getValue());
-            }
-            builder.endObject();
-        }
         if (asynchronousSearchCountStats != null) {
             asynchronousSearchCountStats.toXContent(builder, params);
         }

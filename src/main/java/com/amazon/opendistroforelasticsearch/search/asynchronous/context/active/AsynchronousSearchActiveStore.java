@@ -37,32 +37,33 @@ import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.new
 public class AsynchronousSearchActiveStore {
 
     private static Logger logger = LogManager.getLogger(AsynchronousSearchActiveStore.class);
-    private volatile int maxRunningSearches;
-    public static final int DEFAULT_MAX_RUNNING_SEARCHES = 20;
-    public static final Setting<Integer> MAX_RUNNING_SEARCHES_SETTING = Setting.intSetting(
-            "opendistro_asynchronous_search.max_running_searches", DEFAULT_MAX_RUNNING_SEARCHES, 0, Setting.Property.Dynamic,
-            Setting.Property.NodeScope);
+    private volatile int nodeConcurrentRunningSearches;
+    public static final int NODE_CONCURRENT_RUNNING_SEARCHES = 20;
+    public static final Setting<Integer> NODE_CONCURRENT_RUNNING_SEARCHES_SETTING = Setting.intSetting(
+            "opendistro.asynchronous_search.node_concurrent_running_searches", NODE_CONCURRENT_RUNNING_SEARCHES, 0,
+            Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     private final ConcurrentMapLong<AsynchronousSearchActiveContext> activeContexts = newConcurrentMapLongWithAggressiveConcurrency();
 
     public AsynchronousSearchActiveStore(ClusterService clusterService) {
         Settings settings = clusterService.getSettings();
-        maxRunningSearches = MAX_RUNNING_SEARCHES_SETTING.get(settings);
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_RUNNING_SEARCHES_SETTING, this::setMaxRunningSearches);
+        nodeConcurrentRunningSearches = NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.get(settings);
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
+                this::setNodeConcurrentRunningSearches);
     }
 
-    private void setMaxRunningSearches(int maxRunningSearches) {
-        this.maxRunningSearches = maxRunningSearches;
+    private void setNodeConcurrentRunningSearches(int nodeConcurrentRunningSearches) {
+        this.nodeConcurrentRunningSearches = nodeConcurrentRunningSearches;
     }
 
     public synchronized void putContext(AsynchronousSearchContextId asynchronousSearchContextId,
                                         AsynchronousSearchActiveContext asynchronousSearchContext,
                                         Consumer<AsynchronousSearchContextId> contextRejectionEventConsumer) {
-        if (activeContexts.size() >= maxRunningSearches) {
+        if (activeContexts.size() >= nodeConcurrentRunningSearches) {
             contextRejectionEventConsumer.accept(asynchronousSearchContextId);
-            throw new EsRejectedExecutionException("Trying to create too many running contexts. Must be less than or equal to: ["
-                    + maxRunningSearches + "]. This limit can be set by changing the [" + MAX_RUNNING_SEARCHES_SETTING.getKey()
-                    + "] setting.");
+            throw new EsRejectedExecutionException("Trying to create too many concurrent searches. Must be less than or equal to: ["
+                    + nodeConcurrentRunningSearches + "]. This limit can be set by changing the ["
+                    + NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey() + "] settings.");
         }
         activeContexts.put(asynchronousSearchContextId.getId(), asynchronousSearchContext);
     }

@@ -84,11 +84,11 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             "indices:data/read/opendistro/asynchronous_search/response_cleanup";
 
     public static final Setting<TimeValue> ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING =
-            Setting.timeSetting("opendistro_asynchronous_search.active.context.reaper_interval", TimeValue.timeValueMinutes(5),
+            Setting.timeSetting("opendistro.asynchronous_search.active.context.reaper_interval", TimeValue.timeValueMinutes(5),
                     TimeValue.timeValueSeconds(5),
                     Setting.Property.NodeScope);
     public static final Setting<TimeValue> PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING =
-            Setting.timeSetting("opendistro_asynchronous_search.expired.persisted_response.cleanup_interval",
+            Setting.timeSetting("opendistro.asynchronous_search.expired.persisted_response.cleanup_interval",
                     TimeValue.timeValueMinutes(5), TimeValue.timeValueSeconds(5),
                     Setting.Property.NodeScope);
 

@@ -64,11 +64,11 @@ public class AsynchronousSearchActiveStoreTests extends ESTestCase {
         Settings settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
-                .put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), maxRunningContexts)
+                .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), maxRunningContexts)
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
-                        AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING)).collect(Collectors.toSet());
+                        AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING)).collect(Collectors.toSet());
         final int availableProcessors = EsExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
         executorBuilders.add(new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,

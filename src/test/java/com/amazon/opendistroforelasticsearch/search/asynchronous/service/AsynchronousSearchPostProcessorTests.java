@@ -87,11 +87,11 @@ public class AsynchronousSearchPostProcessorTests extends ESTestCase {
         Settings settings = Settings.builder()
                 .put("node.name", "test")
                 .put("cluster.name", "ClusterServiceTests")
-                .put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 10)
+                .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 10)
                 .build();
         final Set<Setting<?>> settingsSet =
                 Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
-                        AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
+                        AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
                         AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,

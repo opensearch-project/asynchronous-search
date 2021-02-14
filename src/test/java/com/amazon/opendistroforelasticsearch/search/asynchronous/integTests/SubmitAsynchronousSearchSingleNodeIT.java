@@ -54,11 +54,12 @@ import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
 
 public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleNodeTestCase {
 
-    private int asConcurrentLimit = 60;
+    private int asynchronousSearchConcurrentLimit = 60;
 
     @Override
     protected Settings nodeSettings() {
-        return Settings.builder().put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), asConcurrentLimit).build();
+        return Settings.builder().put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+                asynchronousSearchConcurrentLimit).build();
     }
 
     public void
@@ -101,12 +102,12 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
     }
 
     public void testSubmitAsynchronousSearchWithNoRetainedResponseBlocking() throws Exception {
-        int concurrentRuns = randomIntBetween(asConcurrentLimit + 10, asConcurrentLimit + 20);
+        int concurrentRuns = randomIntBetween(asynchronousSearchConcurrentLimit + 10, asynchronousSearchConcurrentLimit + 20);
         assertConcurrentSubmitsForBlockedSearch((numStartedAsynchronousSearch, numFailedAsynchronousSearch,
                                                  numRejectedAsynchronousSearch) -> {
-            assertEquals(asConcurrentLimit, numStartedAsynchronousSearch.get());
-            assertEquals(concurrentRuns - asConcurrentLimit, numFailedAsynchronousSearch.get());
-            assertEquals(concurrentRuns - asConcurrentLimit, numRejectedAsynchronousSearch.get());
+            assertEquals(asynchronousSearchConcurrentLimit, numStartedAsynchronousSearch.get());
+            assertEquals(concurrentRuns - asynchronousSearchConcurrentLimit, numFailedAsynchronousSearch.get());
+            assertEquals(concurrentRuns - asynchronousSearchConcurrentLimit, numRejectedAsynchronousSearch.get());
         }, concurrentRuns);
         AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
         waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty,30, TimeUnit.SECONDS);

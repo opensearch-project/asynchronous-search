@@ -60,7 +60,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         logger.info("Using lowLevelCancellation: {}", lowLevelCancellation);
         return Settings.builder()
                 .put(super.nodeSettings(nodeOrdinal))
-                .put(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), asConcurrentLimit)
+                .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), asConcurrentLimit)
                 .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
                 .build();
     }
@@ -269,7 +269,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
                     SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
                     executeSubmitAsynchronousSearch(client(randomDataNode.getName()), submitAsynchronousSearchRequest);
                 } catch (ExecutionException e) {
-                    assertThat(e.getMessage(), containsString("Trying to create too many running contexts"));
+                    assertThat(e.getMessage(), containsString("Trying to create too many concurrent searches"));
                 } catch (InterruptedException e) {
                     fail(e.getMessage());
                 }

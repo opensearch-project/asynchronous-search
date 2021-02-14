@@ -143,7 +143,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                         @Override
                         public void onFailure(Exception e) {
                             responses.add(e);
-                            assertThat(e.getMessage(), startsWith("Trying to create too many running contexts"));
+                            assertThat(e.getMessage(), startsWith("Trying to create too many concurrent searches"));
                             latch.countDown();
                         }
                     }, latch));

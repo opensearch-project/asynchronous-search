@@ -35,14 +35,15 @@ DELETE /_opendistro/_asynchronous_search/FjdITFhYbC1zVFdHVVV1MUd3UkxkMFEFMjQ1MzY
 **4. Stats for asynchronous search**
 
 ```
-GET /_opendistro/_asynchronous_search/_stats
+GET /_opendistro/_asynchronous_search/stats
 ```
 
 **Tunable Settings**
-1. `opendistro_asynchronous_search.max_search_running_time` : Maximum running time for the search beyond which the search would be terminated
-2. `opendistro_asynchronous_search.max_running_searches` : Concurrent searches running per coordinator node
-3. `opendistro_asynchronous_search.max_keep_alive` : Maximum keep alive for search which dictates how long the search is allowed to be present in the cluster
-4. `opendistro_asynchronous_search.max_wait_for_completion_timeout` : Maximum keep on completion to block for the search response
+1. `opendistro.asynchronous_search.max_search_running_time` : Maximum running time for the search beyond which the search would be terminated
+2. `opendistro.asynchronous_search.node_concurrent_running_searches` : Concurrent searches running per coordinator node
+3. `opendistro.asynchronous_search.max_keep_alive` : Maximum keep alive for search which dictates how long the search is allowed to be present in the cluster
+4. `opendistro.asynchronous_search.max_wait_for_completion_timeout` : Maximum keep on completion to block for the search response
+5. `opendistro.asynchronous_search.persist_search_failures` : Persist asynchronous search result ending with search failure in system index
 
 ## Setup
 

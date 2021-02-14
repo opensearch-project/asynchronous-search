@@ -108,17 +108,17 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     private static final Logger logger = LogManager.getLogger(AsynchronousSearchService.class);
 
     public static final Setting<TimeValue> MAX_KEEP_ALIVE_SETTING =
-            Setting.positiveTimeSetting("opendistro_asynchronous_search.max_keep_alive", timeValueDays(5),
+            Setting.positiveTimeSetting("opendistro.asynchronous_search.max_keep_alive", timeValueDays(5),
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_SEARCH_RUNNING_TIME_SETTING =
-            Setting.positiveTimeSetting("opendistro_asynchronous_search.max_search_running_time", timeValueHours(12),
+            Setting.positiveTimeSetting("opendistro.asynchronous_search.max_search_running_time", timeValueHours(12),
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING = Setting.positiveTimeSetting(
-            "opendistro_asynchronous_search.max_wait_for_completion_timeout", timeValueMinutes(1), Setting.Property.NodeScope,
+            "opendistro.asynchronous_search.max_wait_for_completion_timeout", timeValueMinutes(1), Setting.Property.NodeScope,
             Setting.Property.Dynamic);
 
     public static final Setting<Boolean> PERSIST_SEARCH_FAILURES_SETTING =
-            Setting.boolSetting("opendistro_asynchronous_search.persist_search_failures", false,
+            Setting.boolSetting("opendistro.asynchronous_search.persist_search_failures", false,
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
 
     private volatile long maxKeepAlive;

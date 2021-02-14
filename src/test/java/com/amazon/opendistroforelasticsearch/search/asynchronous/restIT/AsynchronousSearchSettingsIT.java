@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveStore.DEFAULT_MAX_RUNNING_SEARCHES;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES;
 import static org.hamcrest.Matchers.containsString;
 
 public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase {
@@ -98,7 +98,7 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
             thread.join();
         }
 
-        updateClusterSettings(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), 0);
+        updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 0);
         threadsList.clear();
         AtomicInteger numFailures = new AtomicInteger();
         for (int i = 0; i < numThreads; i++) {
@@ -109,7 +109,7 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
                     AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
                 } catch (Exception e) {
                     assertTrue(e instanceof ResponseException);
-                    assertThat(e.getMessage(), containsString("Trying to create too many running contexts"));
+                    assertThat(e.getMessage(), containsString("Trying to create too many concurrent searches"));
                     numFailures.getAndIncrement();
 
                 } finally {
@@ -128,7 +128,8 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
             thread.join();
         }
         assertEquals(numFailures.get(), 50);
-        updateClusterSettings(AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING.getKey(), DEFAULT_MAX_RUNNING_SEARCHES);
+        updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+                NODE_CONCURRENT_RUNNING_SEARCHES);
     }
 
     public void testStoreAsyncSearchWithFailures() throws Exception {

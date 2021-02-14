@@ -129,7 +129,7 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
     @Override
     public List<Setting<?>> getSettings() {
         return Arrays.asList(
-                AsynchronousSearchActiveStore.MAX_RUNNING_SEARCHES_SETTING,
+                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
                 AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
                 AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                 AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,

@@ -49,8 +49,8 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
     @Override
     public List<Route> routes() {
         return Arrays.asList(
-                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/_nodes/{nodeId}/_stats"),
-                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/_stats")
+                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/_nodes/{nodeId}/stats"),
+                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/stats")
         );
     }
 
