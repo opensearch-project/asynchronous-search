@@ -1,5 +1,5 @@
 [![Test and Build Workflow](https://github.com/opendistro-for-elasticsearch/asynchronous-search/workflows/Test%20and%20Build%20Workflow/badge.svg)](https://github.com/opendistro-for-elasticsearch/asynchronous-search/actions)
-[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/asynchronous-search/branch/master/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/asynchronous-search)
+[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/asynchronous-search/branch/main/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/asynchronous-search)
 
 # Open Distro for Elasticsearch asynchronous search
 Asynchronous search makes it possible for users to run such queries without worrying about the query timing out. 

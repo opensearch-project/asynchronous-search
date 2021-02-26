@@ -3,12 +3,12 @@ name: Test and Build Workflow
 on:
   pull_request:
     branches:
-      - master
+      - main
       - opendistro-*
       - plugin-dev
   push:
     branches:
-      - master
+      - main
       - opendistro-*
       - plugin-dev
 
