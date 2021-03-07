@@ -89,7 +89,7 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
                     Setting.Property.NodeScope);
     public static final Setting<TimeValue> PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING =
             Setting.timeSetting("opendistro.asynchronous_search.expired.persisted_response.cleanup_interval",
-                    TimeValue.timeValueMinutes(5), TimeValue.timeValueSeconds(5),
+                    TimeValue.timeValueMinutes(30), TimeValue.timeValueSeconds(5),
                     Setting.Property.NodeScope);
 
     @Inject

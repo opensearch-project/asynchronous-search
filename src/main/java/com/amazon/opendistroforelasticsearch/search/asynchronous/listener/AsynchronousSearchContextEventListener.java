@@ -62,34 +62,29 @@ public interface AsynchronousSearchContextEventListener {
      * @param contextId Executed when a previously created asynchronous search context is running.
      */
     default void onContextRunning(AsynchronousSearchContextId contextId) {
-
     }
 
     /**
      * @param contextId Executed when asynchronous search context creation is rejected
      */
     default void onContextRejected(AsynchronousSearchContextId contextId) {
-
     }
 
     /**
      * @param contextId Executed when a running asynchronous search context is deleted and has bypassed succeeded/failed state
      */
     default void onRunningContextDeleted(AsynchronousSearchContextId contextId) {
-
     }
 
     /**
      * @param contextId Executed when an asynchronous search context is cancelled
      */
     default void onContextCancelled(AsynchronousSearchContextId contextId) {
-
     }
 
     /**
      * @param contextId Executed when an asynchronous search context is initialized
      */
     default void onContextInitialized(AsynchronousSearchContextId contextId) {
-
     }
 }
