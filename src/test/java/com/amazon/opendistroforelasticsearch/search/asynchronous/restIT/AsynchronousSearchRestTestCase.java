@@ -39,7 +39,6 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.rest.action.document.RestIndexAction;
 import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.After;
@@ -73,32 +72,26 @@ public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
     public void indexDocuments() throws IOException {
         {
             {
-                Request doc1 = new Request(HttpPut.METHOD_NAME, "/test/type/1");
-                doc1.setOptions(expectWarnings(RestIndexAction.TYPES_DEPRECATION_MESSAGE));
-                doc1.setJsonEntity("{\"type\":\"type1\", \"id\":1, \"num\":10, \"num2\":50}");
+                Request doc1 = new Request(HttpPut.METHOD_NAME, "/test/_doc/1");
+                doc1.setJsonEntity("{\"id\":1, \"num\":10, \"num2\":50}");
                 client().performRequest(doc1);
-                Request doc2 = new Request(HttpPut.METHOD_NAME, "/test/type/2");
-                doc2.setOptions(expectWarnings(RestIndexAction.TYPES_DEPRECATION_MESSAGE));
-                doc2.setJsonEntity("{\"type\":\"type1\", \"id\":2, \"num\":20, \"num2\":40}");
+                Request doc2 = new Request(HttpPut.METHOD_NAME, "/test/_doc/2");
+                doc2.setJsonEntity("{ \"id\":2, \"num\":20, \"num2\":40}");
                 client().performRequest(doc2);
-                Request doc3 = new Request(HttpPut.METHOD_NAME, "/test/type/3");
-                doc3.setOptions(expectWarnings(RestIndexAction.TYPES_DEPRECATION_MESSAGE));
-                doc3.setJsonEntity("{\"type\":\"type1\", \"id\":3, \"num\":50, \"num2\":35}");
+                Request doc3 = new Request(HttpPut.METHOD_NAME, "/test/_doc/3");
+                doc3.setJsonEntity("{ \"id\":3, \"num\":50, \"num2\":35}");
                 client().performRequest(doc3);
-                Request doc4 = new Request(HttpPut.METHOD_NAME, "/test/type/4");
-                doc4.setOptions(expectWarnings(RestIndexAction.TYPES_DEPRECATION_MESSAGE));
-                doc4.setJsonEntity("{\"type\":\"type2\", \"id\":4, \"num\":100, \"num2\":10}");
+                Request doc4 = new Request(HttpPut.METHOD_NAME, "/test/_doc/4");
+                doc4.setJsonEntity("{ \"id\":4, \"num\":100, \"num2\":10}");
                 client().performRequest(doc4);
-                Request doc5 = new Request(HttpPut.METHOD_NAME, "/test/type/5");
-                doc5.setOptions(expectWarnings(RestIndexAction.TYPES_DEPRECATION_MESSAGE));
-                doc5.setJsonEntity("{\"type\":\"type2\", \"id\":5, \"num\":100, \"num2\":10}");
+                Request doc5 = new Request(HttpPut.METHOD_NAME, "/test/_doc/5");
+                doc5.setJsonEntity("{ \"id\":5, \"num\":100, \"num2\":10}");
                 client().performRequest(doc5);
             }
 
             {
-                Request doc6 = new Request(HttpPut.METHOD_NAME, "/test1/type/1");
-                doc6.setOptions(expectWarnings(RestIndexAction.TYPES_DEPRECATION_MESSAGE));
-                doc6.setJsonEntity("{\"type\":\"type1\", \"id\":1, \"num\":10, \"num2\":50}");
+                Request doc6 = new Request(HttpPut.METHOD_NAME, "/test1/_doc/1");
+                doc6.setJsonEntity("{ \"id\":1, \"num\":10, \"num2\":50}");
                 client().performRequest(doc6);
             }
         }
