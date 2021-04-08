@@ -12,8 +12,8 @@ buildscript {
         maven {
             url = 's3://search-vemsarat/'
             credentials(AwsCredentials) {
-                accessKey = "AKIAUPQMZBE7UNXZ7YU2"
-                secretKey = "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"
+                accessKey = System.env.AWS_ACCESS_KEY_ID ?: findProperty('aws_access_key_id')
+                secretKey = System.env.AWS_ACCESS_KEY_ID ?: findProperty('aws_secret_access_key')
             }
         }
         jcenter()
