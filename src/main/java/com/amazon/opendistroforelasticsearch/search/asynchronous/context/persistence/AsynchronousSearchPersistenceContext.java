@@ -22,11 +22,11 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.A
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.Version;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.Version;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.opensearch.common.io.stream.NamedWriteableRegistry;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

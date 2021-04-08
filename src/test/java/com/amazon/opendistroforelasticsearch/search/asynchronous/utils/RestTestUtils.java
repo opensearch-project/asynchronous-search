@@ -25,24 +25,24 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NByteArrayEntity;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.support.ActiveShardCount;
-import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.client.Request;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.common.Priority;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.SuppressForbidden;
-import org.elasticsearch.common.lucene.uid.Versions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.VersionType;
-import org.elasticsearch.index.seqno.SequenceNumbers;
-import org.elasticsearch.rest.action.search.RestSearchAction;
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.opensearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.support.ActiveShardCount;
+import org.opensearch.action.support.IndicesOptions;
+import org.opensearch.client.Request;
+import org.opensearch.cluster.health.ClusterHealthStatus;
+import org.opensearch.common.Priority;
+import org.opensearch.common.Strings;
+import org.opensearch.common.SuppressForbidden;
+import org.opensearch.common.lucene.uid.Versions;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.xcontent.ToXContent;
+import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.index.VersionType;
+import org.opensearch.index.seqno.SequenceNumbers;
+import org.opensearch.rest.action.search.RestSearchAction;
+import org.opensearch.search.fetch.subphase.FetchSourceContext;
 
 import java.io.IOException;
 import java.net.URI;
@@ -427,14 +427,14 @@ public class RestTestUtils {
             return this;
         }
 
-        Params withTaskId(org.elasticsearch.tasks.TaskId taskId) {
+        Params withTaskId(org.opensearch.tasks.TaskId taskId) {
             if (taskId != null && taskId.isSet()) {
                 return putParam("task_id", taskId.toString());
             }
             return this;
         }
 
-        Params withParentTaskId(org.elasticsearch.tasks.TaskId parentTaskId) {
+        Params withParentTaskId(org.opensearch.tasks.TaskId parentTaskId) {
             if (parentTaskId != null && parentTaskId.isSet()) {
                 return putParam("parent_task_id", parentTaskId.toString());
             }

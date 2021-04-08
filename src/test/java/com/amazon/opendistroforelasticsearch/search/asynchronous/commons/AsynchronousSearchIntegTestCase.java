@@ -24,22 +24,22 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.task.AsynchronousSearchTask;
 import org.apache.logging.log4j.LogManager;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.NoShardAvailableActionException;
-import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksAction;
-import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksRequest;
-import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.reindex.ReindexPlugin;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.plugins.PluginsService;
-import org.elasticsearch.script.MockScriptPlugin;
-import org.elasticsearch.search.lookup.LeafFieldsLookup;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESIntegTestCase;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.NoShardAvailableActionException;
+import org.opensearch.action.admin.cluster.node.tasks.list.ListTasksAction;
+import org.opensearch.action.admin.cluster.node.tasks.list.ListTasksRequest;
+import org.opensearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
+import org.opensearch.action.get.GetRequest;
+import org.opensearch.action.search.SearchPhaseExecutionException;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.client.Client;
+import org.opensearch.index.reindex.ReindexPlugin;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.PluginsService;
+import org.opensearch.script.MockScriptPlugin;
+import org.opensearch.search.lookup.LeafFieldsLookup;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.test.OpenSearchIntegTestCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +55,7 @@ import java.util.function.Function;
 
 import static org.hamcrest.Matchers.greaterThan;
 
-public abstract class AsynchronousSearchIntegTestCase extends ESIntegTestCase {
+public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTestCase {
 
     protected static final String TEST_INDEX = "index";
 

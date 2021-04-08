@@ -33,38 +33,38 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.Asynch
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.task.AsynchronousSearchTask;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.action.ActionType;
-import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodeRole;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.settings.ClusterSettings;
-import org.elasticsearch.common.settings.Setting;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.client.NoOpClient;
-import org.elasticsearch.threadpool.ExecutorBuilder;
-import org.elasticsearch.threadpool.ScalingExecutorBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchException;
+import org.opensearch.Version;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionResponse;
+import org.opensearch.action.ActionType;
+import org.opensearch.action.admin.indices.create.CreateIndexAction;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.cluster.node.DiscoveryNodeRole;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.common.settings.ClusterSettings;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.OpenSearchExecutors;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.test.client.NoOpClient;
+import org.opensearch.threadpool.ExecutorBuilder;
+import org.opensearch.threadpool.ScalingExecutorBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -111,7 +111,7 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
                         AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
                         AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
-        final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+        final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
         executorBuilders.add(new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                 Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30)));
@@ -120,7 +120,7 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
     }
 
     public void testStateMachine() throws InterruptedException, BrokenBarrierException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         TestThreadPool threadPool = null;
         try {
@@ -250,7 +250,7 @@ public class AsynchronousSearchStateMachineTests extends AsynchronousSearchTestC
             if (randomBoolean()) {
                 listener.onResponse(null);
             } else {
-                listener.onFailure(new ElasticsearchException(new RuntimeException("test")));
+                listener.onFailure(new OpenSearchException(new RuntimeException("test")));
             }
         }
     }

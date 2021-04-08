@@ -17,9 +17,9 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.context.permit
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchContextClosedException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.lease.Releasable;
-import org.elasticsearch.common.unit.TimeValue;
+import org.opensearch.action.ActionListener;
+import org.opensearch.common.lease.Releasable;
+import org.opensearch.common.unit.TimeValue;
 
 /**
  * NOOP context permit that responds with a NOOP {@linkplain Releasable} to release

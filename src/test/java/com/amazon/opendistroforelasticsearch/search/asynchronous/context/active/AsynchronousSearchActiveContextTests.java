@@ -27,23 +27,23 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.task.Asynchrono
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.threadpool.ScalingExecutorBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.OpenSearchExecutors;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.threadpool.ScalingExecutorBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.Collections;
 import java.util.UUID;
@@ -66,7 +66,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
                     .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
                             + ".queue_size", writeThreadPoolQueueSize)
                     .build();
-            final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+            final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
@@ -100,7 +100,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
                     .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
                             + ".queue_size", writeThreadPoolQueueSize)
                     .build();
-            final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+            final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
@@ -154,7 +154,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
                     .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
                             + ".queue_size", writeThreadPoolQueueSize)
                     .build();
-            final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+            final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
@@ -207,7 +207,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
                     .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
                             + ".queue_size", writeThreadPoolQueueSize)
                     .build();
-            final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+            final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
             ScalingExecutorBuilder scalingExecutorBuilder =
                     new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                             Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));

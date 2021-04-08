@@ -20,16 +20,16 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.Asynchro
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.AsynchronousSearchStatsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.RestActions;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.common.Strings;
+import org.opensearch.rest.BaseRestHandler;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestActions;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.elasticsearch.rest.RestRequest.Method.GET;
+import static org.opensearch.rest.RestRequest.Method.GET;
 
 public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
 

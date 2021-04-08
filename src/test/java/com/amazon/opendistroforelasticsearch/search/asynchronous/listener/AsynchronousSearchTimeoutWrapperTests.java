@@ -16,20 +16,20 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.listener;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.test.ESTestCase;
+import org.opensearch.action.ActionListener;
+import org.opensearch.cluster.coordination.DeterministicTaskQueue;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.test.OpenSearchTestCase;
 import org.junit.Before;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.elasticsearch.node.Node.NODE_NAME_SETTING;
+import static org.opensearch.node.Node.NODE_NAME_SETTING;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
-public class AsynchronousSearchTimeoutWrapperTests extends ESTestCase {
+public class AsynchronousSearchTimeoutWrapperTests extends OpenSearchTestCase {
 
     private DeterministicTaskQueue deterministicTaskQueue;
 

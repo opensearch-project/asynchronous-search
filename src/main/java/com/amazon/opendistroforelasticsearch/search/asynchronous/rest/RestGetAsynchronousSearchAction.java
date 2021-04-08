@@ -18,16 +18,16 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.rest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.GetAsynchronousSearchAction;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.GetAsynchronousSearchRequest;
-import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.RestStatusToXContentListener;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.rest.BaseRestHandler;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestStatusToXContentListener;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.elasticsearch.rest.RestRequest.Method.GET;
+import static org.opensearch.rest.RestRequest.Method.GET;
 
 public class RestGetAsynchronousSearchAction extends BaseRestHandler {
 

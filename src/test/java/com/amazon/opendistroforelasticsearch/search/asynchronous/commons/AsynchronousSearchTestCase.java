@@ -18,16 +18,16 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.commons;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.search.aggregations.InternalAggregation;
-import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator;
-import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.util.BigArrays;
+import org.opensearch.search.aggregations.InternalAggregation;
+import org.opensearch.search.aggregations.pipeline.PipelineAggregator;
+import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.function.Function;
 
-public abstract class AsynchronousSearchTestCase extends ESTestCase {
+public abstract class AsynchronousSearchTestCase extends OpenSearchTestCase {
 
     public static AsynchronousSearchProgressListener  mockAsynchronousSearchProgressListener(ThreadPool threadPool) {
         return new AsynchronousSearchProgressListener(threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(),

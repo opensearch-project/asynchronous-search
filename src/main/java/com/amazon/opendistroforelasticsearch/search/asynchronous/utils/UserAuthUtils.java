@@ -1,7 +1,7 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.utils;
 
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
-import org.elasticsearch.common.Nullable;
+import org.opensearch.common.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;

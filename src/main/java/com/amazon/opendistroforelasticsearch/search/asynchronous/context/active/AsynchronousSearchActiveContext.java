@@ -24,15 +24,15 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.id.Asynchronous
 import com.amazon.opendistroforelasticsearch.search.asynchronous.id.AsynchronousSearchIdConverter;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
 import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchProgressActionListener;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchTask;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.lease.Releasable;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.search.SearchProgressActionListener;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.SearchTask;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.common.Nullable;
+import org.opensearch.common.lease.Releasable;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.io.Closeable;
 import java.util.Objects;

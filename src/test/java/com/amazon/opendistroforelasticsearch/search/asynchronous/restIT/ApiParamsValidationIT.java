@@ -20,11 +20,11 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.DeleteA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.client.ResponseException;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.search.suggest.SuggestBuilder;
 
 import java.io.IOException;
 import java.util.Arrays;

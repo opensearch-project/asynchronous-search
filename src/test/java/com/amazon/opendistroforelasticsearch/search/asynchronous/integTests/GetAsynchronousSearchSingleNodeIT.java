@@ -22,20 +22,20 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.GetAsyn
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.QuadConsumer;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.common.TriConsumer;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.common.TriConsumer;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.index.engine.VersionConflictEngineException;
+import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.script.Script;
+import org.opensearch.script.ScriptType;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase.SearchDelayPlugin.SCRIPT_NAME;
-import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
+import static org.opensearch.index.query.QueryBuilders.scriptQuery;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
@@ -58,7 +58,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentGetOrUpdates(submitResponse,
@@ -76,7 +77,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentGetOrUpdates(submitResponse,
@@ -94,7 +96,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentGetOrUpdates(submitResponse,
@@ -112,7 +115,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
         assertConcurrentGetOrUpdates(submitResponse,
@@ -131,7 +135,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
         assertConcurrentGetForBlockedSearch(submitResponse,
@@ -150,7 +155,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
         assertConcurrentGetForBlockedSearch(submitResponse,
@@ -169,7 +175,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
         assertConcurrentGetForBlockedSearch(submitResponse,
@@ -187,7 +194,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+        .actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
         assertConcurrentGetForBlockedSearch(submitResponse,
@@ -225,7 +233,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
                     TimeValue waitForCompletionTimeout = randomBoolean() ? null :
                             TimeValue.timeValueMillis(randomLongBetween(1, 5000));
                     getAsynchronousSearchRequest.setWaitForCompletionTimeout(waitForCompletionTimeout);
-                    executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest, new ActionListener<AsynchronousSearchResponse>() {
+                    executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest,
+                    new ActionListener<AsynchronousSearchResponse>() {
                         @Override
                         public void onResponse(AsynchronousSearchResponse acknowledgedResponse) {
                             numGetSuccess.incrementAndGet();
@@ -250,7 +259,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
             countDownLatch.await();
             DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(submitResponse.getId());
             CountDownLatch deleteLatch = new CountDownLatch(1);
-            executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest, ActionListener.wrap(() -> deleteLatch.countDown()));
+            executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest,
+            ActionListener.wrap(() -> deleteLatch.countDown()));
             deleteLatch.await();
             disableBlocks(plugins);
             assertionConsumer.apply(numGetSuccess, numGetFailures, numVersionConflictFailures);
@@ -308,7 +318,7 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
                                 numVersionConflictFailures.incrementAndGet();
                             } else if (e instanceof ResourceNotFoundException) {
                                 numResourceNotFoundFailures.incrementAndGet();
-                            } else if (e instanceof ElasticsearchTimeoutException) {
+                            } else if (e instanceof OpenSearchTimeoutException) {
                                 numTimeouts.incrementAndGet();
                             } else {
                                 numGetFailures.incrementAndGet();

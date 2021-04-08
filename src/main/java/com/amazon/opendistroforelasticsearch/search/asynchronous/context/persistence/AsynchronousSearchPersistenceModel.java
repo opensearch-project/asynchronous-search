@@ -16,11 +16,11 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.context.persistence;
 
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.OpenSearchException;
+import org.opensearch.Version;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.io.stream.BytesStreamOutput;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -79,7 +79,7 @@ public class AsynchronousSearchPersistenceModel {
         }
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             Version.writeVersion(Version.CURRENT, out);
-            out.writeException(error instanceof ElasticsearchException ? error : new ElasticsearchException(error));
+            out.writeException(error instanceof OpenSearchException ? error : new OpenSearchException(error));
             byte[] bytes = BytesReference.toBytes(out.bytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         }

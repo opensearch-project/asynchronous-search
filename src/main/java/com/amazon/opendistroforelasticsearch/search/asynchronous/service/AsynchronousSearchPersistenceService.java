@@ -21,37 +21,37 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.response.Acknow
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ElasticsearchSecurityException;
-import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.ResourceAlreadyExistsException;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.bulk.BackoffPolicy;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.engine.DocumentMissingException;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.reindex.DeleteByQueryAction;
-import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchSecurityException;
+import org.opensearch.ExceptionsHelper;
+import org.opensearch.ResourceAlreadyExistsException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.DocWriteResponse;
+import org.opensearch.action.bulk.BackoffPolicy;
+import org.opensearch.action.delete.DeleteRequest;
+import org.opensearch.action.get.GetRequest;
+import org.opensearch.action.index.IndexRequestBuilder;
+import org.opensearch.action.index.IndexResponse;
+import org.opensearch.action.update.UpdateRequest;
+import org.opensearch.client.Client;
+import org.opensearch.cluster.metadata.IndexMetadata;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.io.stream.NotSerializableExceptionWrapper;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.index.engine.DocumentMissingException;
+import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.index.reindex.DeleteByQueryAction;
+import org.opensearch.index.reindex.DeleteByQueryRequest;
+import org.opensearch.rest.RestStatus;
+import org.opensearch.script.Script;
+import org.opensearch.script.ScriptType;
+import org.opensearch.search.fetch.subphase.FetchSourceContext;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -61,7 +61,7 @@ import java.util.function.Consumer;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.UserAuthUtils.isUserValid;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.UserAuthUtils.parseUser;
-import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
+import static org.opensearch.common.unit.TimeValue.timeValueMillis;
 
 /**
  * Service that stores completed asynchronous search responses as documents in index, fetches asynchronous search response by id,
@@ -143,7 +143,7 @@ public class AsynchronousSearchPersistenceService {
                             listener.onResponse(asynchronousSearchPersistenceModel);
                         } else {
                             logger.debug("Invalid user requesting GET persisted context for asynchronous search [{}]", id);
-                            listener.onFailure(new ElasticsearchSecurityException(
+                            listener.onFailure(new OpenSearchSecurityException(
                                     "User doesn't have necessary roles to access the asynchronous search [" + id + "]",
                                     RestStatus.FORBIDDEN));
                         }
@@ -211,7 +211,7 @@ public class AsynchronousSearchPersistenceService {
                                 + id));
                         break;
                     case NOOP:
-                        listener.onFailure(new ElasticsearchSecurityException(
+                        listener.onFailure(new OpenSearchSecurityException(
                                 "User doesn't have necessary roles to access the asynchronous search with id " + id, RestStatus.FORBIDDEN));
                         break;
                     case NOT_FOUND:
@@ -261,7 +261,7 @@ public class AsynchronousSearchPersistenceService {
             switch (updateResponse.getResult()) {
                 case NOOP:
                     if (user != null) {
-                        listener.onFailure(new ElasticsearchSecurityException(
+                        listener.onFailure(new OpenSearchSecurityException(
                                 "User doesn't have necessary roles to access the asynchronous search with id " + id, RestStatus.FORBIDDEN));
                     } else {
                         Map<String, Object> updatedSource = updateResponse.getGetResult().getSource();
@@ -376,7 +376,7 @@ public class AsynchronousSearchPersistenceService {
             @Override
             public void onFailure(Exception e) {
                 final Throwable cause = ExceptionsHelper.unwrapCause(e);
-                if ((cause instanceof EsRejectedExecutionException) && backoff.hasNext()) {
+                if ((cause instanceof OpenSearchRejectedExecutionException) && backoff.hasNext()) {
                     TimeValue wait = backoff.next();
                     logger.warn(() -> new ParameterizedMessage("failed to store asynchronous search response [{}], retrying in [{}]",
                             indexRequestBuilder.request().id(), wait), e);

@@ -17,20 +17,20 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.context.permit
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.common.CheckedRunnable;
-import org.elasticsearch.common.lease.Releasable;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ScalingExecutorBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.threadpool.ThreadPoolStats;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.support.PlainActionFuture;
+import org.opensearch.common.CheckedRunnable;
+import org.opensearch.common.lease.Releasable;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.OpenSearchExecutors;
+import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.threadpool.ScalingExecutorBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.threadpool.ThreadPoolStats;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -57,7 +57,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.instanceOf;
 
-public class AsynchronousSearchContextPermitsTests extends ESTestCase {
+public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
 
     private static ThreadPool threadPool;
 
@@ -73,7 +73,7 @@ public class AsynchronousSearchContextPermitsTests extends ESTestCase {
                 .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
                         + ".queue_size", writeThreadPoolQueueSize)
                 .build();
-        final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+        final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
         ScalingExecutorBuilder scalingExecutorBuilder =
                 new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                         Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
@@ -153,7 +153,7 @@ public class AsynchronousSearchContextPermitsTests extends ESTestCase {
             } catch (ExecutionException e) {
 
                 assertThat(e.getCause(), either(instanceOf(DummyException.class))
-                        .or(instanceOf(EsRejectedExecutionException.class)));
+                        .or(instanceOf(OpenSearchRejectedExecutionException.class)));
             }
         }
 

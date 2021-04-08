@@ -15,8 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.request;
 
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.common.io.stream.StreamInput;
+import org.opensearch.action.ActionRequestValidationException;
+import org.opensearch.common.io.stream.StreamInput;
 
 import java.io.IOException;
 

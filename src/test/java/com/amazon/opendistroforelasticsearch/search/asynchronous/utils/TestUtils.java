@@ -1,26 +1,26 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.utils;
 
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.block.ClusterBlocks;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodes;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.settings.ClusterSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.client.Requests;
+import org.opensearch.cluster.ClusterName;
+import org.opensearch.cluster.ClusterState;
+import org.opensearch.cluster.block.ClusterBlocks;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.cluster.node.DiscoveryNodes;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.settings.ClusterSettings;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.io.IOException;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
-import static org.elasticsearch.common.xcontent.XContentHelper.convertToMap;
-import static org.elasticsearch.test.ClusterServiceUtils.createClusterStatePublisher;
-import static org.elasticsearch.test.ClusterServiceUtils.createNoOpNodeConnectionsService;
+import static org.opensearch.common.xcontent.XContentHelper.convertToMap;
+import static org.opensearch.test.ClusterServiceUtils.createClusterStatePublisher;
+import static org.opensearch.test.ClusterServiceUtils.createNoOpNodeConnectionsService;
 
 public class TestUtils {
 

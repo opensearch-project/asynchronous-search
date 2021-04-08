@@ -19,19 +19,19 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.A
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.event.SearchDeletedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.settings.Setting;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.CollectionUtils;
-import org.elasticsearch.common.util.concurrent.ConcurrentMapLong;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.util.CollectionUtils;
+import org.opensearch.common.util.concurrent.ConcurrentMapLong;
+import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.newConcurrentMapLongWithAggressiveConcurrency;
+import static org.opensearch.common.util.concurrent.ConcurrentCollections.newConcurrentMapLongWithAggressiveConcurrency;
 
 
 public class AsynchronousSearchActiveStore {
@@ -61,7 +61,7 @@ public class AsynchronousSearchActiveStore {
                                         Consumer<AsynchronousSearchContextId> contextRejectionEventConsumer) {
         if (activeContexts.size() >= nodeConcurrentRunningSearches) {
             contextRejectionEventConsumer.accept(asynchronousSearchContextId);
-            throw new EsRejectedExecutionException("Trying to create too many concurrent searches. Must be less than or equal to: ["
+            throw new OpenSearchRejectedExecutionException("Trying to create too many concurrent searches. Must be less than or equal to: ["
                     + nodeConcurrentRunningSearches + "]. This limit can be set by changing the ["
                     + NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey() + "] settings.");
         }

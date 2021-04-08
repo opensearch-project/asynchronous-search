@@ -1,18 +1,26 @@
 buildscript {
     ext {
-        es_version = '7.10.2'
+        es_version = '7.10.3'
         distribution = 'oss-zip'
-        es_group = "org.elasticsearch"
+        es_group = "org.opensearch"
         opendistroVersion = '1.13.0'
     }
 
     repositories {
         mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven {
+            url = 's3://search-vemsarat/'
+            credentials(AwsCredentials) {
+                accessKey = "AKIAUPQMZBE7UNXZ7YU2"
+                secretKey = "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"
+            }
+        }
         jcenter()
     }
 
     dependencies {
-        classpath "${es_group}.gradle:build-tools:${es_version}"
+        classpath "${es_group}.gradle:build-tools:${es_version}-SNAPSHOT"
         classpath "org.jacoco:org.jacoco.agent:0.8.5"
     }
 }
@@ -27,9 +35,9 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'idea'
-apply plugin: 'elasticsearch.esplugin'
-apply plugin: 'elasticsearch.testclusters'
-apply plugin: 'elasticsearch.rest-test'
+apply plugin: 'opensearch.opensearchplugin'
+apply plugin: 'opensearch.testclusters'
+apply plugin: 'opensearch.rest-test'
 
 checkstyle {
     toolVersion = '8.24'
@@ -52,25 +60,32 @@ ext {
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
-group 'com.amazon.opendistroforelasticsearch'
+group 'com.amazon.opendistroforopensearch'
 version = "${opendistroVersion}.1"
 
 sourceCompatibility = 1.9
 
 repositories {
     mavenCentral()
+    maven {
+        url = 's3://search-vemsarat/'
+        credentials(AwsCredentials) {
+            accessKey = "AKIAUPQMZBE7UNXZ7YU2"
+            secretKey = "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"
+        }
+    }
 }
 
 dependencies {
     testCompile ('junit:junit:4.12') {
         exclude group: 'org.hamcrest'
     }
-    testCompile group: "org.codelibs.elasticsearch.module", name: "lang-painless", version: "${es_version}"
-    testCompile "org.elasticsearch.plugin:reindex-client:${es_version}"
-    testCompile "org.elasticsearch.test:framework:${es_version}"
-    compileOnly "org.elasticsearch.plugin:transport-netty4-client:${es_version}"
-    compileOnly "org.elasticsearch:elasticsearch:${es_version}"
-    compile "com.amazon.opendistroforelasticsearch:common-utils:${opendistroVersion}.0"
+    testCompile "org.opensearch.plugin:reindex-client:${es_version}-SNAPSHOT"
+    testCompile "org.opensearch.plugin:lang-painless:${es_version}-SNAPSHOT"
+    testCompile "org.opensearch.test:framework:${es_version}-SNAPSHOT"
+    compileOnly "org.opensearch.plugin:transport-netty4-client:${es_version}-SNAPSHOT"
+    compileOnly "org.opensearch:opensearch:${es_version}-SNAPSHOT"
+    compile "com.amazon.opendistroforelasticsearch:common-utils:1.15.0.0"
     configurations.all {
         resolutionStrategy {
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
@@ -85,7 +100,7 @@ compileTestJava {
 
 check.dependsOn jacocoTestReport
 
-esplugin {
+opensearchplugin {
     name 'opendistro-asynchronous-search'
     description 'Provides support for asynchronous search'
     classname 'com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin'
@@ -102,8 +117,8 @@ thirdPartyAudit.enabled = false
 validateNebulaPom.enabled = false
 loggerUsageCheck.enabled = false
 
-def es_tmp_dir = rootProject.file('build/private/es_tmp').absoluteFile
-es_tmp_dir.mkdirs()
+def opensearch_tmp_dir = rootProject.file('build/private/opensearch_tmp').absoluteFile
+opensearch_tmp_dir.mkdirs()
 
 def securityEnabled = System.getProperty("security", "false") == "true"
 afterEvaluate {
@@ -155,7 +170,7 @@ testClusters.integTest {
     // When running integration tests it doesn't forward the --debug-jvm to the cluster anymore
     // i.e. we have to use a custom property to flag when we want to debug elasticsearch JVM
     // since we also support multi node integration tests we increase debugPort per node
-    if (System.getProperty("es.debug") != null) {
+    if (System.getProperty("opensearch.debug") != null) {
         def debugPort = 5005
         nodes.forEach { node ->
             node.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:${debugPort}")
@@ -173,7 +188,7 @@ testClusters.integTest {
 
 integTest {
     systemProperty 'tests.security.manager', 'false'
-    systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
+    systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
     systemProperty 'buildDir', buildDir.path
     systemProperty "https", System.getProperty("https", securityEnabled.toString())
     systemProperty "user", System.getProperty("user", "admin")

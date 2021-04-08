@@ -16,32 +16,32 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.response;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.ParseField;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.StatusToXContentObject;
-import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.rest.RestStatus;
+import org.opensearch.OpenSearchException;
+import org.opensearch.ExceptionsHelper;
+import org.opensearch.action.ActionResponse;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.client.Requests;
+import org.opensearch.common.Nullable;
+import org.opensearch.common.ParseField;
+import org.opensearch.common.Strings;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.xcontent.StatusToXContentObject;
+import org.opensearch.common.xcontent.ToXContent;
+import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.common.xcontent.XContentParser;
+import org.opensearch.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
-import static org.elasticsearch.common.xcontent.XContentHelper.convertToMap;
-import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
+import static org.opensearch.common.xcontent.XContentHelper.convertToMap;
+import static org.opensearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 
 public class AsynchronousSearchResponse extends ActionResponse implements StatusToXContentObject {
 
@@ -60,7 +60,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     @Nullable
     private SearchResponse searchResponse;
     @Nullable
-    private ElasticsearchException error;
+    private OpenSearchException error;
 
     public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
                                SearchResponse searchResponse, Exception error) {
@@ -73,7 +73,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     }
 
     public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, ElasticsearchException error) {
+                               SearchResponse searchResponse, OpenSearchException error) {
         this.id = id;
         this.state = state;
         this.startTimeMillis = startTimeMillis;
@@ -83,7 +83,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     }
 
     public AsynchronousSearchResponse(AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, ElasticsearchException error) {
+                               SearchResponse searchResponse, OpenSearchException error) {
         this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
@@ -132,7 +132,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         }
         if (error != null) {
             builder.startObject(ERROR.getPreferredName());
-            ElasticsearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, error);
+            OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, error);
             builder.endObject();
         }
         builder.endObject();
@@ -151,7 +151,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         return searchResponse;
     }
 
-    public ElasticsearchException getError() {
+    public OpenSearchException getError() {
         return error;
     }
 
@@ -175,7 +175,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
 
 
     /**
-     * {@linkplain SearchResponse} and {@linkplain ElasticsearchException} don't override hashcode, hence cannot be included in
+     * {@linkplain SearchResponse} and {@linkplain OpenSearchException} don't override hashcode, hence cannot be included in
      * the hashcode calculation for {@linkplain AsynchronousSearchResponse}. Given that we are using these methods only in tests; on the
      * off-chance that the {@link #equals(Object)} ()} comparison fails and hashcode is equal for 2
      * {@linkplain AsynchronousSearchResponse} objects, we are wary of the @see
@@ -210,12 +210,12 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         }
     }
 
-    private Map<String, Object> getErrorAsMap(ElasticsearchException exception) throws IOException {
+    private Map<String, Object> getErrorAsMap(OpenSearchException exception) throws IOException {
         if (exception != null) {
             BytesReference error;
             try (XContentBuilder builder = XContentFactory.contentBuilder(Requests.INDEX_CONTENT_TYPE)) {
                 builder.startObject();
-                ElasticsearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
+                OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
                 builder.endObject();
                 error = BytesReference.bytes(builder);
                 return convertToMap(error, false, Requests.INDEX_CONTENT_TYPE).v2();
@@ -250,7 +250,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         long startTimeMillis = -1;
         long expirationTimeMillis = -1;
         SearchResponse searchResponse = null;
-        ElasticsearchException error = null;
+        OpenSearchException error = null;
         String currentFieldName = null;
         for (XContentParser.Token token = parser.nextToken(); token != XContentParser.Token.END_OBJECT; token = parser.nextToken()) {
             currentFieldName = parser.currentName();
@@ -261,7 +261,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
                 }
             } else if (ERROR.match(currentFieldName, parser.getDeprecationHandler())) {
                 parser.nextToken();
-                error = ElasticsearchException.fromXContent(parser);
+                error = OpenSearchException.fromXContent(parser);
 
             } else if (token.isValue()) {
                 if (ID.match(currentFieldName, parser.getDeprecationHandler())) {

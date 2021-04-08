@@ -2,16 +2,16 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.context.permit
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.AsynchronousSearchContextClosedException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.test.ESTestCase;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.test.OpenSearchTestCase;
 import org.junit.Assert;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
-public class NoopAsynchronousSearchContextPermitsTests extends ESTestCase {
+public class NoopAsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
 
     public void testAcquireAllPermits() {
         NoopAsynchronousSearchContextPermits permits = new NoopAsynchronousSearchContextPermits(

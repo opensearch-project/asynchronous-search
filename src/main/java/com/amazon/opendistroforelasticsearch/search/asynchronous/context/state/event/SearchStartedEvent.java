@@ -17,13 +17,13 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContext;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchContextEvent;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.search.SearchTask;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.search.SearchTask;
 
 /**
  * Event triggered when
- * {@linkplain org.elasticsearch.action.search.TransportSearchAction#execute(ActionRequest, ActionListener)} is fired, to
+ * {@linkplain org.opensearch.action.search.TransportSearchAction#execute(ActionRequest, ActionListener)} is fired, to
  * signal the search has begun.
  */
 public class SearchStartedEvent extends AsynchronousSearchContextEvent {

@@ -16,12 +16,12 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.id;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
-import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.test.ESTestCase;
+import org.opensearch.common.UUIDs;
+import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.UUID;
 
-public class AsynchronousSearchIdTests extends ESTestCase {
+public class AsynchronousSearchIdTests extends OpenSearchTestCase {
 
     public void testAsynchronousSearchIdParsing() {
         String node = "node" + randomIntBetween(1, 50);

@@ -22,27 +22,27 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.id.Asynchronous
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.SearchModule;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.test.ESTestCase;
+import org.opensearch.OpenSearchException;
+import org.opensearch.action.search.SearchPhaseExecutionException;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.SearchModule;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 
-public class AsynchronousSearchPersistenceContextTests extends ESTestCase {
+public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCase {
 
     /**
      * asynchronous search persistence context serializes search response into {@linkplain BytesReference}. We verify that de-serializing
@@ -92,7 +92,7 @@ public class AsynchronousSearchPersistenceContextTests extends ESTestCase {
                 new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user),
                 System::currentTimeMillis,
                 new NamedWriteableRegistry(searchModule.getNamedWriteables()));
-        ElasticsearchException deserializedException = asPersistenceContext.getAsynchronousSearchResponse().getError();
+        OpenSearchException deserializedException = asPersistenceContext.getAsynchronousSearchResponse().getError();
         assertTrue(deserializedException instanceof SearchPhaseExecutionException);
         assertEquals("phase", ((SearchPhaseExecutionException) deserializedException).getPhaseName());
         assertEquals("msg", deserializedException.getMessage());

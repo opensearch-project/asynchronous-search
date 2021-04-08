@@ -17,13 +17,13 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.rest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.RestCancellableNodeClient;
-import org.elasticsearch.rest.action.RestStatusToXContentListener;
-import org.elasticsearch.rest.action.search.RestSearchAction;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.rest.BaseRestHandler;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestCancellableNodeClient;
+import org.opensearch.rest.action.RestStatusToXContentListener;
+import org.opensearch.rest.action.search.RestSearchAction;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.IntConsumer;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
+import static org.opensearch.rest.RestRequest.Method.POST;
 
 public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
     /**

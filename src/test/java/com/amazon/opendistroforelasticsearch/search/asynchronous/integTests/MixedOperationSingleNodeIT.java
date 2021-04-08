@@ -22,17 +22,17 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.QuadConsumer;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.index.engine.VersionConflictEngineException;
+import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -107,7 +107,7 @@ public class MixedOperationSingleNodeIT extends AsynchronousSearchSingleNodeTest
 
                                     @Override
                                     public void onFailure(Exception e) {
-                                        if (e instanceof ElasticsearchTimeoutException) {
+                                        if (e instanceof OpenSearchTimeoutException) {
                                             numTimeouts.incrementAndGet();
                                         } else {
                                             fail("Unexpected exception " + e.getMessage());
@@ -142,7 +142,7 @@ public class MixedOperationSingleNodeIT extends AsynchronousSearchSingleNodeTest
                                             numVersionConflictFailures.incrementAndGet();
                                         } else if (e instanceof ResourceNotFoundException) {
                                             numResourceNotFoundFailures.incrementAndGet();
-                                        } else if (e instanceof ElasticsearchTimeoutException) {
+                                        } else if (e instanceof OpenSearchTimeoutException) {
                                             numTimeouts.incrementAndGet();
                                         } else {
                                             numGetFailures.incrementAndGet();

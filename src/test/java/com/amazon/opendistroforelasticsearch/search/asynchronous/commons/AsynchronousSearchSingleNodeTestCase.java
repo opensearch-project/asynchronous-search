@@ -30,28 +30,28 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.service.Asynchr
 import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.reindex.ReindexPlugin;
-import org.elasticsearch.painless.PainlessPlugin;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.plugins.PluginsService;
-import org.elasticsearch.script.MockScriptPlugin;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.junit.After;
 import org.junit.Before;
+import org.opensearch.action.ActionFuture;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.get.GetRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.client.Client;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.index.IndexNotFoundException;
+import org.opensearch.index.reindex.ReindexPlugin;
+import org.opensearch.painless.PainlessPlugin;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.PluginsService;
+import org.opensearch.script.MockScriptPlugin;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.test.OpenSearchSingleNodeTestCase;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,9 +64,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
+import static org.opensearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
 
-public abstract class AsynchronousSearchSingleNodeTestCase extends ESSingleNodeTestCase {
+public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSingleNodeTestCase {
     protected static final String INDEX = AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX;
     protected static final String TEST_INDEX = "index";
 
@@ -80,7 +80,7 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends ESSingleNodeT
         super.setUp();
         Map<Long, AsynchronousSearchActiveContext> allActiveContexts = getInstanceFromNode(AsynchronousSearchService.class)
                 .getAllActiveContexts();
-        assertTrue(allActiveContexts.toString(),allActiveContexts.isEmpty());
+        assertTrue(allActiveContexts.toString(), allActiveContexts.isEmpty());
         createIndex(TEST_INDEX, Settings.builder().put("index.refresh_interval", -1).build());
         for (int i = 0; i < 10; i++)
             client().prepareIndex(TEST_INDEX, "type", String.valueOf(i)).setSource("field", "value" + i)
@@ -93,7 +93,7 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends ESSingleNodeT
         plugins.add(SearchDelayPlugin.class);
         plugins.add(AsynchronousSearchPlugin.class);
         plugins.add(ReindexPlugin.class);
-        plugins.add(PainlessPlugin.class);
+        plugins.add(PainlessPlugin.class); //FIXME
         return plugins;
     }
 
@@ -113,17 +113,17 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends ESSingleNodeT
     }
 
     public static void executeDeleteAsynchronousSearch(Client client, DeleteAsynchronousSearchRequest request,
-                                                ActionListener<AcknowledgedResponse> listener) {
+                                                       ActionListener<AcknowledgedResponse> listener) {
         client.execute(DeleteAsynchronousSearchAction.INSTANCE, request, listener);
     }
 
     public static void executeSubmitAsynchronousSearch(Client client, SubmitAsynchronousSearchRequest request,
-                                                ActionListener<AsynchronousSearchResponse> listener) {
+                                                       ActionListener<AsynchronousSearchResponse> listener) {
         client.execute(SubmitAsynchronousSearchAction.INSTANCE, request, listener);
     }
 
     public static void executeGetAsynchronousSearch(Client client, GetAsynchronousSearchRequest request,
-                                             ActionListener<AsynchronousSearchResponse> listener) {
+                                                    ActionListener<AsynchronousSearchResponse> listener) {
         client.execute(GetAsynchronousSearchAction.INSTANCE, request, listener);
     }
 
