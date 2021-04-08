@@ -93,7 +93,7 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSin
         plugins.add(SearchDelayPlugin.class);
         plugins.add(AsynchronousSearchPlugin.class);
         plugins.add(ReindexPlugin.class);
-        plugins.add(PainlessPlugin.class); //FIXME
+        plugins.add(PainlessPlugin.class);
         return plugins;
     }
 
