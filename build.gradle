@@ -1,8 +1,8 @@
 buildscript {
     ext {
-        es_version = '7.10.3'
+        opensearch_version = '7.10.3'
         distribution = 'oss-zip'
-        es_group = "org.opensearch"
+        opensearch_group = "org.opensearch"
         opendistroVersion = '1.13.0'
     }
 
@@ -20,7 +20,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "${es_group}.gradle:build-tools:${es_version}-SNAPSHOT"
+        classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}-SNAPSHOT"
         classpath "org.jacoco:org.jacoco.agent:0.8.5"
     }
 }
@@ -80,11 +80,11 @@ dependencies {
     testCompile ('junit:junit:4.12') {
         exclude group: 'org.hamcrest'
     }
-    testCompile "org.opensearch.plugin:reindex-client:${es_version}-SNAPSHOT"
-    testCompile "org.opensearch.plugin:lang-painless:${es_version}-SNAPSHOT"
-    testCompile "org.opensearch.test:framework:${es_version}-SNAPSHOT"
-    compileOnly "org.opensearch.plugin:transport-netty4-client:${es_version}-SNAPSHOT"
-    compileOnly "org.opensearch:opensearch:${es_version}-SNAPSHOT"
+    testCompile "org.opensearch.plugin:reindex-client:${opensearch_version}-SNAPSHOT"
+    testCompile "org.opensearch.plugin:lang-painless:${opensearch_version}-SNAPSHOT"
+    testCompile "org.opensearch.test:framework:${opensearch_version}-SNAPSHOT"
+    compileOnly "org.opensearch.plugin:transport-netty4-client:${opensearch_version}-SNAPSHOT"
+    compileOnly "org.opensearch:opensearch:${opensearch_version}-SNAPSHOT"
     compile "com.amazon.opendistroforelasticsearch:common-utils:1.15.0.0"
     configurations.all {
         resolutionStrategy {
@@ -168,7 +168,7 @@ testClusters.integTest {
     // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
     if (_numNodes > 1) numberOfNodes = _numNodes
     // When running integration tests it doesn't forward the --debug-jvm to the cluster anymore
-    // i.e. we have to use a custom property to flag when we want to debug elasticsearch JVM
+    // i.e. we have to use a custom property to flag when we want to debug opensearch JVM
     // since we also support multi node integration tests we increase debugPort per node
     if (System.getProperty("opensearch.debug") != null) {
         def debugPort = 5005
