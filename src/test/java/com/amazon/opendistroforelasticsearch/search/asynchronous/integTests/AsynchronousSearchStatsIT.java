@@ -33,6 +33,7 @@ import org.opensearch.common.unit.TimeValue;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
 import org.opensearch.test.OpenSearchIntegTestCase;
+import org.opensearch.test.junit.annotations.TestLogging;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
 
@@ -114,6 +115,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         }
     }
 
+    @TestLogging(value = "_root:DEBUG", reason = "flaky")
     public void testStatsAcrossNodes() throws InterruptedException, ExecutionException {
         TestThreadPool threadPool = null;
         try {
