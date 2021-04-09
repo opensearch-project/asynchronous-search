@@ -40,8 +40,6 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchModule;
-import org.elasticsearch.test.rest.ESRestTestCase;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 
@@ -62,7 +60,7 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Verifies asynchronous search APIs - submit, get, delete end to end using rest client
  */
-public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
+public abstract class AsynchronousSearchRestTestCase extends ODFERestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
@@ -155,11 +153,6 @@ public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
         }
     }
 
-    @After
-    public void closeClient() throws Exception {
-        ESRestTestCase.closeClients();
-    }
-
     protected final <Resp> Resp parseEntity(final HttpEntity entity,
                                             final CheckedFunction<XContentParser, Resp, IOException> entityParser)
             throws IOException {
@@ -180,7 +173,7 @@ public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
     }
 
     protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
-                                                                 GetAsynchronousSearchRequest getAsynchronousSearchRequest)
+                                                                               GetAsynchronousSearchRequest getAsynchronousSearchRequest)
             throws IOException {
         AsynchronousSearchResponse getResponse;
         getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);
