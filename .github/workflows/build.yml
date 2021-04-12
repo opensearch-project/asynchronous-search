@@ -41,7 +41,7 @@ jobs:
           echo "FROM opendistroforelasticsearch/opendistroforelasticsearch:$version" >> Dockerfile
           echo "RUN if [ -d /usr/share/elasticsearch/plugins/opendistro-asynchronous-search ]; then /usr/share/elasticsearch/bin/elasticsearch-plugin remove opendistro-asynchronous-search; fi" >> Dockerfile
           echo "RUN yum -y update \ && yum -y groupinstall "Development Tools" \ && yum install -y unzip glibc.x86_64 cmake \ && yum clean all" >> Dockerfile
-          echo "RUN git clone --recursive --branch ${BRANCH_NAME} https://github.com/opendistro-for-elasticsearch/asynchronous-search.git /usr/share/elasticsearch/asynchronous-search \ " >> Dockerfile
+          echo "RUN git clone --recursive --branch ${GITHUB_REF} https://github.com/opendistro-for-elasticsearch/asynchronous-search.git /usr/share/elasticsearch/asynchronous-search \ " >> Dockerfile
           echo "&& cd /usr/share/elasticsearch/asynchronous-search/jni \ && sed -i 's/-march=native/-march=x86-64/g' external/nmslib/similarity_search/CMakeLists.txt \ && cmake . \ && make \ " >> Dockerfile
           echo "&& mkdir /tmp/jni/ && cp release/*.so /tmp/jni/ && ls -ltr /tmp/jni/ \ && rm -rf /usr/share/elasticsearch/asynchronous-search" >> Dockerfile
           echo "RUN cd /usr/share/elasticsearch/" >> Dockerfile
