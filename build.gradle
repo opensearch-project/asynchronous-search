@@ -70,8 +70,8 @@ repositories {
     maven {
         url = 's3://search-vemsarat/'
         credentials(AwsCredentials) {
-            accessKey = System.env.AWS_ACCESS_KEY_ID ?: findProperty('aws_access_key_id')
-            secretKey = System.env.AWS_SECRET_ACCESS_KEY ?: findProperty('aws_secret_access_key')
+            accessKey = ${{ secrets.AWS_ACCESS_KEY_ID }}
+            secretKey = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         }
     }
 }
