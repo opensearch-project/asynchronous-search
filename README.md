@@ -1,7 +1,7 @@
-[![Test and Build Workflow](https://github.com/opendistro-for-elasticsearch/asynchronous-search/workflows/Test%20and%20Build%20Workflow/badge.svg)](https://github.com/opendistro-for-elasticsearch/asynchronous-search/actions)
-[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/asynchronous-search/branch/main/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/asynchronous-search)
+[![Test and Build Workflow](https://github.com/opensearch-project/asynchronous-search/workflows/Test%20and%20Build%20Workflow/badge.svg)](https://github.com/opensearch-project/asynchronous-search/actions)
+[![codecov](https://codecov.io/gh/opensearch-project/asynchronous-search/branch/main/graph/badge.svg)](https://codecov.io/gh/opensearch-project/asynchronous-search)
 
-# Open Distro for Elasticsearch asynchronous search
+# Asynchronous search
 Asynchronous search makes it possible for users to run such queries without worrying about the query timing out. 
 These queries run in the background, and users can track the progress, and retrieve partial results as they become available.
 
@@ -78,7 +78,7 @@ When launching a cluster using one of the above commands, logs are placed in `bu
 
 ### Debugging
 
-Sometimes it is useful to attach a debugger to either the Elasticsearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the Elasticsearch cluster or the integ tests, first, make sure start a debugger listening on port `5005`. 
+Sometimes it is useful to attach a debugger to either the Opensearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the Opensearch cluster or the integ tests, first, make sure start a debugger listening on port `5005`. 
 
 To debug the server code, run:
 
@@ -92,7 +92,7 @@ OR
 ./gradlew run --debug-jvm # to just start a cluster that can be debugged
 ```
 
-The Elasticsearch server JVM will connect to a debugger attached to `localhost:5005`.
+The Opensearch server JVM will connect to a debugger attached to `localhost:5005`.
 
 The IDE needs to listen for the remote JVM. If using Intellij you must set your debug configuration to "Listen to remote JVM" and make sure "Auto Restart" is checked.
 You must start your debugger to listen for remote JVM before running the commands.
