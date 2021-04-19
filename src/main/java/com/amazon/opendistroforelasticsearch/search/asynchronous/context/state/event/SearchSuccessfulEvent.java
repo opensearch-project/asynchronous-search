@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContext;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchContextEvent;
-import org.elasticsearch.action.search.SearchResponse;
+import org.opensearch.action.search.SearchResponse;
 
 /**
  * Event triggered when asynchronous search completes with a successful search response.

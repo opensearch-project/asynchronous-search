@@ -17,8 +17,8 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.stats;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.AsynchronousSearchContextEventListener;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.metrics.CounterMetric;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.common.metrics.CounterMetric;
 
 public class InternalAsynchronousSearchStats implements AsynchronousSearchContextEventListener {
 

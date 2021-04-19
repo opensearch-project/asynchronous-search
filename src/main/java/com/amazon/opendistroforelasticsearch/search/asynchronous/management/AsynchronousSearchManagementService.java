@@ -24,34 +24,34 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateListener;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.Randomness;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.component.AbstractLifecycleComponent;
-import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.settings.Setting;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.AbstractRunnable;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.tasks.Task;
-import org.elasticsearch.threadpool.Scheduler;
-import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportChannel;
-import org.elasticsearch.transport.TransportException;
-import org.elasticsearch.transport.TransportRequestHandler;
-import org.elasticsearch.transport.TransportResponseHandler;
-import org.elasticsearch.transport.TransportService;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionRequestValidationException;
+import org.opensearch.cluster.ClusterChangedEvent;
+import org.opensearch.cluster.ClusterState;
+import org.opensearch.cluster.ClusterStateListener;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.Randomness;
+import org.opensearch.common.collect.ImmutableOpenMap;
+import org.opensearch.common.component.AbstractLifecycleComponent;
+import org.opensearch.common.inject.Inject;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.AbstractRunnable;
+import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.common.util.concurrent.ThreadContext;
+import org.opensearch.tasks.Task;
+import org.opensearch.threadpool.Scheduler;
+import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.TransportChannel;
+import org.opensearch.transport.TransportException;
+import org.opensearch.transport.TransportRequestHandler;
+import org.opensearch.transport.TransportResponseHandler;
+import org.opensearch.transport.TransportService;
 
 import java.io.IOException;
 import java.util.List;
@@ -266,7 +266,8 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
 
         @Override
         public void onRejection(Exception e) {
-            final boolean shutDown = e instanceof EsRejectedExecutionException && ((EsRejectedExecutionException) e).isExecutorShutdown();
+            final boolean shutDown = e instanceof OpenSearchRejectedExecutionException && ((OpenSearchRejectedExecutionException) e)
+                    .isExecutorShutdown();
             logger.log(shutDown ? Level.DEBUG : Level.WARN, "asynchronous search clean up job rejected [{}]", reason, e);
         }
     }

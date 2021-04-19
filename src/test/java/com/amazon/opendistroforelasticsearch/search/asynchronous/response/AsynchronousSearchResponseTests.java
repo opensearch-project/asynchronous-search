@@ -17,30 +17,30 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.response;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.Randomness;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.test.AbstractSerializingTestCase;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.client.Requests;
+import org.opensearch.common.Randomness;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.io.stream.Writeable;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.NamedXContentRegistry;
+import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.common.xcontent.XContentParser;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.test.AbstractSerializingTestCase;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.elasticsearch.common.xcontent.XContentHelper.toXContent;
+import static org.opensearch.common.xcontent.XContentHelper.toXContent;
 
 public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase<AsynchronousSearchResponse> {
 
@@ -91,7 +91,7 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
 
     /*
      * we cannot compare the cause, because it will be wrapped and serialized in an outer
-     * ElasticSearchException best effort: try to check that the original
+     * OpenSearchException best effort: try to check that the original
      * message appears somewhere in the rendered xContent.
      */
     public void testXContentRoundTripForAsynchronousSearchResponseContainingError() throws IOException {
@@ -107,7 +107,7 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
             AsynchronousSearchResponse asResponse1 = AsynchronousSearchResponse.fromXContent(parser);
             String originalMsg = asResponse1.getError().getCause().getMessage();
             assertEquals(originalMsg,
-                    "Elasticsearch exception [type=runtime_exception, reason=test]");
+                    "OpenSearch exception [type=runtime_exception, reason=test]");
         }
     }
 }

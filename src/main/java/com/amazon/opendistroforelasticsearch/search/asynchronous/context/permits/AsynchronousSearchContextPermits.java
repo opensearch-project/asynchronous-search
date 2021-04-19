@@ -22,12 +22,12 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.Asynchro
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.lease.Releasable;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.AbstractRunnable;
-import org.elasticsearch.common.util.concurrent.RunOnce;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.ActionListener;
+import org.opensearch.common.lease.Releasable;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.AbstractRunnable;
+import org.opensearch.common.util.concurrent.RunOnce;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.io.Closeable;
 import java.util.concurrent.Semaphore;

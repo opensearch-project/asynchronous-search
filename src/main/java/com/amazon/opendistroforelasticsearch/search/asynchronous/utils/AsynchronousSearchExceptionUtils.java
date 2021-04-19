@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.utils;
 
-import org.elasticsearch.ResourceNotFoundException;
+import org.opensearch.ResourceNotFoundException;
 
 import java.util.Locale;
 

@@ -26,29 +26,29 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.response.Acknow
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchTask;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchService;
-import org.elasticsearch.search.aggregations.InternalAggregation;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.test.junit.annotations.TestLogging;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ExceptionsHelper;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchPhaseExecutionException;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.SearchTask;
+import org.opensearch.action.search.SearchType;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.search.SearchService;
+import org.opensearch.search.aggregations.InternalAggregation;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.test.OpenSearchIntegTestCase;
+import org.opensearch.test.junit.annotations.TestLogging;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.Locale;
 import java.util.Map;
@@ -62,7 +62,7 @@ import java.util.function.Function;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 
-@ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.SUITE, numDataNodes = 2, transportClientRatio = 0)
+@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, numDataNodes = 2, transportClientRatio = 0)
 public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCase {
 
     @Override
@@ -126,9 +126,9 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                                                     @Override
                                                     public void onFailure(Exception e) {
                                                         Throwable cause = ExceptionsHelper.unwrapCause(e);
-                                                        if (cause instanceof EsRejectedExecutionException) {
+                                                        if (cause instanceof OpenSearchRejectedExecutionException) {
                                                             numRejections.incrementAndGet();
-                                                        } else if (cause instanceof ElasticsearchTimeoutException) {
+                                                        } else if (cause instanceof OpenSearchTimeoutException) {
                                                             numTimeouts.incrementAndGet();
                                                         } else if(cause instanceof ResourceNotFoundException) {
                                                             // deletion is in race with task cancellation due to partial merge failure
@@ -171,7 +171,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                                 failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected"));
                     }
                     // we have have null responses if submit completes before search starts
-                } else if (unwrap instanceof EsRejectedExecutionException == false) {
+                } else if (unwrap instanceof OpenSearchRejectedExecutionException == false) {
                     throw new AssertionError("unexpected failure + ", (Throwable) response);
                 }
             }

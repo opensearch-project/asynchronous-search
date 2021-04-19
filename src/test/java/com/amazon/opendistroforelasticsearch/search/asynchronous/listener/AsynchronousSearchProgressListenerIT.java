@@ -17,26 +17,26 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.listener;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.AsynchronousSearchAssertions;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
-import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsResponse;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchShard;
-import org.elasticsearch.action.search.SearchTask;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchService;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.InternalAggregation;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESSingleNodeTestCase;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.admin.cluster.shards.ClusterSearchShardsResponse;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.SearchShard;
+import org.opensearch.action.search.SearchTask;
+import org.opensearch.action.search.SearchType;
+import org.opensearch.client.Client;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.search.SearchService;
+import org.opensearch.search.aggregations.AggregationBuilders;
+import org.opensearch.search.aggregations.InternalAggregation;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.search.sort.FieldSortBuilder;
+import org.opensearch.search.sort.SortOrder;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.test.OpenSearchSingleNodeTestCase;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,10 +48,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+import static org.opensearch.index.query.QueryBuilders.queryStringQuery;
+import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
 
-public class AsynchronousSearchProgressListenerIT extends ESSingleNodeTestCase {
+public class AsynchronousSearchProgressListenerIT extends OpenSearchSingleNodeTestCase {
 
     public void setUp() throws Exception {
         super.setUp();

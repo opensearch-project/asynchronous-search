@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.listener;
 
 
-import org.elasticsearch.action.ActionListener;
+import org.opensearch.action.ActionListener;
 
 public interface PrioritizedActionListener<Response> extends ActionListener<Response> {
 

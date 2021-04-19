@@ -16,8 +16,8 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.task;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
-import org.elasticsearch.tasks.CancellableTask;
-import org.elasticsearch.tasks.TaskId;
+import org.opensearch.tasks.CancellableTask;
+import org.opensearch.tasks.TaskId;
 
 import java.util.Map;
 

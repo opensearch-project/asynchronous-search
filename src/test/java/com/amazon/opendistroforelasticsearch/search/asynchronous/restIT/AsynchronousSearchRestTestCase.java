@@ -24,26 +24,26 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Request;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.common.CheckedFunction;
-import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.DeprecationHandler;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchModule;
-import org.elasticsearch.test.rest.ESRestTestCase;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.client.Request;
+import org.opensearch.client.Response;
+import org.opensearch.client.ResponseException;
+import org.opensearch.common.CheckedFunction;
+import org.opensearch.common.Nullable;
+import org.opensearch.common.Strings;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.xcontent.DeprecationHandler;
+import org.opensearch.common.xcontent.NamedXContentRegistry;
+import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.common.xcontent.XContentParser;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.rest.RestStatus;
+import org.opensearch.search.SearchModule;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
@@ -62,7 +62,7 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Verifies asynchronous search APIs - submit, get, delete end to end using rest client
  */
-public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
+public abstract class AsynchronousSearchRestTestCase extends OpenSearchRestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
@@ -148,7 +148,7 @@ public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
                     connector.getMBeanServerConnection(), new ObjectName("org.jacoco:type=Runtime"), IProxy.class,
                     false);
 
-            Path path = org.elasticsearch.common.io.PathUtils.get(jacocoBuildPath + "/integTestRunner.exec");
+            Path path = org.opensearch.common.io.PathUtils.get(jacocoBuildPath + "/integTestRunner.exec");
             Files.write(path, proxy.getExecutionData(false));
         } catch (Exception ex) {
             throw new RuntimeException("Failed to dump coverage: " + ex);
@@ -157,7 +157,7 @@ public abstract class AsynchronousSearchRestTestCase extends ESRestTestCase {
 
     @After
     public void closeClient() throws Exception {
-        ESRestTestCase.closeClients();
+        OpenSearchRestTestCase.closeClients();
     }
 
     protected final <Resp> Resp parseEntity(final HttpEntity entity,

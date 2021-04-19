@@ -15,8 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.listener;
 
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchProgressActionListener;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.search.SearchProgressActionListener;
 
 import java.util.ArrayList;
 import java.util.List;

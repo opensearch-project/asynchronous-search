@@ -17,8 +17,8 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.id;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.apache.lucene.store.ByteArrayDataInput;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.io.stream.BytesStreamOutput;
 
 import java.io.IOException;
 import java.util.Base64;

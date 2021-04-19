@@ -16,8 +16,8 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.action;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchStatsResponse;
-import org.elasticsearch.action.ActionType;
-import org.elasticsearch.common.io.stream.Writeable;
+import org.opensearch.action.ActionType;
+import org.opensearch.common.io.stream.Writeable;
 
 public class AsynchronousSearchStatsAction extends ActionType<AsynchronousSearchStatsResponse> {
 

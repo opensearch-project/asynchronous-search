@@ -18,18 +18,18 @@ package com.amazon.opendistroforelasticsearch.search.asynchronous.listener;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.commons.AsynchronousSearchTestCase;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.common.collect.Tuple;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchException;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.common.collect.Tuple;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class SearchProgressActionListenerTests extends AsynchronousSearchTestCas
 
         mockAsynchronousSearchResp = AsynchronousSearchResponse.empty("random-id", mockSearchResponse, null);
         mockAsynchronousSearchFailResp = AsynchronousSearchResponse.empty("random-id", null,
-                new ElasticsearchException(mockSearchException));
+                new OpenSearchException(mockSearchException));
     }
 
     public void testListenerOnResponseForSuccessfulSearch() throws InterruptedException {

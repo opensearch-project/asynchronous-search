@@ -31,25 +31,25 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.response.Asynch
 import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ElasticsearchSecurityException;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportService;
+import org.opensearch.OpenSearchSecurityException;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.DocWriteResponse;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.index.IndexResponse;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.cluster.metadata.IndexMetadata;
+import org.opensearch.common.UUIDs;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.ThreadContext;
+import org.opensearch.index.engine.VersionConflictEngineException;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.TransportService;
 import org.junit.After;
 import org.junit.Assert;
 
@@ -63,7 +63,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.elasticsearch.common.unit.TimeValue.timeValueDays;
+import static org.opensearch.common.unit.TimeValue.timeValueDays;
 
 public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSingleNodeTestCase {
 
@@ -100,7 +100,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
             if (user != null) {
                 CountDownLatch getLatch1 = new CountDownLatch(1);
                 ActionListener<AsynchronousSearchPersistenceModel> getListener = ActionListener.wrap(
-                        r -> fail("Expected exception. Got " + r), e -> assertTrue(e instanceof ElasticsearchSecurityException));
+                        r -> fail("Expected exception. Got " + r), e -> assertTrue(e instanceof OpenSearchSecurityException));
                 persistenceService.getResponse(newAsynchronousSearchResponse.getId(), user2, new LatchedActionListener<>(getListener,
                         getLatch1));
                 getLatch1.await();
@@ -121,7 +121,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
                 User diffUser = TestClientUtils.randomUser();
                 ActionListener<Boolean> deleteListener = ActionListener.wrap(
                         r -> fail("Expected exception on delete. Got acknowledgment" + r),
-                        e -> assertTrue(e instanceof ElasticsearchSecurityException));
+                        e -> assertTrue(e instanceof OpenSearchSecurityException));
                 persistenceService.deleteResponse(newAsynchronousSearchResponse.getId(), diffUser,
                         new LatchedActionListener<>(deleteListener, deleteLatch1));
                 deleteLatch1.await();
@@ -256,7 +256,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
                     if (originalUser != null && currentUser != null && currentUser.equals(originalUser) == false) {
                         ActionListener<AsynchronousSearchPersistenceModel> updateListener = ActionListener.wrap(
                                 r -> fail("Expected security exception. Unauthorized update. Got " + r),
-                                e -> assertTrue(e instanceof ElasticsearchSecurityException));
+                                e -> assertTrue(e instanceof OpenSearchSecurityException));
                         persistenceService.updateExpirationTime(asResponse.getId(), newExpirationTime, currentUser,
                                 new LatchedActionListener<>(updateListener, updateLatch));
                     } else {
@@ -578,7 +578,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
             AsynchronousSearchResponse asResponse = executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest).actionGet();
             assertEquals(AsynchronousSearchState.PERSISTING, asResponse.getState());
             timedOut = false;
-        } catch (ElasticsearchTimeoutException e) {
+        } catch (OpenSearchTimeoutException e) {
             timedOut = true;
         }
         return timedOut;

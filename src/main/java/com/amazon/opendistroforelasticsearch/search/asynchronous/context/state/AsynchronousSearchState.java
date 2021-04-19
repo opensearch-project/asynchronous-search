@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.context.state;
 
-import org.elasticsearch.action.search.SearchTask;
+import org.opensearch.action.search.SearchTask;
 
 /**
  * The state of the asynchronous search.

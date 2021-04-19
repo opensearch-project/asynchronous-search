@@ -15,11 +15,11 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.request;
 
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.unit.TimeValue;
+import org.opensearch.action.ActionRequestValidationException;
+import org.opensearch.common.Nullable;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.unit.TimeValue;
 
 import java.io.IOException;
 

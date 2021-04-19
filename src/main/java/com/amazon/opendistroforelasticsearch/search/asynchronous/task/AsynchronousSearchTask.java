@@ -19,10 +19,10 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.active.
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchTask;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.tasks.TaskId;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchTask;
+import org.opensearch.common.Strings;
+import org.opensearch.tasks.TaskId;
 
 import java.util.Map;
 import java.util.Objects;

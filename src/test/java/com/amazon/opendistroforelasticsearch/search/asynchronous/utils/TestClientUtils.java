@@ -26,22 +26,22 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BackoffPolicy;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.Randomness;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.test.rest.ESRestTestCase;
+import org.opensearch.action.ActionFuture;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.bulk.BackoffPolicy;
+import org.opensearch.action.get.GetRequest;
+import org.opensearch.action.get.GetResponse;
+import org.opensearch.client.Client;
+import org.opensearch.common.Randomness;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.test.rest.OpenSearchRestTestCase;
 import org.junit.Assert;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 
-import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
+import static org.opensearch.common.unit.TimeValue.timeValueMillis;
 
 public class TestClientUtils {
     static final String INDEX = AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX;
@@ -133,10 +133,10 @@ public class TestClientUtils {
     }
 
     public static User randomUser() {
-        return new User(ESRestTestCase.randomAlphaOfLength(10), Arrays.asList(
-                ESRestTestCase.randomAlphaOfLength(10),
-                ESRestTestCase.randomAlphaOfLength(10)),
-                Arrays.asList(ESRestTestCase.randomAlphaOfLength(10), "all_access"), Arrays.asList());
+        return new User(OpenSearchRestTestCase.randomAlphaOfLength(10), Arrays.asList(
+                OpenSearchRestTestCase.randomAlphaOfLength(10),
+                OpenSearchRestTestCase.randomAlphaOfLength(10)),
+                Arrays.asList(OpenSearchRestTestCase.randomAlphaOfLength(10), "all_access"), Arrays.asList());
     }
 
     public static User randomUserOrNull() {

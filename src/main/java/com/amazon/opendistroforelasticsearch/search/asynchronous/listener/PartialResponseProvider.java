@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.listener;
 
-import org.elasticsearch.action.search.SearchResponse;
+import org.opensearch.action.search.SearchResponse;
 
 @FunctionalInterface
 public interface PartialResponseProvider {

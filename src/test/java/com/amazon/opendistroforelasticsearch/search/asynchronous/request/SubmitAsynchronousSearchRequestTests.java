@@ -16,19 +16,19 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.request;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.common.ValidationException;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.suggest.SuggestBuilder;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ESTestCase;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.common.ValidationException;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.search.suggest.SuggestBuilder;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.HashMap;
 
 import static org.hamcrest.Matchers.containsString;
 
-public class SubmitAsynchronousSearchRequestTests extends ESTestCase {
+public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
 
     public void testValidRequest() {
         SearchSourceBuilder source = new SearchSourceBuilder();

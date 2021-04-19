@@ -15,9 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.search.asynchronous.request;
 
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 

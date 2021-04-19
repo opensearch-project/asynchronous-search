@@ -44,31 +44,31 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.Asynchron
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ElasticsearchSecurityException;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
-import org.elasticsearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchTask;
-import org.elasticsearch.action.support.GroupedActionListener;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterStateListener;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.common.component.AbstractLifecycleComponent;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.lease.Releasable;
-import org.elasticsearch.common.settings.Setting;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.aggregations.InternalAggregation;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchSecurityException;
+import org.opensearch.ExceptionsHelper;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
+import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchTask;
+import org.opensearch.action.support.GroupedActionListener;
+import org.opensearch.client.Client;
+import org.opensearch.cluster.ClusterChangedEvent;
+import org.opensearch.cluster.ClusterStateListener;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.UUIDs;
+import org.opensearch.common.component.AbstractLifecycleComponent;
+import org.opensearch.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.common.lease.Releasable;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.rest.RestStatus;
+import org.opensearch.search.aggregations.InternalAggregation;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -93,11 +93,11 @@ import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.RUNNING;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState.SUCCEEDED;
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.UserAuthUtils.isUserValid;
-import static org.elasticsearch.action.ActionListener.runAfter;
-import static org.elasticsearch.action.ActionListener.wrap;
-import static org.elasticsearch.common.unit.TimeValue.timeValueDays;
-import static org.elasticsearch.common.unit.TimeValue.timeValueHours;
-import static org.elasticsearch.common.unit.TimeValue.timeValueMinutes;
+import static org.opensearch.action.ActionListener.runAfter;
+import static org.opensearch.action.ActionListener.wrap;
+import static org.opensearch.common.unit.TimeValue.timeValueDays;
+import static org.opensearch.common.unit.TimeValue.timeValueHours;
+import static org.opensearch.common.unit.TimeValue.timeValueMinutes;
 
 /***
  * Manages the lifetime of {@link AsynchronousSearchContext} for all the asynchronous searches running on the coordinator node.
@@ -252,7 +252,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
             AsynchronousSearchActiveContext asynchronousSearchActiveContext = optionalAsynchronousSearchActiveContext.get();
             if (isUserValid(user, asynchronousSearchActiveContext.getUser()) == false) {
                 logger.debug("Invalid user requesting GET active context for asynchronous search id {}", id);
-                exceptionTranslationListener.onFailure(new ElasticsearchSecurityException(
+                exceptionTranslationListener.onFailure(new OpenSearchSecurityException(
                         "User doesn't have necessary roles to access the asynchronous search with id " + id, RestStatus.FORBIDDEN));
             } else {
                 exceptionTranslationListener.onResponse(asynchronousSearchActiveContext);
@@ -306,7 +306,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
             if (isUserValid(user, asynchronousSearchContext.getUser())) {
                 cancelAndFreeActiveAndPersistedContext(asynchronousSearchContext, exceptionTranslationWrapper, user);
             } else {
-                exceptionTranslationWrapper.onFailure(new ElasticsearchSecurityException(
+                exceptionTranslationWrapper.onFailure(new OpenSearchSecurityException(
                         "User doesn't have necessary roles to access the asynchronous search with id " + id, RestStatus.FORBIDDEN));
             }
         } else {
@@ -395,7 +395,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
                         logger.debug(() -> new ParameterizedMessage("Failed to acquire permits for " +
                                 "asynchronous search id [{}] for updating context within timeout 5s",
                                 asynchronousSearchContext.getAsynchronousSearchId()), exception);
-                        listener.onFailure(new ElasticsearchTimeoutException(asynchronousSearchContext.getAsynchronousSearchId()));
+                        listener.onFailure(new OpenSearchTimeoutException(asynchronousSearchContext.getAsynchronousSearchId()));
                     } else {
                         // best effort clean up with acknowledged as false
                         if (asynchronousSearchContext.keepOnCompletion()) {
@@ -527,7 +527,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
                                 releasableActionListener.onResponse(asynchronousSearchActiveContext);
                             } else {
                                 releasableActionListener.onFailure(
-                                        new ElasticsearchSecurityException("User doesn't have necessary roles to access the " +
+                                        new OpenSearchSecurityException("User doesn't have necessary roles to access the " +
                                                 "asynchronous search with id " + id, RestStatus.FORBIDDEN));
                             }
                         }
@@ -539,7 +539,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
                             logger.debug(() -> new ParameterizedMessage("Failed to acquire permits for " +
                                     "asynchronous search id [{}] for updating context within timeout 5s",
                                     asynchronousSearchActiveContext.getAsynchronousSearchId()), exception);
-                            listener.onFailure(new ElasticsearchTimeoutException(id));
+                            listener.onFailure(new OpenSearchTimeoutException(id));
                         } else {
                             // best effort we try an update the doc if one exists
                             if (asynchronousSearchActiveContext.keepOnCompletion()) {
@@ -695,7 +695,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     }
 
     private Exception translateException(String id, Exception e) {
-        if (e instanceof ResourceNotFoundException || e instanceof ElasticsearchSecurityException) {
+        if (e instanceof ResourceNotFoundException || e instanceof OpenSearchSecurityException) {
             logger.debug(() -> new ParameterizedMessage("Translating exception received from operation on {}", id), e);
             return AsynchronousSearchExceptionUtils.buildResourceNotFoundException(id);
         } else {

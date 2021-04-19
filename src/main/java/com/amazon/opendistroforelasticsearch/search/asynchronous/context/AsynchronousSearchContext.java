@@ -20,8 +20,8 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.A
 import com.amazon.opendistroforelasticsearch.search.asynchronous.id.AsynchronousSearchId;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.Nullable;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.Nullable;
 
 import java.util.function.LongSupplier;
 

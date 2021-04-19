@@ -19,28 +19,28 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.service.Asynchr
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.cluster.metadata.Metadata;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodeRole;
-import org.elasticsearch.cluster.node.DiscoveryNodes;
-import org.elasticsearch.cluster.routing.RoutingTable;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.set.Sets;
-import org.elasticsearch.index.Index;
-import org.elasticsearch.test.ClusterServiceUtils;
-import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.transport.MockTransport;
-import org.elasticsearch.transport.TransportRequest;
-import org.elasticsearch.transport.TransportService;
+import org.opensearch.OpenSearchException;
+import org.opensearch.Version;
+import org.opensearch.cluster.ClusterChangedEvent;
+import org.opensearch.cluster.ClusterName;
+import org.opensearch.cluster.ClusterState;
+import org.opensearch.cluster.coordination.DeterministicTaskQueue;
+import org.opensearch.cluster.metadata.IndexMetadata;
+import org.opensearch.cluster.metadata.Metadata;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.cluster.node.DiscoveryNodeRole;
+import org.opensearch.cluster.node.DiscoveryNodes;
+import org.opensearch.cluster.routing.RoutingTable;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.UUIDs;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.util.set.Sets;
+import org.opensearch.index.Index;
+import org.opensearch.test.ClusterServiceUtils;
+import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.test.transport.MockTransport;
+import org.opensearch.transport.TransportRequest;
+import org.opensearch.transport.TransportService;
 import org.junit.Before;
 import org.mockito.Mockito;
 
@@ -51,11 +51,11 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.emptySet;
-import static org.elasticsearch.node.Node.NODE_NAME_SETTING;
-import static org.elasticsearch.transport.TransportService.NOOP_TRANSPORT_INTERCEPTOR;
+import static org.opensearch.node.Node.NODE_NAME_SETTING;
+import static org.opensearch.transport.TransportService.NOOP_TRANSPORT_INTERCEPTOR;
 import static org.hamcrest.Matchers.is;
 
-public class AsynchronousSearchManagementServiceTests extends ESTestCase {
+public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase {
 
     private DeterministicTaskQueue deterministicTaskQueue;
     private static final ClusterName TEST_CLUSTER_NAME = new ClusterName("test");
@@ -120,7 +120,7 @@ public class AsynchronousSearchManagementServiceTests extends ESTestCase {
                 if (successResponse) {
                     handleResponse(requestId, new AcknowledgedResponse(true));
                 } else {
-                    handleRemoteError(requestId, new ElasticsearchException("simulated error"));
+                    handleRemoteError(requestId, new OpenSearchException("simulated error"));
                 }
             }
         };

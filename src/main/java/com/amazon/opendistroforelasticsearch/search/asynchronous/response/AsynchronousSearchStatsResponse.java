@@ -16,15 +16,15 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.response;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.stats.AsynchronousSearchStats;
-import org.elasticsearch.action.FailedNodeException;
-import org.elasticsearch.action.support.nodes.BaseNodesResponse;
-import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.ToXContentObject;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
+import org.opensearch.action.FailedNodeException;
+import org.opensearch.action.support.nodes.BaseNodesResponse;
+import org.opensearch.cluster.ClusterName;
+import org.opensearch.common.Strings;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.xcontent.ToXContentObject;
+import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
 import java.util.List;

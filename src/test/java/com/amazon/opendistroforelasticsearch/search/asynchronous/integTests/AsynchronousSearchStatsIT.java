@@ -26,15 +26,16 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.service.Asynchr
 import com.amazon.opendistroforelasticsearch.search.asynchronous.stats.AsynchronousSearchCountStats;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.stats.AsynchronousSearchStats;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.script.Script;
+import org.opensearch.script.ScriptType;
+import org.opensearch.test.OpenSearchIntegTestCase;
+import org.opensearch.test.junit.annotations.TestLogging;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,11 +47,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
-import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
+import static org.opensearch.index.query.QueryBuilders.scriptQuery;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
-@ESIntegTestCase.ClusterScope(numDataNodes = 5, scope = ESIntegTestCase.Scope.TEST)
+@OpenSearchIntegTestCase.ClusterScope(numDataNodes = 5, scope = OpenSearchIntegTestCase.Scope.TEST)
 public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     private int asConcurrentLimit = 20;
 
@@ -114,6 +115,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         }
     }
 
+    @TestLogging(value = "_root:DEBUG", reason = "flaky")
     public void testStatsAcrossNodes() throws InterruptedException, ExecutionException {
         TestThreadPool threadPool = null;
         try {

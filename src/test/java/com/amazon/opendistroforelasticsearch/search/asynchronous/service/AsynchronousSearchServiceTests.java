@@ -28,42 +28,42 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.stats.InternalA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.task.AsynchronousSearchTask;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.Version;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.action.ActionType;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.index.IndexAction;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodeRole;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.settings.ClusterSettings;
-import org.elasticsearch.common.settings.Setting;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.InternalAggregations;
-import org.elasticsearch.search.internal.InternalSearchResponse;
-import org.elasticsearch.search.profile.SearchProfileShardResults;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.test.ClusterServiceUtils;
-import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.client.NoOpClient;
-import org.elasticsearch.threadpool.ExecutorBuilder;
-import org.elasticsearch.threadpool.ScalingExecutorBuilder;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.Version;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionResponse;
+import org.opensearch.action.ActionType;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.index.IndexAction;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.cluster.node.DiscoveryNodeRole;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.common.settings.ClusterSettings;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.util.concurrent.OpenSearchExecutors;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.suggest.Suggest;
+import org.opensearch.tasks.TaskId;
+import org.opensearch.test.ClusterServiceUtils;
+import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.test.client.NoOpClient;
+import org.opensearch.threadpool.ExecutorBuilder;
+import org.opensearch.threadpool.ScalingExecutorBuilder;
+import org.opensearch.threadpool.TestThreadPool;
+import org.opensearch.threadpool.ThreadPool;
 import org.junit.Assert;
 import org.junit.Before;
 
@@ -82,11 +82,11 @@ import static com.amazon.opendistroforelasticsearch.search.asynchronous.context.
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestUtils.createClusterService;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static org.elasticsearch.action.ActionListener.wrap;
-import static org.elasticsearch.common.unit.TimeValue.timeValueHours;
+import static org.opensearch.action.ActionListener.wrap;
+import static org.opensearch.common.unit.TimeValue.timeValueHours;
 import static org.hamcrest.Matchers.greaterThan;
 
-public class AsynchronousSearchServiceTests extends ESTestCase {
+public class AsynchronousSearchServiceTests extends OpenSearchTestCase {
 
     private ClusterSettings clusterSettings;
     private Settings settings;
@@ -107,7 +107,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
                         AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
                         AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
                         AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
-        final int availableProcessors = EsExecutors.allocatedProcessors(settings);
+        final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
         executorBuilders.add(new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
                 Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30)));
@@ -117,7 +117,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testFindContext() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -201,7 +201,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testUpdateExpirationTimesOutBlockedOnPersistence() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -248,7 +248,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
             fakeClient.awaitBlock();
             asService.updateKeepAliveAndGetContext(asActiveContext.getAsynchronousSearchId(), newKeepAlive,
                     asActiveContext.getContextId(), null, new LatchedActionListener<>(wrap(r -> fail("expected update req to timeout"),
-                            e -> assertTrue("expected timeout got " + e.getClass(), e instanceof ElasticsearchTimeoutException)),
+                            e -> assertTrue("expected timeout got " + e.getClass(), e instanceof OpenSearchTimeoutException)),
                             updateLatch));
             updateLatch.await();
             fakeClient.releaseBlock();
@@ -258,7 +258,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testUpdateExpirationOnRunningSearch() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -320,7 +320,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testFindContextOnNonExistentSearch() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -354,7 +354,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testBootStrapOnClosedSearch() {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -396,7 +396,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testFreeActiveContext() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -450,7 +450,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testFreeContext() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {
@@ -503,7 +503,7 @@ public class AsynchronousSearchServiceTests extends ESTestCase {
     }
 
     public void testFindContextsToReap() {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", ESTestCase.buildNewFakeTransportAddress(), emptyMap(),
+        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
                 DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
         ThreadPool testThreadPool = null;
         try {

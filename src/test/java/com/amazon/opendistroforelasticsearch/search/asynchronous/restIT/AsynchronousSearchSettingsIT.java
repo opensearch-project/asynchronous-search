@@ -21,9 +21,9 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.GetAsyn
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.service.AsynchronousSearchService;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.common.unit.TimeValue;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.client.ResponseException;
+import org.opensearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.util.Arrays;

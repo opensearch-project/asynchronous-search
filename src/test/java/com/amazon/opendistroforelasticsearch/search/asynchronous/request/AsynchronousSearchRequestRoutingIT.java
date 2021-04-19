@@ -25,15 +25,15 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.id.Asynchronous
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AcknowledgedResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestClientUtils;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.LatchedActionListener;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.test.ESIntegTestCase;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.LatchedActionListener;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.cluster.health.ClusterHealthStatus;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.script.Script;
+import org.opensearch.script.ScriptType;
+import org.opensearch.test.OpenSearchIntegTestCase;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,11 +43,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase.ScriptedBlockPlugin.SCRIPT_NAME;
-import static org.elasticsearch.index.query.QueryBuilders.scriptQuery;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+import static org.opensearch.index.query.QueryBuilders.scriptQuery;
+import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.containsString;
 
-@ESIntegTestCase.ClusterScope(numDataNodes = 5)
+@OpenSearchIntegTestCase.ClusterScope(numDataNodes = 5)
 public class AsynchronousSearchRequestRoutingIT extends AsynchronousSearchIntegTestCase {
 
     @Override
