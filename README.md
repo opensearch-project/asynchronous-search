@@ -78,7 +78,7 @@ When launching a cluster using one of the above commands, logs are placed in `bu
 
 ### Debugging
 
-Sometimes it is useful to attach a debugger to either the Opensearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the Opensearch cluster or the integ tests, first, make sure start a debugger listening on port `5005`. 
+Sometimes it is useful to attach a debugger to either the OpenSearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the OpenSearch cluster or the integ tests, first, make sure start a debugger listening on port `5005`. 
 
 To debug the server code, run:
 
@@ -92,7 +92,7 @@ OR
 ./gradlew run --debug-jvm # to just start a cluster that can be debugged
 ```
 
-The Opensearch server JVM will connect to a debugger attached to `localhost:5005`.
+The OpenSearch server JVM will connect to a debugger attached to `localhost:5005`.
 
 The IDE needs to listen for the remote JVM. If using Intellij you must set your debug configuration to "Listen to remote JVM" and make sure "Auto Restart" is checked.
 You must start your debugger to listen for remote JVM before running the commands.

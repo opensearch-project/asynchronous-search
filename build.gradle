@@ -60,7 +60,7 @@ ext {
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
-group 'com.amazon.opendistroforopensearch'
+group 'com.amazon.opendistroforelasticsearch'
 version = "${opendistroVersion}.1"
 
 sourceCompatibility = 1.9
