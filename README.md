@@ -1,6 +1,3 @@
-[![Test and Build Workflow](https://github.com/opensearch-project/asynchronous-search/workflows/Test%20and%20Build%20Workflow/badge.svg)](https://github.com/opensearch-project/asynchronous-search/actions)
-[![codecov](https://codecov.io/gh/opensearch-project/asynchronous-search/branch/main/graph/badge.svg)](https://codecov.io/gh/opensearch-project/asynchronous-search)
-
 # Asynchronous search
 Asynchronous search makes it possible for users to run such queries without worrying about the query timing out. 
 These queries run in the background, and users can track the progress, and retrieve partial results as they become available.
