@@ -10,7 +10,7 @@
  */
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "1.0.0-alpha1")
+        opensearch_version = System.getProperty("opensearch_version", "1.0.0-alpha1")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         opendistroVersion = '1.0.0'
