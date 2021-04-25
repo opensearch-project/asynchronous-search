@@ -73,7 +73,7 @@ ext {
 }
 
 group 'com.amazon.opendistroforelasticsearch'
-version = "${opendistroVersion}.0"
+version = "${opendistroVersion}.0-beta1"
 
 sourceCompatibility = 1.9
 
@@ -104,7 +104,7 @@ compileTestJava {
 check.dependsOn jacocoTestReport
 
 opensearchplugin {
-    name 'opendistro-asynchronous-search'
+    name 'opensearch-asynchronous-search'
     description 'Provides support for asynchronous search'
     classname 'com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin'
 }
