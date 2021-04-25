@@ -10,27 +10,22 @@
  */
 buildscript {
     ext {
-        opensearch_version = '7.10.3'
+        opensearch_version = System.getProperty("opensearch.version", "1.0.0-alpha1")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
-        opendistroVersion = '1.13.0'
+        opendistroVersion = '1.0.0'
+        common_utils_version = '1.0.0.0'
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2/" }
-        maven {
-            url = 's3://search-vemsarat/'
-            credentials(AwsCredentials) {
-                accessKey = System.env.AWS_ACCESS_KEY_ID ?: findProperty('aws_access_key_id')
-                secretKey = System.env.AWS_SECRET_ACCESS_KEY ?: findProperty('aws_secret_access_key')
-            }
-        }
         jcenter()
     }
 
     dependencies {
-        classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}-SNAPSHOT"
+        classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
         classpath "org.jacoco:org.jacoco.agent:0.8.5"
     }
 }
@@ -42,12 +37,19 @@ plugins {
     id 'nebula.ospackage' version "8.3.0"
 }
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://plugins.gradle.org/m2/" }
+    jcenter()
+}
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.rest-test'
+
 
 checkstyle {
     toolVersion = '8.24'
@@ -71,34 +73,22 @@ ext {
 }
 
 group 'com.amazon.opendistroforelasticsearch'
-version = "${opendistroVersion}.1"
+version = "${opendistroVersion}.0"
 
 sourceCompatibility = 1.9
 
-subprojects {
-    repositories {
-        mavenCentral()
-        maven {
-            url = 's3://search-vemsarat/'
-            credentials(AwsCredentials) {
-                accessKey = System.env.AWS_ACCESS_KEY_ID ?: findProperty('aws_access_key_id')
-                secretKey = System.env.AWS_SECRET_ACCESS_KEY ?: findProperty('aws_secret_access_key')
-            }
-        }
-    }
-}
 
 
 dependencies {
     testCompile ('junit:junit:4.12') {
         exclude group: 'org.hamcrest'
     }
-    testCompile "org.opensearch.plugin:reindex-client:${opensearch_version}-SNAPSHOT"
-    testCompile "org.opensearch.plugin:lang-painless:${opensearch_version}-SNAPSHOT"
-    testCompile "org.opensearch.test:framework:${opensearch_version}-SNAPSHOT"
-    compileOnly "org.opensearch.plugin:transport-netty4-client:${opensearch_version}-SNAPSHOT"
-    compileOnly "org.opensearch:opensearch:${opensearch_version}-SNAPSHOT"
-    compile "com.amazon.opendistroforelasticsearch:common-utils:1.15.0.0"
+    testCompile "org.opensearch.plugin:reindex-client:${opensearch_version}"
+    testCompile "org.opensearch.plugin:lang-painless:${opensearch_version}"
+    testCompile "org.opensearch.test:framework:${opensearch_version}"
+    compileOnly "org.opensearch.plugin:transport-netty4-client:${opensearch_version}"
+    compileOnly "org.opensearch:opensearch:${opensearch_version}"
+    compile "com.amazon.opendistroforelasticsearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"

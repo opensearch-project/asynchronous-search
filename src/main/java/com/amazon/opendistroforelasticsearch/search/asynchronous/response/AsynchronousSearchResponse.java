@@ -79,7 +79,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.searchResponse = searchResponse;
-        this.error = error == null ? null : ExceptionsHelper.convertToElastic(error);
+        this.error = error == null ? null : ExceptionsHelper.convertToOpenSearchException(error);
     }
 
     public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
