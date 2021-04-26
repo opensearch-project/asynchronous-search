@@ -94,11 +94,11 @@ public class AsynchronousSearchPostProcessor {
             }
             // Best effort to return the response.
             return new AsynchronousSearchResponse(AsynchronousSearchState.FAILED, -1L, -1L, null,
-                    ExceptionsHelper.convertToElastic(exception));
+                    ExceptionsHelper.convertToOpenSearchException(exception));
         } catch (AsynchronousSearchStateMachineClosedException ex) {
             // Best effort to return the response.
             return new AsynchronousSearchResponse(AsynchronousSearchState.FAILED, -1L, -1L, null,
-                    ExceptionsHelper.convertToElastic(exception));
+                    ExceptionsHelper.convertToOpenSearchException(exception));
         }
     }
 
