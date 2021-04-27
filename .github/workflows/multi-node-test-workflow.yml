@@ -36,6 +36,7 @@ jobs:
         with:
           repository: 'opensearch-project/common-utils'
           path: common-utils
+          ref: '1.0.0-alpha2'
       - name: Build OpenSearch
         working-directory: ./OpenSearch
         run: ./gradlew publishToMavenLocal -Dbuild.version_qualifier=alpha2 -Dbuild.snapshot=false
