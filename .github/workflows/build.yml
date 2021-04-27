@@ -38,9 +38,9 @@ jobs:
       - name: Checkout common-utils
         uses: actions/checkout@v2
         with:
+          ref: '1.0.0-alpha2'
           repository: 'opensearch-project/common-utils'
           path: common-utils
-          ref: '1.0.0-alpha2'
       - name: Build common-utils
         working-directory: ./common-utils
         run: ./gradlew publishToMavenLocal -Dopensearch.version=1.0.0-alpha2
@@ -48,7 +48,7 @@ jobs:
       - name: Checkout Branch
         uses: actions/checkout@v2
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -Dopensearch.version=1.0.0-alpha2
       - name: Upload failed logs
         uses: actions/upload-artifact@v2
         if: failure()
