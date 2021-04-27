@@ -14,7 +14,7 @@ buildscript {
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         opendistroVersion = '1.0.0'
-        common_utils_version = '1.0.0.0'
+        common_utils_version = '1.0.0.0-alpha2'
     }
 
     repositories {
@@ -73,7 +73,7 @@ ext {
 }
 
 group 'com.amazon.opendistroforelasticsearch'
-version = "${opendistroVersion}.0-beta1"
+version = "${opendistroVersion}.0-alpha2"
 
 sourceCompatibility = 1.9
 
