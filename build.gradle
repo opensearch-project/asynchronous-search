@@ -10,7 +10,7 @@
  */
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch_version", "1.0.0-alpha1")
+        opensearch_version = System.getProperty("opensearch_version", "1.0.0-alpha2")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         opendistroVersion = '1.0.0'
@@ -166,7 +166,7 @@ def _numNodes = findProperty('numNodes') as Integer ?: 1
 
 
 testClusters.integTest {
-    testDistribution = "OSS"
+    testDistribution = "ARCHIVE"
     plugin(project.tasks.bundlePlugin.archiveFile)
     // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
     if (_numNodes > 1) numberOfNodes = _numNodes
