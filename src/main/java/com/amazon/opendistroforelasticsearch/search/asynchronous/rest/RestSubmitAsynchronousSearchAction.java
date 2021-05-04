@@ -68,7 +68,10 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
     public List<Route> routes() {
         return Arrays.asList(
                 new Route(POST, AsynchronousSearchPlugin.BASE_URI),
-                new Route(POST, "/{index}" + AsynchronousSearchPlugin.BASE_URI));
+                new Route(POST, "/{index}" + AsynchronousSearchPlugin.BASE_URI),
+                new Route(POST, AsynchronousSearchPlugin.OPENSEARCH_BASE_URI),
+                new Route(POST, "/{index}" + AsynchronousSearchPlugin.OPENSEARCH_BASE_URI)
+        );
     }
 
     @Override

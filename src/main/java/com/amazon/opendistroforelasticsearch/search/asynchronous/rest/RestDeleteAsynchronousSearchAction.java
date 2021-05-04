@@ -33,6 +33,7 @@ import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestStatusToXContentListener;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,7 +48,10 @@ public class RestDeleteAsynchronousSearchAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return Collections.singletonList(new Route(DELETE, AsynchronousSearchPlugin.BASE_URI + "/{id}"));
+        return Arrays.asList(
+                new Route(DELETE, AsynchronousSearchPlugin.BASE_URI + "/{id}"),
+                new Route(DELETE, AsynchronousSearchPlugin.OPENSEARCH_BASE_URI + "/{id}")
+        );
     }
 
     @Override

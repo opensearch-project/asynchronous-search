@@ -48,7 +48,10 @@ public class RestGetAsynchronousSearchAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return Arrays.asList(new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/{id}"));
+        return Arrays.asList(
+                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/{id}"),
+                new Route(GET, AsynchronousSearchPlugin.OPENSEARCH_BASE_URI + "/{id}")
+                );
     }
 
     @Override

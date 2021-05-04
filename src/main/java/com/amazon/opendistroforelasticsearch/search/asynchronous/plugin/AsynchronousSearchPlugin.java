@@ -85,6 +85,7 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
 
     public static final String OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME = "opendistro_asynchronous_search_generic";
     public static final String BASE_URI = "/_opendistro/_asynchronous_search";
+    public static final String OPENSEARCH_BASE_URI = "/_opensearch/_asynchronous_search";
 
     private AsynchronousSearchPersistenceService persistenceService;
     private AsynchronousSearchActiveStore asynchronousSearchActiveStore;
