@@ -34,7 +34,6 @@ import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestStatusToXContentListener;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.opensearch.rest.RestRequest.Method.DELETE;
