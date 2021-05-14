@@ -25,7 +25,6 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.rest;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.client.node.NodeClient;
@@ -43,6 +42,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.IntConsumer;
 
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.BASE_URI;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.LEGACY_BASE_URI;
 import static org.opensearch.rest.RestRequest.Method.POST;
 
 public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
@@ -66,11 +67,14 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<ReplacedRoute> replacedRoutes() {
         return Arrays.asList(
-                new Route(POST, AsynchronousSearchPlugin.BASE_URI),
-                new Route(POST, "/{index}" + AsynchronousSearchPlugin.BASE_URI),
-                new Route(POST, AsynchronousSearchPlugin.OPENSEARCH_BASE_URI),
-                new Route(POST, "/{index}" + AsynchronousSearchPlugin.OPENSEARCH_BASE_URI)
+                new ReplacedRoute(POST, "/{index}" + BASE_URI, POST, "/{index}" + LEGACY_BASE_URI),
+                new ReplacedRoute(POST, BASE_URI, POST, LEGACY_BASE_URI)
         );
     }
 
@@ -84,12 +88,12 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
 
         submitAsynchronousSearchRequest.waitForCompletionTimeout(request.paramAsTime("wait_for_completion_timeout",
-                    SubmitAsynchronousSearchRequest.DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT));
+                SubmitAsynchronousSearchRequest.DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT));
 
         submitAsynchronousSearchRequest.keepAlive(request.paramAsTime("keep_alive", SubmitAsynchronousSearchRequest.DEFAULT_KEEP_ALIVE));
 
         submitAsynchronousSearchRequest.keepOnCompletion(request.paramAsBoolean("keep_on_completion",
-                    SubmitAsynchronousSearchRequest.DEFAULT_KEEP_ON_COMPLETION));
+                SubmitAsynchronousSearchRequest.DEFAULT_KEEP_ON_COMPLETION));
 
         searchRequest.requestCache(request.paramAsBoolean("request_cache", SubmitAsynchronousSearchRequest.DEFAULT_REQUEST_CACHE));
 

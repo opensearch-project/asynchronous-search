@@ -26,7 +26,6 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.rest;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.action.AsynchronousSearchStatsAction;
-import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.AsynchronousSearchStatsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,8 +36,11 @@ import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestActions;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.BASE_URI;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.LEGACY_BASE_URI;
 import static org.opensearch.rest.RestRequest.Method.GET;
 
 public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
@@ -58,12 +60,7 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return Arrays.asList(
-                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/_nodes/{nodeId}/stats"),
-                new Route(GET, AsynchronousSearchPlugin.BASE_URI + "/stats"),
-                new Route(GET, AsynchronousSearchPlugin.OPENSEARCH_BASE_URI + "/_nodes/{nodeId}/stats"),
-                new Route(GET, AsynchronousSearchPlugin.OPENSEARCH_BASE_URI + "/stats")
-        );
+        return Collections.emptyList();
     }
 
     @Override
@@ -72,6 +69,14 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
 
         return channel -> client.execute(AsynchronousSearchStatsAction.INSTANCE, asynchronousSearchStatsRequest,
                 new RestActions.NodesResponseRestListener<>(channel));
+    }
+
+    @Override
+    public List<ReplacedRoute> replacedRoutes() {
+        return Arrays.asList(new ReplacedRoute(GET, BASE_URI + "/_nodes/{nodeId}/stats",
+                        GET, LEGACY_BASE_URI + "/_nodes/{nodeId}/stats"),
+                new ReplacedRoute(GET, BASE_URI + "/stats", GET, LEGACY_BASE_URI + "/stats")
+        );
     }
 
     private AsynchronousSearchStatsRequest getRequest(RestRequest request) {

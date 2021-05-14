@@ -73,7 +73,7 @@ public class RestTestUtils {
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
         Request request = new Request(HttpPost.METHOD_NAME,
                 /*trim first backslash*/
-                endpoint(searchRequest.indices(), AsynchronousSearchPlugin.OPENSEARCH_BASE_URI.substring(1)));
+                endpoint(searchRequest.indices(), AsynchronousSearchPlugin.BASE_URI.substring(1)));
 
         Params params = new Params();
         addSearchRequestParams(params, searchRequest);
@@ -88,7 +88,7 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         Request request = new Request(HttpGet.METHOD_NAME,
-                AsynchronousSearchPlugin.OPENSEARCH_BASE_URI + "/" + getAsynchronousSearchRequest.getId());
+                AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
@@ -97,7 +97,7 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) {
         return new Request(HttpDelete.METHOD_NAME,
-                AsynchronousSearchPlugin.OPENSEARCH_BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+                AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
     }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
