@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.StringJoiner;
 
 public class RestTestUtils {
@@ -71,6 +72,8 @@ public class RestTestUtils {
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest) throws IOException {
 
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
+        String baseUri = new Random().nextBoolean() ? AsynchronousSearchPlugin.BASE_URI
+                : AsynchronousSearchPlugin.LEGACY_BASE_URI;
         Request request = new Request(HttpPost.METHOD_NAME,
                 /*trim first backslash*/
                 endpoint(searchRequest.indices(), AsynchronousSearchPlugin.BASE_URI.substring(1)));
