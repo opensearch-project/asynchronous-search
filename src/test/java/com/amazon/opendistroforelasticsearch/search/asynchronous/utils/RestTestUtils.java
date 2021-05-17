@@ -42,6 +42,7 @@ import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.client.Request;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.Priority;
+import org.opensearch.common.Randomness;
 import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.lucene.uid.Versions;
@@ -63,7 +64,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.StringJoiner;
 
 public class RestTestUtils {
@@ -72,11 +72,11 @@ public class RestTestUtils {
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest) throws IOException {
 
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
-        String baseUri = new Random().nextBoolean() ? AsynchronousSearchPlugin.BASE_URI
+        String baseUri = Randomness.get().nextBoolean() ? AsynchronousSearchPlugin.BASE_URI
                 : AsynchronousSearchPlugin.LEGACY_BASE_URI;
         Request request = new Request(HttpPost.METHOD_NAME,
                 /*trim first backslash*/
-                endpoint(searchRequest.indices(), AsynchronousSearchPlugin.BASE_URI.substring(1)));
+                endpoint(searchRequest.indices(), baseUri.substring(1)));
 
         Params params = new Params();
         addSearchRequestParams(params, searchRequest);
