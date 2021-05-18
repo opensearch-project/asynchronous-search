@@ -72,8 +72,7 @@ public class RestTestUtils {
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest) throws IOException {
 
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
-        String baseUri = Randomness.get().nextBoolean() ? AsynchronousSearchPlugin.BASE_URI
-                : AsynchronousSearchPlugin.LEGACY_BASE_URI;
+        String baseUri = getBaseUri();
         Request request = new Request(HttpPost.METHOD_NAME,
                 /*trim first backslash*/
                 endpoint(searchRequest.indices(), baseUri.substring(1)));
@@ -89,9 +88,14 @@ public class RestTestUtils {
         return request;
     }
 
+    private static String getBaseUri() {
+        return Randomness.get().nextBoolean() ? AsynchronousSearchPlugin.BASE_URI
+                : AsynchronousSearchPlugin.LEGACY_BASE_URI;
+    }
+
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         Request request = new Request(HttpGet.METHOD_NAME,
-                AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
+                getBaseUri() + "/" + getAsynchronousSearchRequest.getId());
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
@@ -100,7 +104,7 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) {
         return new Request(HttpDelete.METHOD_NAME,
-                AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+                getBaseUri() + "/" + deleteAsynchronousSearchRequest.getId());
     }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
