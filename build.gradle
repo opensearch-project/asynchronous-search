@@ -72,7 +72,7 @@ ext {
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
-group 'com.amazon.opendistroforelasticsearch'
+group 'org.opensearch.opendistroforelasticsearch'
 version = "${opensearchVersion}.0-beta1"
 
 sourceCompatibility = 1.9
@@ -106,7 +106,7 @@ check.dependsOn jacocoTestReport
 opensearchplugin {
     name 'opensearch-asynchronous-search'
     description 'Provides support for asynchronous search'
-    classname 'com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin'
+    classname 'org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin'
 }
 
 tasks.named("integTest").configure {
