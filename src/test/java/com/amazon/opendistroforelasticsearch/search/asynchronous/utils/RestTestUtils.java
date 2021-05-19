@@ -42,7 +42,6 @@ import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.client.Request;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.Priority;
-import org.opensearch.common.Randomness;
 import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.lucene.uid.Versions;
@@ -72,10 +71,9 @@ public class RestTestUtils {
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest) throws IOException {
 
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
-        String baseUri = getBaseUri();
         Request request = new Request(HttpPost.METHOD_NAME,
                 /*trim first backslash*/
-                endpoint(searchRequest.indices(), baseUri.substring(1)));
+                endpoint(searchRequest.indices(), AsynchronousSearchPlugin.BASE_URI.substring(1)));
 
         Params params = new Params();
         addSearchRequestParams(params, searchRequest);
@@ -88,14 +86,9 @@ public class RestTestUtils {
         return request;
     }
 
-    private static String getBaseUri() {
-        return Randomness.get().nextBoolean() ? AsynchronousSearchPlugin.BASE_URI
-                : AsynchronousSearchPlugin.LEGACY_BASE_URI;
-    }
-
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         Request request = new Request(HttpGet.METHOD_NAME,
-                getBaseUri() + "/" + getAsynchronousSearchRequest.getId());
+                AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
@@ -104,7 +97,7 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) {
         return new Request(HttpDelete.METHOD_NAME,
-                getBaseUri() + "/" + deleteAsynchronousSearchRequest.getId());
+                AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
     }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
@@ -142,7 +135,7 @@ public class RestTestUtils {
         }
     }
 
-    static String endpoint(String[] indices, String endpoint) {
+    public static String endpoint(String[] indices, String endpoint) {
         return new EndpointBuilder().addCommaSeparatedPathParts(indices)
                 .addPathPartAsIs(endpoint).build();
     }

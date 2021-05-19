@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.BASE_URI;
-import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.LEGACY_BASE_URI;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI;
 import static org.opensearch.rest.RestRequest.Method.GET;
 
 public class RestGetAsynchronousSearchAction extends BaseRestHandler {
@@ -55,7 +55,7 @@ public class RestGetAsynchronousSearchAction extends BaseRestHandler {
     @Override
     public List<ReplacedRoute> replacedRoutes() {
         return Collections.singletonList(new ReplacedRoute(GET, BASE_URI + "/{id}",
-                GET, LEGACY_BASE_URI + "/{id}")
+                GET, LEGACY_OPENDISTRO_BASE_URI + "/{id}")
         );
     }
 

@@ -26,11 +26,17 @@
 package com.amazon.opendistroforelasticsearch.search.asynchronous.restIT;
 
 import com.amazon.opendistroforelasticsearch.search.asynchronous.context.state.AsynchronousSearchState;
+import com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.DeleteAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.opensearch.action.search.SearchRequest;
+import org.opensearch.client.Request;
+import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.search.builder.SearchSourceBuilder;
@@ -40,13 +46,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.utils.TestUtils.getResponseAsMap;
-import static org.apache.lucene.util.LuceneTestCase.expectThrows;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
 
@@ -157,5 +157,28 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         ResponseException responseException = expectThrows(ResponseException.class, () -> executeGetAsynchronousSearch(
                 new GetAsynchronousSearchRequest(submitResponse.getId())));
         assertRnf(responseException);
+    }
+
+    public void testBackwardCompatibilityWithOpenDistro() throws IOException {
+        //submit async search
+        Request request = new Request(HttpPost.METHOD_NAME, AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI +
+                "?keep_on_completion=true");
+        Response resp = client().performRequest(request);
+        assertEquals(resp.getStatusLine().getStatusCode(), 200);
+        AsynchronousSearchResponse asynchronousSearchResponse = parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
+        //get async search
+        request = new Request(HttpGet.METHOD_NAME,
+                AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + asynchronousSearchResponse.getId());
+        resp = client().performRequest(request);
+        assertEquals(resp.getStatusLine().getStatusCode(), 200);
+        //delete async search
+        request = new Request(HttpDelete.METHOD_NAME,
+                AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + asynchronousSearchResponse.getId());
+        resp = client().performRequest(request);
+        assertEquals(resp.getStatusLine().getStatusCode(), 200);
+        //async search stats
+        request = new Request(HttpGet.METHOD_NAME, AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/stats");
+        resp = client().performRequest(request);
+        assertEquals(resp.getStatusLine().getStatusCode(), 200);
     }
 }

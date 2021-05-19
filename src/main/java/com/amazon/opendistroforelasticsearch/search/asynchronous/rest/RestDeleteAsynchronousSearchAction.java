@@ -54,7 +54,7 @@ public class RestDeleteAsynchronousSearchAction extends BaseRestHandler {
     @Override
     public List<ReplacedRoute> replacedRoutes() {
         return Collections.singletonList(new ReplacedRoute(DELETE, BASE_URI + "/{id}",
-                DELETE, AsynchronousSearchPlugin.LEGACY_BASE_URI + "/{id}")
+                DELETE, AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/{id}")
         );
     }
 

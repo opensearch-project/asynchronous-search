@@ -40,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.BASE_URI;
-import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.LEGACY_BASE_URI;
+import static com.amazon.opendistroforelasticsearch.search.asynchronous.plugin.AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI;
 import static org.opensearch.rest.RestRequest.Method.GET;
 
 public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
@@ -74,8 +74,8 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
     @Override
     public List<ReplacedRoute> replacedRoutes() {
         return Arrays.asList(new ReplacedRoute(GET, BASE_URI + "/_nodes/{nodeId}/stats",
-                        GET, LEGACY_BASE_URI + "/_nodes/{nodeId}/stats"),
-                new ReplacedRoute(GET, BASE_URI + "/stats", GET, LEGACY_BASE_URI + "/stats")
+                        GET, LEGACY_OPENDISTRO_BASE_URI + "/_nodes/{nodeId}/stats"),
+                new ReplacedRoute(GET, BASE_URI + "/stats", GET, LEGACY_OPENDISTRO_BASE_URI + "/stats")
         );
     }
 
