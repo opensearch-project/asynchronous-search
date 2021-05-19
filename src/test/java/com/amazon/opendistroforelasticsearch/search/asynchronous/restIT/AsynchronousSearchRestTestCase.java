@@ -31,13 +31,19 @@ import com.amazon.opendistroforelasticsearch.search.asynchronous.request.SubmitA
 import com.amazon.opendistroforelasticsearch.search.asynchronous.response.AsynchronousSearchResponse;
 import com.amazon.opendistroforelasticsearch.search.asynchronous.utils.RestTestUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.lucene.search.TotalHits;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
+import org.opensearch.client.RestClient;
+import org.opensearch.client.RestClientBuilder;
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Strings;
@@ -50,9 +56,6 @@ import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchModule;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import javax.management.MBeanServerInvocationHandler;
@@ -77,6 +80,12 @@ public abstract class AsynchronousSearchRestTestCase extends OpenSearchRestTestC
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
 
+    @Override
+    protected RestClient buildClient(Settings settings, HttpHost[] hosts) {
+        RestClientBuilder builder = RestClient.builder(hosts);
+        builder.setStrictDeprecationMode(false);
+        return builder.build();
+    }
 
     @Before
     public void indexDocuments() throws IOException {
@@ -190,7 +199,7 @@ public abstract class AsynchronousSearchRestTestCase extends OpenSearchRestTestC
     }
 
     protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
-                                                                 GetAsynchronousSearchRequest getAsynchronousSearchRequest)
+                                                                               GetAsynchronousSearchRequest getAsynchronousSearchRequest)
             throws IOException {
         AsynchronousSearchResponse getResponse;
         getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);

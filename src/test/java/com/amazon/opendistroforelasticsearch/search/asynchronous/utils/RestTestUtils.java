@@ -135,7 +135,7 @@ public class RestTestUtils {
         }
     }
 
-    static String endpoint(String[] indices, String endpoint) {
+    public static String endpoint(String[] indices, String endpoint) {
         return new EndpointBuilder().addCommaSeparatedPathParts(indices)
                 .addPathPartAsIs(endpoint).build();
     }
