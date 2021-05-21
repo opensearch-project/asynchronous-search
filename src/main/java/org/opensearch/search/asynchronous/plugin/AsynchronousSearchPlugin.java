@@ -37,6 +37,7 @@ import org.opensearch.search.asynchronous.rest.RestDeleteAsynchronousSearchActio
 import org.opensearch.search.asynchronous.rest.RestGetAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.rest.RestSubmitAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.service.AsynchronousSearchService;
+import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousSearchSettings;
 import org.opensearch.search.asynchronous.stats.InternalAsynchronousSearchStats;
 import org.opensearch.search.asynchronous.transport.TransportAsynchronousSearchStatsAction;
 import org.opensearch.search.asynchronous.transport.TransportDeleteAsynchronousSearchAction;
@@ -147,13 +148,13 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
                 AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
                 AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
                 AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
-                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
-                AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
-                AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
-                AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
-                AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
-                AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
-                AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING
+                LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
+                LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING,
+                LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING,
+                LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
+                LegacyOpendistroAsynchronousSearchSettings.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
+                LegacyOpendistroAsynchronousSearchSettings.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
+                LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING
         );
     }
 
