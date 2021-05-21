@@ -24,9 +24,6 @@
  */
 package org.opensearch.search.asynchronous.context.active;
 
-import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
-import org.opensearch.search.asynchronous.context.state.AsynchronousSearchStateMachine;
-import org.opensearch.search.asynchronous.context.state.event.SearchDeletedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.cluster.service.ClusterService;
@@ -35,6 +32,10 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.CollectionUtils;
 import org.opensearch.common.util.concurrent.ConcurrentMapLong;
 import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
+import org.opensearch.search.asynchronous.context.state.AsynchronousSearchStateMachine;
+import org.opensearch.search.asynchronous.context.state.event.SearchDeletedEvent;
+import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousSearchSettings;
 
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +51,8 @@ public class AsynchronousSearchActiveStore {
     private volatile int nodeConcurrentRunningSearches;
     public static final int NODE_CONCURRENT_RUNNING_SEARCHES = 20;
     public static final Setting<Integer> NODE_CONCURRENT_RUNNING_SEARCHES_SETTING = Setting.intSetting(
-            "opendistro.asynchronous_search.node_concurrent_running_searches", NODE_CONCURRENT_RUNNING_SEARCHES, 0,
+            "plugins.asynchronous_search.node_concurrent_running_searches",
+            LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING, 0,
             Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     private final ConcurrentMapLong<AsynchronousSearchActiveContext> activeContexts = newConcurrentMapLongWithAggressiveConcurrency();
