@@ -124,7 +124,7 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_SEARCH_RUNNING_TIME_SETTING =
             Setting.positiveTimeSetting("plugins.asynchronous_search.max_search_running_time",
-                    LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING, timeValueMinutes(1),
+                    LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING, timeValueMinutes(1),
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING = Setting.positiveTimeSetting(
             "plugins.asynchronous_search.max_wait_for_completion_timeout",
