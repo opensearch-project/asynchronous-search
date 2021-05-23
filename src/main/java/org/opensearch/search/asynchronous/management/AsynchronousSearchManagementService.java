@@ -54,6 +54,7 @@ import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.util.concurrent.AbstractRunnable;
 import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
 import org.opensearch.common.util.concurrent.ThreadContext;
+import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousSearchSettings;
 import org.opensearch.tasks.Task;
 import org.opensearch.threadpool.Scheduler;
 import org.opensearch.threadpool.ThreadPool;
@@ -94,12 +95,12 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             "indices:data/read/opendistro/asynchronous_search/response_cleanup";
 
     public static final Setting<TimeValue> ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING =
-            Setting.timeSetting("opendistro.asynchronous_search.active.context.reaper_interval", TimeValue.timeValueMinutes(5),
-                    TimeValue.timeValueSeconds(5),
-                    Setting.Property.NodeScope);
+            Setting.timeSetting("plugins.asynchronous_search.active.context.reaper_interval",
+                    LegacyOpendistroAsynchronousSearchSettings.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
+                    TimeValue.timeValueSeconds(5), Setting.Property.NodeScope);
     public static final Setting<TimeValue> PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING =
-            Setting.timeSetting("opendistro.asynchronous_search.expired.persisted_response.cleanup_interval",
-                    TimeValue.timeValueMinutes(30), TimeValue.timeValueSeconds(5),
+            Setting.timeSetting("plugins.asynchronous_search.expired.persisted_response.cleanup_interval",
+                    LegacyOpendistroAsynchronousSearchSettings.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING, TimeValue.timeValueSeconds(5),
                     Setting.Property.NodeScope);
 
     @Inject

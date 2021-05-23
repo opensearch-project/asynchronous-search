@@ -26,6 +26,32 @@
 package org.opensearch.search.asynchronous.service;
 
 import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.opensearch.ExceptionsHelper;
+import org.opensearch.OpenSearchSecurityException;
+import org.opensearch.OpenSearchTimeoutException;
+import org.opensearch.ResourceNotFoundException;
+import org.opensearch.action.ActionListener;
+import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
+import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
+import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.SearchTask;
+import org.opensearch.action.support.GroupedActionListener;
+import org.opensearch.client.Client;
+import org.opensearch.cluster.ClusterChangedEvent;
+import org.opensearch.cluster.ClusterStateListener;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.UUIDs;
+import org.opensearch.common.component.AbstractLifecycleComponent;
+import org.opensearch.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.common.lease.Releasable;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.rest.RestStatus;
+import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveContext;
@@ -48,35 +74,10 @@ import org.opensearch.search.asynchronous.listener.AsynchronousSearchProgressLis
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import org.opensearch.search.asynchronous.processor.AsynchronousSearchPostProcessor;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
+import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousSearchSettings;
 import org.opensearch.search.asynchronous.stats.AsynchronousSearchStats;
 import org.opensearch.search.asynchronous.stats.InternalAsynchronousSearchStats;
 import org.opensearch.search.asynchronous.utils.AsynchronousSearchExceptionUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.opensearch.OpenSearchSecurityException;
-import org.opensearch.ExceptionsHelper;
-import org.opensearch.OpenSearchTimeoutException;
-import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.ActionListener;
-import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
-import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
-import org.opensearch.action.search.SearchAction;
-import org.opensearch.action.search.SearchTask;
-import org.opensearch.action.support.GroupedActionListener;
-import org.opensearch.client.Client;
-import org.opensearch.cluster.ClusterChangedEvent;
-import org.opensearch.cluster.ClusterStateListener;
-import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.UUIDs;
-import org.opensearch.common.component.AbstractLifecycleComponent;
-import org.opensearch.common.io.stream.NamedWriteableRegistry;
-import org.opensearch.common.lease.Releasable;
-import org.opensearch.common.settings.Setting;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.common.unit.TimeValue;
-import org.opensearch.rest.RestStatus;
-import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.tasks.TaskId;
 import org.opensearch.threadpool.ThreadPool;
 
@@ -94,6 +95,11 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.opensearch.action.ActionListener.runAfter;
+import static org.opensearch.action.ActionListener.wrap;
+import static org.opensearch.common.unit.TimeValue.timeValueHours;
+import static org.opensearch.common.unit.TimeValue.timeValueMinutes;
+import static org.opensearch.common.unit.TimeValue.timeValueSeconds;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.CLOSED;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.FAILED;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.INIT;
@@ -103,11 +109,6 @@ import static org.opensearch.search.asynchronous.context.state.AsynchronousSearc
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.RUNNING;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.SUCCEEDED;
 import static org.opensearch.search.asynchronous.utils.UserAuthUtils.isUserValid;
-import static org.opensearch.action.ActionListener.runAfter;
-import static org.opensearch.action.ActionListener.wrap;
-import static org.opensearch.common.unit.TimeValue.timeValueDays;
-import static org.opensearch.common.unit.TimeValue.timeValueHours;
-import static org.opensearch.common.unit.TimeValue.timeValueMinutes;
 
 /***
  * Manages the lifetime of {@link AsynchronousSearchContext} for all the asynchronous searches running on the coordinator node.
@@ -118,17 +119,21 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     private static final Logger logger = LogManager.getLogger(AsynchronousSearchService.class);
 
     public static final Setting<TimeValue> MAX_KEEP_ALIVE_SETTING =
-            Setting.positiveTimeSetting("opendistro.asynchronous_search.max_keep_alive", timeValueDays(5),
+            Setting.positiveTimeSetting("plugins.asynchronous_search.max_keep_alive",
+                    LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING, timeValueHours(1),
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_SEARCH_RUNNING_TIME_SETTING =
-            Setting.positiveTimeSetting("opendistro.asynchronous_search.max_search_running_time", timeValueHours(12),
+            Setting.positiveTimeSetting("plugins.asynchronous_search.max_search_running_time",
+                    LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING, timeValueMinutes(1),
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING = Setting.positiveTimeSetting(
-            "opendistro.asynchronous_search.max_wait_for_completion_timeout", timeValueMinutes(1), Setting.Property.NodeScope,
-            Setting.Property.Dynamic);
+            "plugins.asynchronous_search.max_wait_for_completion_timeout",
+            LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING, timeValueSeconds(1),
+            Setting.Property.NodeScope, Setting.Property.Dynamic);
 
     public static final Setting<Boolean> PERSIST_SEARCH_FAILURES_SETTING =
-            Setting.boolSetting("opendistro.asynchronous_search.persist_search_failures", false,
+            Setting.boolSetting("plugins.asynchronous_search.persist_search_failures",
+                    LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING,
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
 
     private volatile long maxKeepAlive;
