@@ -254,7 +254,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
         for (User originalUser : Arrays.asList(user1, null)) {
             try (ThreadContext.StoredContext ctx = threadPool1.getThreadContext().stashContext()) {
                 threadPool1.getThreadContext().putTransient(
-                        ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT, getUserRolesString(originalUser));
+                        ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT, getUserRolesString(originalUser));
                 AsynchronousSearchResponse asResponse = submitAndGetPersistedAsynchronousSearchResponse();
                 long newExpirationTime = System.currentTimeMillis() + new TimeValue(10, TimeUnit.DAYS).getMillis();
                 final AsynchronousSearchPersistenceModel newPersistenceModel = new AsynchronousSearchPersistenceModel(

@@ -173,7 +173,7 @@ public abstract class TransportAsynchronousSearchRoutingAction<Request extends A
 
         private void sendLocalRequest(AsynchronousSearchId asynchronousSearchId, Request request, ActionListener<Response> listener) {
             ThreadContext threadContext = threadPool.getThreadContext();
-            String userStr = threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT);
+            String userStr = threadContext.getTransient(ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT);
             User user = User.parse(userStr);
             try (ThreadContext.StoredContext ctx = threadContext.stashContext()) {
                 handleRequest(asynchronousSearchId, request, listener, user);

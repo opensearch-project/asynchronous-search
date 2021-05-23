@@ -87,7 +87,7 @@ public class TransportSubmitAsynchronousSearchAction extends HandledTransportAct
     @Override
     protected void doExecute(Task task, SubmitAsynchronousSearchRequest request, ActionListener<AsynchronousSearchResponse> listener) {
         AsynchronousSearchContext asynchronousSearchContext = null;
-        String userStr = threadPool.getThreadContext().getTransient(ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT);
+        String userStr = threadPool.getThreadContext().getTransient(ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT);
         User user = User.parse(userStr);
         try {
             final long relativeStartTimeInMillis = threadPool.relativeTimeInMillis();
