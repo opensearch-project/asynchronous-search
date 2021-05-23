@@ -11,7 +11,7 @@
 
 package org.opensearch.search.asynchronous.service;
 
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveContext;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;

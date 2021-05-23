@@ -25,8 +25,8 @@
 
 package org.opensearch.search.asynchronous.service.persistence;
 
-import com.amazon.opendistroforelasticsearch.commons.ConfigConstants;
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.ConfigConstants;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.opensearch.search.asynchronous.context.persistence.AsynchronousSearchPersistenceModel;

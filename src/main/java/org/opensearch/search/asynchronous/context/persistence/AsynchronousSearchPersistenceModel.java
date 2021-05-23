@@ -25,7 +25,7 @@
 
 package org.opensearch.search.asynchronous.context.persistence;
 
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.action.search.SearchResponse;

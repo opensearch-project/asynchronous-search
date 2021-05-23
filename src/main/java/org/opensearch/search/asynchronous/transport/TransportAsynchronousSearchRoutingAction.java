@@ -25,8 +25,8 @@
 
 package org.opensearch.search.asynchronous.transport;
 
-import com.amazon.opendistroforelasticsearch.commons.ConfigConstants;
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.ConfigConstants;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchIdConverter;
 import org.opensearch.search.asynchronous.request.AsynchronousSearchRoutingRequest;
