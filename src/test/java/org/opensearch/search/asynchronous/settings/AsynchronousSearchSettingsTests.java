@@ -92,7 +92,7 @@ public class AsynchronousSearchSettingsTests extends OpenSearchTestCase {
         settings =
                 Settings.builder().put(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), "10d").build();
         assertEquals(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.get(settings), TimeValue.timeValueDays(10));
-        assertEquals(LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.get(settings), TimeValue.timeValueDays(10));
+        assertEquals(LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.get(settings), TimeValue.timeValueDays(5));
 
         settings =
                 Settings.builder().put(AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING.getKey(), "2d").build();
