@@ -10,11 +10,11 @@
  */
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch_version", "1.0.0-beta1")
+        opensearch_version = System.getProperty("opensearch_version", "1.0.0-rc1")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         opensearchVersion = '1.0.0'
-        common_utils_version = '1.0.0.0-beta1'
+        common_utils_version = '1.0.0.0-rc1'
     }
 
     repositories {
@@ -73,7 +73,7 @@ ext {
 }
 
 group 'org.opensearch.opendistroforelasticsearch'
-version = "${opensearchVersion}.0-beta1"
+version = "${opensearchVersion}.0-rc1"
 
 sourceCompatibility = 1.9
 
@@ -88,7 +88,7 @@ dependencies {
     testCompile "org.opensearch.test:framework:${opensearch_version}"
     compileOnly "org.opensearch.plugin:transport-netty4-client:${opensearch_version}"
     compileOnly "org.opensearch:opensearch:${opensearch_version}"
-    compile "com.amazon.opendistroforelasticsearch:common-utils:${common_utils_version}"
+    compile "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"

@@ -25,7 +25,6 @@
 
 package org.opensearch.search.asynchronous.service;
 
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -50,6 +49,7 @@ import org.opensearch.common.lease.Releasable;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
@@ -97,9 +97,6 @@ import java.util.stream.Collectors;
 
 import static org.opensearch.action.ActionListener.runAfter;
 import static org.opensearch.action.ActionListener.wrap;
-import static org.opensearch.common.unit.TimeValue.timeValueHours;
-import static org.opensearch.common.unit.TimeValue.timeValueMinutes;
-import static org.opensearch.common.unit.TimeValue.timeValueSeconds;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.CLOSED;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.FAILED;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.INIT;
@@ -120,15 +117,15 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
 
     public static final Setting<TimeValue> MAX_KEEP_ALIVE_SETTING =
             Setting.positiveTimeSetting("plugins.asynchronous_search.max_keep_alive",
-                    LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING, timeValueHours(1),
+                    LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING,
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_SEARCH_RUNNING_TIME_SETTING =
             Setting.positiveTimeSetting("plugins.asynchronous_search.max_search_running_time",
-                    LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING, timeValueMinutes(1),
+                    LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING,
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<TimeValue> MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING = Setting.positiveTimeSetting(
             "plugins.asynchronous_search.max_wait_for_completion_timeout",
-            LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING, timeValueSeconds(1),
+            LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
             Setting.Property.NodeScope, Setting.Property.Dynamic);
 
     public static final Setting<Boolean> PERSIST_SEARCH_FAILURES_SETTING =

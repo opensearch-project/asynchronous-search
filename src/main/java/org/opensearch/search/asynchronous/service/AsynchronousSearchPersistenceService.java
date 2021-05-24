@@ -25,7 +25,7 @@
 
 package org.opensearch.search.asynchronous.service;
 
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.context.persistence.AsynchronousSearchPersistenceModel;
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
 import org.apache.logging.log4j.LogManager;

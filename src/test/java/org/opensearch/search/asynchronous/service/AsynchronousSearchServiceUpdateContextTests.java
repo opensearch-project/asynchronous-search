@@ -11,7 +11,7 @@
 
 package org.opensearch.search.asynchronous.service;
 
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.authuser.User;
 import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
 import org.opensearch.OpenSearchTimeoutException;

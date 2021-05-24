@@ -11,7 +11,7 @@
 
 package org.opensearch.search.asynchronous.utils;
 
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.common.Nullable;
 
 import java.io.IOException;

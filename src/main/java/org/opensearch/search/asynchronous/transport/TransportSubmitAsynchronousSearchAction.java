@@ -25,8 +25,8 @@
 
 package org.opensearch.search.asynchronous.transport;
 
-import com.amazon.opendistroforelasticsearch.commons.ConfigConstants;
-import com.amazon.opendistroforelasticsearch.commons.authuser.User;
+import org.opensearch.commons.ConfigConstants;
+import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveContext;
@@ -87,7 +87,7 @@ public class TransportSubmitAsynchronousSearchAction extends HandledTransportAct
     @Override
     protected void doExecute(Task task, SubmitAsynchronousSearchRequest request, ActionListener<AsynchronousSearchResponse> listener) {
         AsynchronousSearchContext asynchronousSearchContext = null;
-        String userStr = threadPool.getThreadContext().getTransient(ConfigConstants.OPENDISTRO_SECURITY_USER_INFO_THREAD_CONTEXT);
+        String userStr = threadPool.getThreadContext().getTransient(ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT);
         User user = User.parse(userStr);
         try {
             final long relativeStartTimeInMillis = threadPool.relativeTimeInMillis();
