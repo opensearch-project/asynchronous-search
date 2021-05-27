@@ -84,7 +84,7 @@ import java.util.function.Supplier;
 
 public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, SystemIndexPlugin {
 
-    public static final String OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME = "opendistro_asynchronous_search_generic";
+    public static final String OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME = "opensearch_asynchronous_search_generic";
     public static final String LEGACY_OPENDISTRO_BASE_URI = "/_opendistro/_asynchronous_search";
     public static final String BASE_URI = "/_plugins/_asynchronous_search";
 
