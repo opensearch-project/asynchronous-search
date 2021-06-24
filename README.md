@@ -9,7 +9,7 @@ The asynchronous search plugin supports the below operations
 
 **1. Submit asynchronous search**
 ```
-POST /_opendistro/_asynchronous_search?wait_for_completion_timeout=500ms&keep_on_completion=true&keep_alive=3d
+POST /_plugins/_asynchronous_search?wait_for_completion_timeout=500ms&keep_on_completion=true&keep_alive=3d
 {  "aggs": {
     "city": {
       "terms": {
@@ -23,27 +23,27 @@ POST /_opendistro/_asynchronous_search?wait_for_completion_timeout=500ms&keep_on
 
 **2. Retrieve asynchronous search results**
 ```
-GET /_opendistro/_asynchronous_search/FjdITFhYbC1zVFdHVVV1MUd3UkxkMFEFMjQ1MzYUWHRrZjhuWUJXdFhxMmlCSW5HTE8BMQ==?keep_alive=3d
+GET /_plugins/_asynchronous_search/FjdITFhYbC1zVFdHVVV1MUd3UkxkMFEFMjQ1MzYUWHRrZjhuWUJXdFhxMmlCSW5HTE8BMQ==?keep_alive=3d
 ```
 
 **3. Delete an asynchronous search**
 
 ```
-DELETE /_opendistro/_asynchronous_search/FjdITFhYbC1zVFdHVVV1MUd3UkxkMFEFMjQ1MzYUWHRrZjhuWUJXdFhxMmlCSW5HTE8BMQ==
+DELETE /_plugins/_asynchronous_search/FjdITFhYbC1zVFdHVVV1MUd3UkxkMFEFMjQ1MzYUWHRrZjhuWUJXdFhxMmlCSW5HTE8BMQ==
 ```
 
 **4. Stats for asynchronous search**
 
 ```
-GET /_opendistro/_asynchronous_search/stats
+GET /_plugins/_asynchronous_search/stats
 ```
 
 **Tunable Settings**
-1. `opendistro.asynchronous_search.max_search_running_time` : Maximum running time for the search beyond which the search would be terminated
-2. `opendistro.asynchronous_search.node_concurrent_running_searches` : Concurrent searches running per coordinator node
-3. `opendistro.asynchronous_search.max_keep_alive` : Maximum keep alive for search which dictates how long the search is allowed to be present in the cluster
-4. `opendistro.asynchronous_search.max_wait_for_completion_timeout` : Maximum keep on completion to block for the search response
-5. `opendistro.asynchronous_search.persist_search_failures` : Persist asynchronous search result ending with search failure in system index
+1. `plugins.asynchronous_search.max_search_running_time` : Maximum running time for the search beyond which the search would be terminated
+2. `plugins.asynchronous_search.node_concurrent_running_searches` : Concurrent searches running per coordinator node
+3. `plugins.asynchronous_search.max_keep_alive` : Maximum keep alive for search which dictates how long the search is allowed to be present in the cluster
+4. `plugins.asynchronous_search.max_wait_for_completion_timeout` : Maximum keep on completion to block for the search response
+5. `plugins.asynchronous_search.persist_search_failures` : Persist asynchronous search result ending with search failure in system index
 
 ## Setup
 
