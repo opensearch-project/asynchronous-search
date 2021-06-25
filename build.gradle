@@ -113,8 +113,7 @@ tasks.named("integTest").configure {
     it.dependsOn(project.tasks.named("bundlePlugin"))
 }
 
-//TODO enable license headers
-licenseHeaders.enabled = false
+licenseHeaders.enabled = true
 dependencyLicenses.enabled = false
 thirdPartyAudit.enabled = false
 validateNebulaPom.enabled = false
