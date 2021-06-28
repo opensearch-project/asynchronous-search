@@ -75,7 +75,7 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Verifies asynchronous search APIs - submit, get, delete end to end using rest client
  */
-public abstract class AsynchronousSearchRestTestCase extends OpenSearchRestTestCase {
+public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
