@@ -174,11 +174,6 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         }
     }
 
-    @After
-    public void closeClient() throws Exception {
-        OpenSearchRestTestCase.closeClients();
-    }
-
     protected final <Resp> Resp parseEntity(final HttpEntity entity,
                                             final CheckedFunction<XContentParser, Resp, IOException> entityParser)
             throws IOException {
