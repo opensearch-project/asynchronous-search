@@ -30,7 +30,7 @@ jobs:
         with:
           repository: 'opensearch-project/OpenSearch'
           path: OpenSearch
-          ref: '1.0'
+          ref: 1.0.0-rc1
       - name: Build OpenSearch
         working-directory: ./OpenSearch
         run: ./gradlew publishToMavenLocal -Dbuild.snapshot=false
@@ -38,7 +38,7 @@ jobs:
       - name: Checkout common-utils
         uses: actions/checkout@v2
         with:
-          ref: 'main'
+          ref: '1.0.0.0-rc1'
           repository: 'opensearch-project/common-utils'
           path: common-utils
       - name: Build common-utils
