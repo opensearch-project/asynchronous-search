@@ -30,7 +30,7 @@ jobs:
         with:
           repository: 'opensearch-project/OpenSearch'
           path: OpenSearch
-          ref: 1.0.0-rc1
+          ref: '1.0.0-rc1'
       - name: Build OpenSearch
         working-directory: ./OpenSearch
         run: ./gradlew publishToMavenLocal -Dbuild.snapshot=false
@@ -43,7 +43,7 @@ jobs:
           path: common-utils
       - name: Build common-utils
         working-directory: ./common-utils
-        run: ./gradlew publishToMavenLocal -Dopensearch.version=1.0.0
+        run: ./gradlew publishToMavenLocal -Dopensearch.version=1.0.0-rc1
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
         uses: actions/checkout@v2
