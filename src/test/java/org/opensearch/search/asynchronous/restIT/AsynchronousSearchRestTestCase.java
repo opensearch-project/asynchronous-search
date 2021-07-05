@@ -35,7 +35,6 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.lucene.search.TotalHits;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.opensearch.action.search.SearchResponse;
@@ -56,7 +55,6 @@ import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchModule;
-import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
