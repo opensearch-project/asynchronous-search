@@ -51,16 +51,21 @@ jobs:
         run: ./gradlew build -Dopensearch.version=1.0.0
       - name: Pull and Run Docker for security tests
         run: |
-          version=1.0.0
-          plugin_version=1.0.0.0
-          echo $version
-          cd ..
-          if docker pull opensearchstaging/opensearch:$version
+          plugin=`ls asynchronous-search/build/distributions/*.zip`
+          list_of_files=`ls`
+          list_of_all_files=`ls asynchronous-search/build/distributions/`
+          version=`echo $plugin|awk -F- '{print $3}'| cut -d. -f 1-3`
+          plugin_version=`echo $plugin|awk -F- '{print $3}'| cut -d. -f 1-4`
+          candidate_version=`echo $plugin|awk -F- '{print $4}'| cut -d. -f 1-1`
+          echo $version $plugin_version $candidate_version
+          echo $ls $list_of_all_files
+
+          if docker pull opensearchstaging/opensearch:$version-$candidate_version
           then
-            echo "FROM opensearchstaging/opensearch:$version" >> Dockerfile
-            echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-anomaly-detection ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
-            echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version.zip /tmp/" >> Dockerfile
-            echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version.zip" >> Dockerfile
+            echo "FROM opensearchstaging/opensearch:$version-$candidate_version" >> Dockerfile
+            echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-asynchronous-search ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
+            echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version-$candidate_version.zip /tmp/" >> Dockerfile
+            echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version-$candidate_version.zip" >> Dockerfile
             docker build -t opensearch-asynchronous-search:test .
             echo "imagePresent=true" >> $GITHUB_ENV
           else
@@ -72,7 +77,7 @@ jobs:
           cd ..
           docker run -p 9200:9200 -d -p 9600:9600 -e "discovery.type=single-node" opensearch-asynchronou-search:test
           sleep 90
-      - name: Run AD Test
+      - name: Run Asynchronous Search Test
         if: env.imagePresent == 'true'
         run: |
           security=`curl -XGET https://localhost:9200/_cat/plugins?v -u admin:admin --insecure |grep opensearch-security|wc -l`
