@@ -52,7 +52,7 @@ jobs:
       - name: Pull and Run Docker for security tests
         run: |
           list_of_files=`ls`
-          echo $ls
+          echo "List files: " $ls
           plugin=`ls asynchronous-search/build/distributions/*.zip`
           list_of_files=`ls`
           list_of_all_files=`ls asynchronous-search/build/distributions/`
