@@ -51,11 +51,13 @@ jobs:
         run: ./gradlew build -Dopensearch.version=1.0.0-rc1
       - name: Pull and Run Docker for security tests
         run: |
-          #list_of_files=`ls`
-          #echo "List files: " $ls
           version=1.0.0-rc1
           plugin_version=1.0.0.0-rc1
+          pwd=`pwd`
+          echo $pwd
           cd ../..
+          pwd1=`pwd`
+          echo $pwd1
           list_of_all_files=`ls asynchronous-search/build/distributions/`
           echo "listing distributions"
           echo $list_of_all_files
