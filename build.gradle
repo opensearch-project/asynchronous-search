@@ -10,11 +10,11 @@
  */
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch_version", "1.0.0")
+        opensearch_version = System.getProperty("opensearch_version", "1.0.0-rc1")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         opensearchVersion = '1.0.0'
-        common_utils_version = '1.0.0.0'
+        common_utils_version = '1.0.0.0-rc1'
     }
 
     repositories {
@@ -73,7 +73,7 @@ ext {
 }
 
 group 'org.opensearch.opendistroforelasticsearch'
-version = "${opensearchVersion}.0"
+version = "${opensearchVersion}.0-rc1"
 
 sourceCompatibility = 1.9
 
