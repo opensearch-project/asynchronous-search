@@ -51,20 +51,14 @@ jobs:
         run: ./gradlew build -Dopensearch.version=1.0.0-rc1
       - name: Pull and Run Docker for security tests
         run: |
-          ##list_of_files=`ls`
-          ##echo "List files: " $ls
+          #list_of_files=`ls`
+          #echo "List files: " $ls
           version=1.0.0-rc1
           plugin_version=1.0.0.0-rc1
           cd ../..
-          ##list_of_files=`ls`
-          ##pwd=`pwd`
-          ##echo "List files: " $ls
-          ##echo "Pwd:" $pwd
-          ##plugin=`ls asynchronous-search/build/distributions/*.zip`
-          ##list_of_files=`ls`
-          ##list_of_all_files=`ls asynchronous-search/build/distributions/`
-          ##echo $version $plugin_version
-          ##echo $ls $list_of_all_files
+          list_of_all_files=`ls asynchronous-search/build/distributions/`
+          echo "listing distributions"
+          echo $list_of_all_files
 
           if docker pull opensearchstaging/opensearch:$version
           then
