@@ -54,7 +54,7 @@ jobs:
           ##list_of_files=`ls`
           ##echo "List files: " $ls
           version=1.0.0-rc1
-          plugin_version=1.0.0.0
+          plugin_version=1.0.0.0-rc1
           cd ../..
           ##list_of_files=`ls`
           ##pwd=`pwd`
