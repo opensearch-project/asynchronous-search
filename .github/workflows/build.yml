@@ -51,20 +51,20 @@ jobs:
         run: ./gradlew build -Dopensearch.version=1.0.0
       - name: Pull and Run Docker for security tests
         run: |
-          list_of_files=`ls`
-          echo "List files: " $ls
-          cd ../..
-          list_of_files=`ls`
-          pwd=`pwd`
-          echo "List files: " $ls
-          echo "Pwd:" $pwd
-          plugin=`ls asynchronous-search/build/distributions/*.zip`
-          list_of_files=`ls`
-          list_of_all_files=`ls asynchronous-search/build/distributions/`
+          ##list_of_files=`ls`
+          ##echo "List files: " $ls
           version=1.0.0
           plugin_version=1.0.0.0
-          echo $version $plugin_version
-          echo $ls $list_of_all_files
+          cd ../..
+          ##list_of_files=`ls`
+          ##pwd=`pwd`
+          ##echo "List files: " $ls
+          ##echo "Pwd:" $pwd
+          ##plugin=`ls asynchronous-search/build/distributions/*.zip`
+          ##list_of_files=`ls`
+          ##list_of_all_files=`ls asynchronous-search/build/distributions/`
+          ##echo $version $plugin_version
+          ##echo $ls $list_of_all_files
 
           if docker pull opensearchstaging/opensearch:$version
           then
@@ -88,7 +88,7 @@ jobs:
         run: |
           security=`curl -XGET https://localhost:9200/_cat/plugins?v -u admin:admin --insecure |grep opensearch-security|wc -l`
           if [ $security -gt 0 ]
-          then
+          then`
             echo "Security plugin is available"
             ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
           else
