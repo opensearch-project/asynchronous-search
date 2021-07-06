@@ -84,7 +84,7 @@ jobs:
         run: |
           security=`curl -XGET https://localhost:9200/_cat/plugins?v -u admin:admin --insecure |grep opensearch-security|wc -l`
           if [ $security -gt 0 ]
-          then`
+          then
             echo "Security plugin is available"
             ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
           else
