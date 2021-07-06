@@ -77,7 +77,7 @@ jobs:
         if: env.imagePresent == 'true'
         run: |
           cd ..
-          docker run -p 9200:9200 -d -p 9600:9600 -e "discovery.type=single-node" opensearch-asynchronou-search:test
+          docker run -p 9200:9200 -d -p 9600:9600 -e "discovery.type=single-node" opensearch-asynchronous-search:test
           sleep 90
       - name: Run Asynchronous Search Test
         if: env.imagePresent == 'true'
