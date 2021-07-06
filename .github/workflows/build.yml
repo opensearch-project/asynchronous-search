@@ -53,7 +53,7 @@ jobs:
         run: |
           list_of_files=`ls`
           echo "List files: " $ls
-          cd ..
+          cd ../..
           list_of_files=`ls`
           pwd=`pwd`
           echo "List files: " $ls
