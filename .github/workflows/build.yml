@@ -55,7 +55,7 @@ jobs:
           plugin_version=1.0.0.0-rc1
           pwd=`pwd`
           echo $pwd
-          cd ../..
+          cd ..
           pwd1=`pwd`
           echo $pwd1
           list_of_all_files=`ls asynchronous-search/build/distributions/`
