@@ -25,6 +25,7 @@ import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.RestClientBuilder;
+import org.opensearch.common.io.PathUtils;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.util.concurrent.ThreadContext;
@@ -32,12 +33,17 @@ import org.opensearch.common.xcontent.DeprecationHandler;
 import org.opensearch.common.xcontent.NamedXContentRegistry;
 import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.commons.rest.SecureRestClientBuilder;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -52,12 +58,17 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
         boolean isHttps = Optional.ofNullable(System.getProperty("https")).map("true"::equalsIgnoreCase).orElse(false);
         if (isHttps) {
             // currently only external cluster is supported for security enabled testing
-            if (Optional.ofNullable(System.getProperty("tests.rest.cluster")).isPresent() == false) {
+            if (!Optional.ofNullable(System.getProperty("tests.rest.cluster")).isPresent()) {
                 throw new RuntimeException("cluster url should be provided for security enabled testing");
             }
         }
 
         return isHttps;
+    }
+
+    @Override
+    protected String getProtocol() {
+        return isHttps() ? "https" : "http";
     }
 
     @Override
@@ -76,21 +87,63 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
     }
 
     @Override
-    protected String getProtocol() {
-        return isHttps() ? "https" : "http";
-    }
-
-    @Override
     protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
+        boolean strictDeprecationMode = settings.getAsBoolean("strictDeprecationMode", true);
         RestClientBuilder builder = RestClient.builder(hosts);
         if (isHttps()) {
-            configureHttpsClient(builder, settings);
+            String keystore = settings.get(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH);
+            if (Objects.nonNull(keystore)) {
+                URI uri = null;
+                try {
+                    uri = this.getClass().getClassLoader().getResource("security/sample.pem").toURI();
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+                Path configPath = PathUtils.get(uri).getParent().toAbsolutePath();
+                return new SecureRestClientBuilder(settings, configPath).build();
+            } else {
+                configureHttpsClient(builder, settings);
+                builder.setStrictDeprecationMode(strictDeprecationMode);
+                return builder.build();
+            }
+
         } else {
             configureClient(builder, settings);
+            builder.setStrictDeprecationMode(strictDeprecationMode);
+            return builder.build();
         }
 
-        builder.setStrictDeprecationMode(false);
-        return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    @After
+    protected void wipeAllODFEIndices() throws IOException {
+        Response response = adminClient().performRequest(new Request("GET", "/_cat/indices?format=json&expand_wildcards=all"));
+        XContentType xContentType = XContentType.fromMediaTypeOrFormat(response.getEntity().getContentType().getValue());
+        try (
+                XContentParser parser = xContentType
+                        .xContent()
+                        .createParser(
+                                NamedXContentRegistry.EMPTY,
+                                DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
+                                response.getEntity().getContent()
+                        )
+        ) {
+            XContentParser.Token token = parser.nextToken();
+            List<Map<String, Object>> parserList = null;
+            if (token == XContentParser.Token.START_ARRAY) {
+                parserList = parser.listOrderedMap().stream().map(obj -> (Map<String, Object>) obj).collect(Collectors.toList());
+            } else {
+                parserList = Collections.singletonList(parser.mapOrdered());
+            }
+
+            for (Map<String, Object> index : parserList) {
+                String indexName = (String) index.get("index");
+                if (indexName != null && !".opendistro_security".equals(indexName)) {
+                    adminClient().performRequest(new Request("DELETE", "/" + indexName));
+                }
+            }
+        }
     }
 
     protected static void configureHttpsClient(RestClientBuilder builder, Settings settings) throws IOException {
@@ -136,36 +189,5 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
     @Override
     protected boolean preserveIndicesUponCompletion() {
         return true;
-    }
-
-    @SuppressWarnings("unchecked")
-    @After
-    protected void wipeAllODFEIndices() throws IOException {
-        Response response = client().performRequest(new Request("GET", "/_cat/indices?format=json&expand_wildcards=all"));
-        XContentType xContentType = XContentType.fromMediaTypeOrFormat(response.getEntity().getContentType().getValue());
-        try (
-                XContentParser parser = xContentType
-                        .xContent()
-                        .createParser(
-                                NamedXContentRegistry.EMPTY,
-                                DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
-                                response.getEntity().getContent()
-                        )
-        ) {
-            XContentParser.Token token = parser.nextToken();
-            List<Map<String, Object>> parserList = null;
-            if (token == XContentParser.Token.START_ARRAY) {
-                parserList = parser.listOrderedMap().stream().map(obj -> (Map<String, Object>) obj).collect(Collectors.toList());
-            } else {
-                parserList = Collections.singletonList(parser.mapOrdered());
-            }
-
-            for (Map<String, Object> index : parserList) {
-                String indexName = (String) index.get("index");
-                if (indexName != null && !".opendistro_security".equals(indexName)) {
-                    client().performRequest(new Request("DELETE", "/" + indexName));
-                }
-            }
-        }
     }
 }
