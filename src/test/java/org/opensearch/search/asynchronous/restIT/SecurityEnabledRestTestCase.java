@@ -41,6 +41,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.opensearch.commons.ConfigConstants.OPENSEARCH_SECURITY_SSL_HTTP_ENABLED;
+import static org.opensearch.commons.ConfigConstants.OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH;
+import static org.opensearch.commons.ConfigConstants.OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD;
+import static org.opensearch.commons.ConfigConstants.OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD;
+import static org.opensearch.commons.ConfigConstants.OPENSEARCH_SECURITY_SSL_HTTP_PEMCERT_FILEPATH;
+
 public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase {
     protected boolean isHttps() {
         boolean isHttps = Optional.ofNullable(System.getProperty("https")).map("true"::equalsIgnoreCase).orElse(false);
@@ -52,6 +58,21 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
         }
 
         return isHttps;
+    }
+
+    @Override
+    protected Settings restAdminSettings() {
+        return Settings
+                .builder()
+                // disable the warning exception for admin client since it's only used for cleanup.
+                .put("strictDeprecationMode", false)
+                .put("http.port", 9200)
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_ENABLED, isHttps())
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_PEMCERT_FILEPATH, "sample.pem")
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH, "test-kirk.jks")
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD, "changeit")
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD, "changeit")
+                .build();
     }
 
     @Override
