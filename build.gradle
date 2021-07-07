@@ -140,8 +140,6 @@ afterEvaluate {
             node.setting("opendistro_security.ssl.transport.pemtrustedcas_filepath", "root-ca.pem")
             node.setting("opendistro_security.ssl.transport.enforce_hostname_verification", "false")
             node.setting("opendistro_security.ssl.http.enabled", "true")
-            node.setting("opendistro_security.ssl.http.pemcert_filepath", "esnode.pem")
-            node.setting("opendistro_security.ssl.http.pemkey_filepath", "esnode-key.pem")
             node.setting("opendistro_security.ssl.http.pemtrustedcas_filepath", "root-ca.pem")
             node.setting("opendistro_security.allow_unsafe_democertificates", "true")
             node.setting("opendistro_security.allow_default_init_securityindex", "true")
