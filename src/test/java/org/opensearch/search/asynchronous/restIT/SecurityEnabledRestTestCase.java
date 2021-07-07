@@ -58,7 +58,7 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
         boolean isHttps = Optional.ofNullable(System.getProperty("https")).map("true"::equalsIgnoreCase).orElse(false);
         if (isHttps) {
             // currently only external cluster is supported for security enabled testing
-            if (!Optional.ofNullable(System.getProperty("tests.rest.cluster")).isPresent()) {
+            if (Optional.ofNullable(System.getProperty("tests.rest.cluster")).isPresent() == false) {
                 throw new RuntimeException("cluster url should be provided for security enabled testing");
             }
         }
