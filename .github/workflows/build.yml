@@ -48,7 +48,7 @@ jobs:
       - name: Checkout Branch
         uses: actions/checkout@v2
       - name: Build with Gradle
-        run: ./gradlew build -Dopensearch.version=1.0.0
+        run: ./gradlew build -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername=opensearch -Dhttps=true
       - name: Upload failed logs
         uses: actions/upload-artifact@v2
         if: failure()
