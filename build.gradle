@@ -122,6 +122,8 @@ loggerUsageCheck.enabled = false
 def opensearch_tmp_dir = rootProject.file('build/private/opensearch_tmp').absoluteFile
 opensearch_tmp_dir.mkdirs()
 
+def securityEnabled = System.getProperty("security", "false") == "true"
+
 test {
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'es.set.netty.runtime.available.processors', 'false'
