@@ -68,6 +68,8 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
 
     @Override
     protected String getProtocol() {
+        logger.error("isHttpsOrNot:[{}]", isHttps());
+        fail();
         return isHttps() ? "https" : "http";
     }
 
