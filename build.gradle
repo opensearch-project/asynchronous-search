@@ -15,11 +15,11 @@ import java.util.function.Predicate
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch_version", "1.0.0-rc1")
+        opensearch_version = System.getProperty("opensearch_version", "1.0.0")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         opensearchVersion = '1.0.0'
-        common_utils_version = '1.0.0.0-rc1'
+        common_utils_version = '1.0.0.0'
     }
 
     repositories {
@@ -78,7 +78,7 @@ ext {
 }
 
 group 'org.opensearch'
-version = "${opensearchVersion}.0-rc1"
+version = "${opensearchVersion}.0"
 
 sourceCompatibility = 1.9
 
