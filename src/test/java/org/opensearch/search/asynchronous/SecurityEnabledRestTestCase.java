@@ -88,8 +88,8 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
 
     @Override
     protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
-        boolean strictDeprecationMode = settings.getAsBoolean("strictDeprecationMode", true);
         RestClientBuilder builder = RestClient.builder(hosts);
+        builder.setStrictDeprecationMode(false);
         if (isHttps()) {
             String keystore = settings.get(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH);
             if (Objects.nonNull(keystore)) {
@@ -103,13 +103,11 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
                 return new SecureRestClientBuilder(settings, configPath).build();
             } else {
                 configureHttpsClient(builder, settings);
-                builder.setStrictDeprecationMode(strictDeprecationMode);
                 return builder.build();
             }
 
         } else {
             configureClient(builder, settings);
-            builder.setStrictDeprecationMode(strictDeprecationMode);
             return builder.build();
         }
 
