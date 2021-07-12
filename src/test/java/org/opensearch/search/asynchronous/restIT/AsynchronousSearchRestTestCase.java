@@ -79,13 +79,6 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
 
-    @Override
-    protected RestClient buildClient(Settings settings, HttpHost[] hosts) {
-        RestClientBuilder builder = RestClient.builder(hosts);
-        builder.setStrictDeprecationMode(false);
-        return builder.build();
-    }
-
     @Before
     public void indexDocuments() throws IOException {
         {
