@@ -25,6 +25,7 @@
 
 package org.opensearch.search.asynchronous.restIT;
 
+import org.opensearch.search.asynchronous.SecurityEnabledRestTestCase;
 import org.opensearch.search.asynchronous.request.DeleteAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;

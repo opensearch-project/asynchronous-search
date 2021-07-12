@@ -9,7 +9,7 @@
  * GitHub history for details.
  */
 
-package org.opensearch.search.asynchronous.restIT;
+package org.opensearch.search.asynchronous;
 
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
