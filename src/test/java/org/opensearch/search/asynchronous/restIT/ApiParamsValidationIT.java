@@ -81,19 +81,6 @@ public class ApiParamsValidationIT extends AsynchronousSearchRestTestCase {
         assertHitCount(submitResponse.getSearchResponse(), 5);
     }
 
-//    TODO : doesn't work for security enabled scenario as security plugin index docs are also searched upon
-//    /**
-//     * run search on all indices
-//     */
-//    public void testSubmitSearchAllIndices() throws IOException {
-//        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
-//        submitAsynchronousSearchRequest.keepOnCompletion(false);
-//        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
-//        List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.CLOSED);
-//        assertTrue(legalStates.contains(submitResponse.getState()));
-//        assertHitCount(submitResponse.getSearchResponse(), 6);
-//    }
-
     public void testSubmitSearchOnInvalidIndex() throws IOException {
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(
                 new SearchRequest("invalid-index"));

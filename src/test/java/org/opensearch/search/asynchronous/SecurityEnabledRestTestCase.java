@@ -62,7 +62,6 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
                 throw new RuntimeException("cluster url should be provided for security enabled testing");
             }
         }
-
         return isHttps;
     }
 
@@ -115,7 +114,7 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
 
     @SuppressWarnings("unchecked")
     @After
-    protected void wipeAllODFEIndices() throws IOException {
+    protected void wipeAllOSIndices() throws IOException {
         Response response = adminClient().performRequest(new Request("GET", "/_cat/indices?format=json&expand_wildcards=all"));
         XContentType xContentType = XContentType.fromMediaTypeOrFormat(response.getEntity().getContentType().getValue());
         try (
