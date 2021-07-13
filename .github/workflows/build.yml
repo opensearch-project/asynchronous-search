@@ -51,8 +51,8 @@ jobs:
         run: ./gradlew build -Dopensearch.version=1.0.0
       - name: Pull and Run Docker for security tests
         run: |
-          version=1.0.0-rc1
-          plugin_version=1.0.0.0-rc1
+          version=1.0.0
+          plugin_version=1.0.0.0
           pwd=`pwd`
           echo $pwd
           cd ..
