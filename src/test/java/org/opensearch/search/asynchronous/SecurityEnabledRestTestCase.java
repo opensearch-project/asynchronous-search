@@ -78,10 +78,14 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
                 .put("strictDeprecationMode", false)
                 .put("http.port", 9200)
                 .put(OPENSEARCH_SECURITY_SSL_HTTP_ENABLED, isHttps())
-                .put(OPENSEARCH_SECURITY_SSL_HTTP_PEMCERT_FILEPATH, "sample.pem")
-                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH, "test-kirk.jks")
-                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD, "changeit")
-                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD, "changeit")
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_PEMCERT_FILEPATH, System.getProperty(
+                        OPENSEARCH_SECURITY_SSL_HTTP_PEMCERT_FILEPATH, "sample.pem"))
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH, System.getProperty(
+                        OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH, "test-kirk.jks"))
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD, System.getProperty(
+                        OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD, "changeit"))
+                .put(OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD, System.getProperty(
+                        OPENSEARCH_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD, "changeit"))
                 .build();
     }
 
