@@ -25,25 +25,22 @@
 
 package org.opensearch.search.asynchronous.restIT;
 
+import org.opensearch.search.asynchronous.SecurityEnabledRestTestCase;
 import org.opensearch.search.asynchronous.request.DeleteAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.RestTestUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.lucene.search.TotalHits;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
-import org.opensearch.client.RestClient;
-import org.opensearch.client.RestClientBuilder;
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Strings;
@@ -56,7 +53,6 @@ import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchModule;
-import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
@@ -75,17 +71,10 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Verifies asynchronous search APIs - submit, get, delete end to end using rest client
  */
-public abstract class AsynchronousSearchRestTestCase extends OpenSearchRestTestCase {
+public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
             new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
-
-    @Override
-    protected RestClient buildClient(Settings settings, HttpHost[] hosts) {
-        RestClientBuilder builder = RestClient.builder(hosts);
-        builder.setStrictDeprecationMode(false);
-        return builder.build();
-    }
 
     @Before
     public void indexDocuments() throws IOException {
@@ -172,11 +161,6 @@ public abstract class AsynchronousSearchRestTestCase extends OpenSearchRestTestC
         } catch (Exception ex) {
             throw new RuntimeException("Failed to dump coverage: " + ex);
         }
-    }
-
-    @After
-    public void closeClient() throws Exception {
-        OpenSearchRestTestCase.closeClients();
     }
 
     protected final <Resp> Resp parseEntity(final HttpEntity entity,
