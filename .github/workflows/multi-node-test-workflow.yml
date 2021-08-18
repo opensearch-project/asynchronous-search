@@ -29,25 +29,25 @@ jobs:
         with:
           repository: 'opensearch-project/OpenSearch'
           path: OpenSearch
-          ref: '1.0'
+          ref: '1.x'
       # dependencies: common-utils
       - name: Checkout common-utils
         uses: actions/checkout@v2
         with:
-          ref: '1.0'
+          ref: 'main'
           repository: 'opensearch-project/common-utils'
           path: common-utils
       - name: Build OpenSearch
         working-directory: ./OpenSearch
-        run: ./gradlew publishToMavenLocal -Dbuild.snapshot=false
+        run: ./gradlew publishToMavenLocal
       - name: Build common-utils
         working-directory: ./common-utils
-        run: ./gradlew publishToMavenLocal -Dopensearch.version=1.0.0
+        run: ./gradlew publishToMavenLocal -Dopensearch.version=1.1.0-SNAPSHOT
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
         uses: actions/checkout@v2
       - name: Run integration tests with multi node config
-        run: ./gradlew integTest -PnumNodes=5 -Dopensearch.version=1.0.0
+        run: ./gradlew integTest -PnumNodes=5 -Dopensearch.version=1.1.0-SNAPSHOT
       - name: Upload failed logs
         uses: actions/upload-artifact@v2
         if: failure()
