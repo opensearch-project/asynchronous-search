@@ -29,12 +29,12 @@ jobs:
         with:
           repository: 'opensearch-project/OpenSearch'
           path: OpenSearch
-          ref: '1.0'
+          ref: '1.x'
       # dependencies: common-utils
       - name: Checkout common-utils
         uses: actions/checkout@v2
         with:
-          ref: '1.0'
+          ref: 'main'
           repository: 'opensearch-project/common-utils'
           path: common-utils
       - name: Build OpenSearch
