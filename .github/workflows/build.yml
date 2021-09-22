@@ -1,5 +1,5 @@
 name: Test and Build Workflow
-# This workflow is triggered on pull requests to master or a opensearch release branch
+# This workflow is triggered on pull requests to master or a OpenSearch release branch
 on:
   pull_request:
     branches:
@@ -40,7 +40,7 @@ jobs:
       - name: Checkout common-utils
         uses: actions/checkout@v2
         with:
-          ref: 'main'
+          ref: '1.1'
           repository: 'opensearch-project/common-utils'
           path: common-utils
       - name: Build common-utils
