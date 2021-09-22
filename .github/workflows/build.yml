@@ -1,5 +1,5 @@
 name: Test and Build Workflow
-# This workflow is triggered on pull requests to master or a opendistro release branch
+# This workflow is triggered on pull requests to master or a opensearch release branch
 on:
   pull_request:
     branches:
@@ -30,7 +30,7 @@ jobs:
         with:
           repository: 'opensearch-project/OpenSearch'
           path: OpenSearch
-          ref: '1.x'
+          ref: '1.1'
       - name: Build OpenSearch
         working-directory: ./OpenSearch
         run: |
