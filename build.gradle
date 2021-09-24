@@ -10,11 +10,13 @@
  */
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch_version", "1.0.0")
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
-        opensearchVersion = '1.0.0'
-        common_utils_version = '1.0.0.0'
+        isSnapshot = "true" == System.getProperty("build.snapshot", "true")
+        opensearch_version = System.getProperty("opensearch.version", "1.1.0-SNAPSHOT")
+        // 1.0.0 -> 1.0.0.0, and 1.0.0-SNAPSHOT -> 1.0.0.0-SNAPSHOT
+        opensearch_build = opensearch_version.replaceAll(/(\.\d)([^\d]*)$/, '$1.0$2')
+        common_utils_version = System.getProperty("common_utils.version", opensearch_build)
     }
 
     repositories {
@@ -69,15 +71,17 @@ ext {
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.txt')
     noticeFile = rootProject.file('NOTICE.txt')
-    isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
-
-group 'org.opensearch'
-version = "${opensearchVersion}.0"
 
 sourceCompatibility = 1.9
 
-
+allprojects {
+    group 'org.opensearch'
+    version = opensearch_version - '-SNAPSHOT' + '.0'
+    if (isSnapshot) {
+        version += "-SNAPSHOT"
+    }
+}
 
 dependencies {
     testCompile ('junit:junit:4.12') {
