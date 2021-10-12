@@ -36,8 +36,10 @@ import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.opensearch.rest.RestRequest.Method.GET;
+import static org.opensearch.search.asynchronous.rest.RestSubmitAsynchronousSearchAction.RESPONSE_PARAMS;
 
 public class RestGetAsynchronousSearchAction extends BaseRestHandler {
 
@@ -70,5 +72,10 @@ public class RestGetAsynchronousSearchAction extends BaseRestHandler {
         return channel -> {
             client.execute(GetAsynchronousSearchAction.INSTANCE, getRequest, new RestStatusToXContentListener<>(channel));
         };
+    }
+
+    @Override
+    protected Set<String> responseParams() {
+        return RESPONSE_PARAMS;
     }
 }
