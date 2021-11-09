@@ -118,4 +118,8 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the [Apache v2.0 License](LICENSE).
+
+## Copyright
+
+Copyright OpenSearch Contributors. See [NOTICE](NOTICE) for details.
