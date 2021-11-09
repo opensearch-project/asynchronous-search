@@ -59,8 +59,6 @@ checkstyle {
     toolVersion = '8.24'
     configFile file("checkstyle/checkstyle.xml")
 }
-checkstyleMain.ignoreFailures = true
-checkstyleTest.ignoreFailures = true
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
 def usingMultiNode = project.properties.containsKey('numNodes')
