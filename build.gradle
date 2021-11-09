@@ -53,6 +53,14 @@ apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.rest-test'
+apply plugin: 'checkstyle'
+
+checkstyle {
+    toolVersion = '8.24'
+    configFile file("checkstyle/checkstyle.xml")
+}
+checkstyleMain.ignoreFailures = true
+checkstyleTest.ignoreFailures = true
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
 def usingMultiNode = project.properties.containsKey('numNodes')
@@ -91,7 +99,7 @@ dependencies {
     compile "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
-            force "com.puppycrawl.tools:checkstyle:8.29"
+            force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
         }
     }
 }
