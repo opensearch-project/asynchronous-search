@@ -38,7 +38,6 @@ buildscript {
 
 plugins {
     id 'nebula.ospackage' version "8.3.0"
-    id 'checkstyle'
 }
 
 repositories {
@@ -54,22 +53,6 @@ apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.rest-test'
-
-subprojects {
-    apply plugin: 'checkstyle'
-    checkstyle {
-        configFile rootProject.file("config/checkstyle/google_checks.xml")
-        toolVersion "8.29"
-        configProperties = [
-                "org.checkstyle.google.suppressionfilter.config": rootProject.file("config/checkstyle/suppressions.xml")]
-        ignoreFailures = false
-    }
-}
-checkstyle {
-    configFile file("config/checkstyle/checkstyle.xml")
-}
-checkstyleMain.ignoreFailures = false
-checkstyleTest.ignoreFailures = false
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
 def usingMultiNode = project.properties.containsKey('numNodes')
@@ -108,7 +91,7 @@ dependencies {
     compile "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
-            force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
+            force "com.puppycrawl.tools:checkstyle:8.29"
         }
     }
 }
