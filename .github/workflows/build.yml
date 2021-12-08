@@ -94,7 +94,7 @@ jobs:
   windows-build:
     # Job name
     name: Build Asynchronous Search
-    # This job runs on Linux.
+    # This job runs on Windows.
     runs-on: windows-latest
     steps:
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
