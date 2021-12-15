@@ -3,14 +3,10 @@ name: Test and Build Workflow
 on:
   pull_request:
     branches:
-      - main
-      - opendistro-*
-      - plugin-dev
+      - "*"
   push:
     branches:
-      - main
-      - opendistro-*
-      - plugin-dev
+      - "*"
 
 jobs:
   linux-build:
