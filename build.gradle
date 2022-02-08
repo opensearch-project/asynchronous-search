@@ -81,9 +81,6 @@ allprojects {
 }
 
 dependencies {
-    testCompile ('junit:junit:4.12') {
-        exclude group: 'org.hamcrest'
-    }
     testCompile "org.opensearch.plugin:reindex-client:${opensearch_version}"
     testCompile "org.opensearch.plugin:lang-painless:${opensearch_version}"
     testCompile "org.opensearch.test:framework:${opensearch_version}"
