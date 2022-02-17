@@ -111,13 +111,13 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         return ClusterType.parse(System.getProperty(BWCSUITE_CLUSTER));
     }
 
-    public void testSubmitWithRetainedResponse(boolean legacy) throws IOException {
+    public void testSubmitWithRetainedResponse(boolean isLegacy) throws IOException {
         SearchRequest searchRequest = new SearchRequest("test");
         searchRequest.source(new SearchSourceBuilder());
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, legacy);
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, isLegacy);
         List<AsynchronousSearchState> legalStates = Arrays.asList(
                 AsynchronousSearchState.RUNNING, AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.PERSIST_SUCCEEDED,
                 AsynchronousSearchState.PERSISTING,
@@ -127,7 +127,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
         AsynchronousSearchResponse getResponse;
         do {
-            getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest);
+            getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, isLegacy);
             if (getResponse.getState() == AsynchronousSearchState.RUNNING && getResponse.getSearchResponse() != null) {
                 assertEquals(getResponse.getSearchResponse().getHits().getHits().length, 0);
             } else {
@@ -135,11 +135,11 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
                 assertNotEquals(getResponse.getSearchResponse().getTook(), -1L);
             }
         } while (AsynchronousSearchState.STORE_RESIDENT.equals(getResponse.getState()) == false);
-        getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest);
+        getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, isLegacy);
         assertNotNull(getResponse.getSearchResponse());
         assertEquals(AsynchronousSearchState.STORE_RESIDENT, getResponse.getState());
         assertHitCount(getResponse.getSearchResponse(), 5);
-        executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()), legacy);
+        executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()), isLegacy);
     }
 
 

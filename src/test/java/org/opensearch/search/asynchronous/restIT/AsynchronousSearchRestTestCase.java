@@ -46,6 +46,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 
 /**
@@ -87,7 +88,11 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     }
 
     AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
-        Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest);
+        return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
+    }
+
+    AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) throws IOException {
+        Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, isLegacy);
         Response resp = client().performRequest(getRequest);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
@@ -165,12 +170,19 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
                                                                                GetAsynchronousSearchRequest getAsynchronousSearchRequest)
             throws IOException {
+        return getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, false);
+    }
+
+    protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
+                                                                               GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy)
+            throws IOException {
         AsynchronousSearchResponse getResponse;
-        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);
+        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, isLegacy);
         assertEquals(submitResponse.getId(), getResponse.getId());
         assertEquals(submitResponse.getStartTimeMillis(), getResponse.getStartTimeMillis());
         return getResponse;
     }
+
 
     protected void assertRnf(Exception e) {
         assertTrue(e instanceof ResponseException);
