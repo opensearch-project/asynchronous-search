@@ -95,7 +95,7 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean isLegacy) {
         return new Request(HttpDelete.METHOD_NAME,
-                isLegacy ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI : AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+                isLegacy ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI  + "/" + deleteAsynchronousSearchRequest.getId() : AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
     }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
