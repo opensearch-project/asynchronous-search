@@ -93,6 +93,7 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
 
     AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) throws IOException {
         Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, isLegacy);
+        logger.info("Endpoint ----- "+getRequest.getEndpoint() + " ----- " + getAsynchronousSearchRequest.getId());
         Response resp = client().performRequest(getRequest);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
