@@ -82,7 +82,7 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) {
         Request request = new Request(HttpGet.METHOD_NAME,
-                isLegacy ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI : AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
+                isLegacy ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + getAsynchronousSearchRequest.getId() : AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
