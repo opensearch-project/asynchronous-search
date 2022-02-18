@@ -78,6 +78,11 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
                     testSubmitWithRetainedResponse(true);
                     break;
                 case MIXED:
+                    if(pluginNames.contains("opendistro-asynchronous-search"))
+                        testSubmitWithRetainedResponse(true);
+                    else
+                        testSubmitWithRetainedResponse(false);
+                    break;
                 case UPGRADED:
                     Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
                     testSubmitWithRetainedResponse(false);
