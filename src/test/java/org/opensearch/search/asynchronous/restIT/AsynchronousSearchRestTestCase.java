@@ -87,20 +87,25 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         client().performRequest(new Request(HttpPost.METHOD_NAME, "/_refresh"));
     }
 
-    AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
+    protected AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
         return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
     }
 
-    AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) throws IOException {
+    protected AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) throws IOException {
         Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, isLegacy);
         logger.info("Endpoint ----- "+getRequest.getEndpoint() + " ----- " + getAsynchronousSearchRequest.getId());
         Response resp = client().performRequest(getRequest);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
 
-    AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
+    protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
             throws IOException {
-        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest);
+        return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
+    }
+
+    protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean isLegacy)
+            throws IOException {
+        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, isLegacy);
         Response resp = client().performRequest(request);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }

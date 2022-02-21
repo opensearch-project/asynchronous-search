@@ -191,7 +191,7 @@ String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/
     testClusters {
         "${baseName}$i" {
             testDistribution = "ARCHIVE"
-            versions = ["7.10.2","1.3.0"]
+            versions = ["7.10.2",opensearch_version]
             //versions = [opensearch_bwc_version, opensearch_version] //Opensearch Cluster Versions
             numberOfNodes = 3
             plugin(provider(new Callable<RegularFile>() {
@@ -321,7 +321,7 @@ task "${baseName}#fullRestartClusterTask"(type: StandaloneRestIntegTestTask) {
 
 // A bwc test suite which runs all the bwc tasks combined.
 task bwcTestSuite(type: StandaloneRestIntegTestTask) {
-    //dependsOn "copyLatestSnapshot"
+    dependsOn "copyLatestSnapshot"
     exclude '**/*Test*'
     exclude '**/*IT*'
     dependsOn tasks.named("${baseName}#mixedClusterTask")
