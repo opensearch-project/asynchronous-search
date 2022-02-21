@@ -330,9 +330,8 @@ task bwcTestSuite(type: StandaloneRestIntegTestTask) {
 }
 
 task copyLatestSnapshot(type: Copy){
-    logger.info('BUILD file ---- '  + "$bwcFilePath$project.version" + "$buildDir/distributions")
+    logger.info('BUILD file ---- '  + "$bwcFilePath$project.version" + " " + "$buildDir/distributions")
     dependsOn 'assemble'
-    mkdir "$bwcFilePath$project.version"
     from "$buildDir/distributions"
     include "*.zip"
     into "$bwcFilePath$project.version"
