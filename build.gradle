@@ -135,7 +135,7 @@ test {
 File repo = file("$buildDir/testclusters/repo")
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 
-
+Zip bundle = (Zip) project.getTasks().getByName("bundlePlugin");
 testClusters.integTest {
     testDistribution = "ARCHIVE"
     plugin(project.tasks.bundlePlugin.archiveFile)
