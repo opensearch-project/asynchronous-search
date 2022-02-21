@@ -25,6 +25,7 @@ import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchReques
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.restIT.AsynchronousSearchRestTestCase;
 import org.opensearch.search.asynchronous.service.AsynchronousSearchService;
+import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousSearchSettings;
 import org.opensearch.search.asynchronous.utils.RestTestUtils;
 import org.opensearch.search.builder.SearchSourceBuilder;
 
@@ -155,7 +156,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         validRequest.keepAlive(TimeValue.timeValueHours(7));
         AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest, isLegacy);
         assertNotNull(asResponse.getSearchResponse());
-        updateClusterSettings(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(6));
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.getKey() : AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(6));
         SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.keepAlive(TimeValue.timeValueHours(7));
         ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(
@@ -170,7 +171,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         validRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
         AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest, isLegacy);
         assertNotNull(asResponse.getSearchResponse());
-        updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey() : AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
                 TimeValue.timeValueSeconds(2));
         SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
@@ -211,7 +212,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
             thread.join();
         }
 
-        updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 0);
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey() : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 0);
         threadsList.clear();
         AtomicInteger numFailures = new AtomicInteger();
         for (int i = 0; i < numThreads; i++) {
@@ -241,8 +242,8 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
             thread.join();
         }
         assertEquals(numFailures.get(), 50);
-        updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
-                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey() :  AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+                isLegacy ?  LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
     }
 
     public void testStoreAsyncSearchWithFailures(boolean isLegacy) throws Exception {
@@ -259,7 +260,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
                 return e.getMessage().contains("resource_not_found");
             }
         });
-        updateClusterSettings(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey() : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
                 true);
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(request, isLegacy);
         waitUntil(() -> {
@@ -272,7 +273,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         });
         assertEquals(executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId())).getState(),
                 AsynchronousSearchState.STORE_RESIDENT);
-        updateClusterSettings(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey() : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
                 false);
     }
 }
