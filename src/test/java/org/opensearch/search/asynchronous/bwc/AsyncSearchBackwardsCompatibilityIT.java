@@ -163,7 +163,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
                 invalidRequest, isLegacy));
         assertThat(responseException.getMessage(), containsString("Keep alive for asynchronous search (" +
                 invalidRequest.getKeepAlive().getMillis() + ") is too large"));
-        updateClusterSettings(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(24));
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.getKey() :AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(24));
     }
 
     public void testSubmitInvalidWaitForCompletion(boolean isLegacy) throws Exception {
