@@ -91,20 +91,22 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
     }
 
-    protected AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) throws IOException {
-        Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, isLegacy);
-        logger.info("Endpoint ----- "+getRequest.getEndpoint() + " ----- " + getAsynchronousSearchRequest.getId());
-        Response resp = client().performRequest(getRequest);
-        return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
-    }
+  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy)
+      throws IOException {
+    Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, isLegacy);
+    Response resp = client().performRequest(getRequest);
+    return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
+  }
 
     protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
             throws IOException {
         return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
     }
 
-    protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean isLegacy)
-            throws IOException {
+  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean isLegacy)
+      throws IOException {
         Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, isLegacy);
         Response resp = client().performRequest(request);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
@@ -179,9 +181,11 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         return getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, false);
     }
 
-    protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
-                                                                               GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy)
-            throws IOException {
+  protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
+      AsynchronousSearchResponse submitResponse,
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest,
+      boolean isLegacy)
+      throws IOException {
         AsynchronousSearchResponse getResponse;
         getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, isLegacy);
         assertEquals(submitResponse.getId(), getResponse.getId());
