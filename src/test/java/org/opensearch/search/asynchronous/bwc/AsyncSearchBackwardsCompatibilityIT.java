@@ -243,7 +243,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         }
         assertEquals(numFailures.get(), 50);
         updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey() :  AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
-                isLegacy ?  LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
+                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
     }
 
     public void testStoreAsyncSearchWithFailures(boolean isLegacy) throws Exception {
