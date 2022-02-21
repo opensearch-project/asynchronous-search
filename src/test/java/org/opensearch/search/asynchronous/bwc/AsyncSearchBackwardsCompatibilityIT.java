@@ -80,7 +80,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
                 case UPGRADED:
                     Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
                     testAsyncSearchAndSettingsApi(true);
-                    testAsyncSearchAndSettingsApi(false);
+                    //testAsyncSearchAndSettingsApi(false);
                     break;
             }
             break;
