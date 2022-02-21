@@ -179,7 +179,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
                 invalidRequest, isLegacy));
         assertThat(responseException.getMessage(), containsString("Wait for completion timeout for asynchronous search (" +
                 validRequest.getWaitForCompletionTimeout().getMillis() + ") is too large"));
-        updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
+        updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey() :AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
                 TimeValue.timeValueSeconds(60));
     }
 
