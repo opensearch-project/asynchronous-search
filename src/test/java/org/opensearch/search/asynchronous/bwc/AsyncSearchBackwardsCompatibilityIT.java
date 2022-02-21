@@ -160,7 +160,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.keepAlive(TimeValue.timeValueHours(7));
         ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(
-                invalidRequest));
+                invalidRequest, isLegacy));
         assertThat(responseException.getMessage(), containsString("Keep alive for asynchronous search (" +
                 invalidRequest.getKeepAlive().getMillis() + ") is too large"));
         updateClusterSettings(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(24));
@@ -176,7 +176,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
         ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(
-                invalidRequest));
+                invalidRequest, isLegacy));
         assertThat(responseException.getMessage(), containsString("Wait for completion timeout for asynchronous search (" +
                 validRequest.getWaitForCompletionTimeout().getMillis() + ") is too large"));
         updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
@@ -254,7 +254,7 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         assertTrue(Arrays.asList(AsynchronousSearchState.CLOSED, AsynchronousSearchState.FAILED).contains(AsynchronousSearchState.FAILED));
         waitUntil(() -> {
             try {
-                executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(response.getId()));
+                executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(response.getId()), isLegacy);
                 return false;
             } catch (IOException e) {
                 return e.getMessage().contains("resource_not_found");
@@ -265,13 +265,13 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(request, isLegacy);
         waitUntil(() -> {
             try {
-                return executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId())).getState()
+                return executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()), isLegacy).getState()
                         .equals(AsynchronousSearchState.STORE_RESIDENT);
             } catch (IOException e) {
                 return false;
             }
         });
-        assertEquals(executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId())).getState(),
+        assertEquals(executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()), isLegacy).getState(),
                 AsynchronousSearchState.STORE_RESIDENT);
         updateClusterSettings(isLegacy ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey() : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
                 false);
