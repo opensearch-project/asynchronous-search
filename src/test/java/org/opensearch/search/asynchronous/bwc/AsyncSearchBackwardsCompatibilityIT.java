@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRestTestCase {
     private static final ClusterType CLUSTER_TYPE =
@@ -71,21 +72,26 @@ public class AsyncSearchBackwardsCompatibilityIT  extends AsynchronousSearchRest
             switch (CLUSTER_TYPE) {
                 case OLD:
                     Assert.assertTrue(pluginNames.contains("opendistro-asynchronous-search"));
-                    testSubmitWithRetainedResponse(true);
+                    testAsyncSearchAndSettingsApi(true);
                     break;
                 case MIXED:
-                    if(pluginNames.contains("opendistro-asynchronous-search"))
-                        testSubmitWithRetainedResponse(true);
-                    else
-                        testSubmitWithRetainedResponse(true);
-                    break;
+                    testAsyncSearchAndSettingsApi(true);
                 case UPGRADED:
                     Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
-                    testSubmitWithRetainedResponse(false);
+                    testAsyncSearchAndSettingsApi(false);
+                    testAsyncSearchAndSettingsApi(true);
                     break;
             }
             break;
         }
+    }
+
+    private void testAsyncSearchAndSettingsApi(boolean isLegacy) throws Exception {
+        testSubmitWithRetainedResponse(isLegacy);
+        testMaxKeepAliveSetting(isLegacy);
+        testSubmitInvalidWaitForCompletion(isLegacy);
+        testMaxRunningAsynchronousSearchContexts(isLegacy);
+        testStoreAsyncSearchWithFailures(isLegacy);
     }
 
     private String getUri() {
