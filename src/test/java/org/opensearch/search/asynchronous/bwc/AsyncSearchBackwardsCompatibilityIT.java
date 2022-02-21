@@ -11,7 +11,6 @@
 
 package org.opensearch.search.asynchronous.bwc;
 
-import org.junit.Assert;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
@@ -30,13 +29,16 @@ import org.opensearch.search.asynchronous.utils.RestTestUtils;
 import org.opensearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Set;
+import java.util.Map;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Arrays;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 
 public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestTestCase {
   private static final ClusterType CLUSTER_TYPE =
@@ -53,14 +55,11 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
           plugins.stream().map(map -> map.get("name")).collect(Collectors.toSet());
       switch (CLUSTER_TYPE) {
         case OLD:
-          Assert.assertTrue(pluginNames.contains("opendistro-asynchronous-search"));
           testAsyncSearchAndSettingsApi(true);
           break;
         case MIXED:
           testAsyncSearchAndSettingsApi(true);
         case UPGRADED:
-          Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
-          testSubmitWithRetainedResponse(false);
           testAsyncSearchAndSettingsApi(true);
           break;
       }

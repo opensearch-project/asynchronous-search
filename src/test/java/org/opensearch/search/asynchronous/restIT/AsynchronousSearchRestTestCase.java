@@ -46,7 +46,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 
 
 /**
@@ -87,9 +86,10 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         client().performRequest(new Request(HttpPost.METHOD_NAME, "/_refresh"));
     }
 
-    protected AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
-        return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
-    }
+  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
+    return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
+  }
 
   protected AsynchronousSearchResponse executeGetAsynchronousSearch(
       GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy)
@@ -99,10 +99,11 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
   }
 
-    protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
-            throws IOException {
-        return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
-    }
+  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
+      throws IOException {
+    return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
+  }
 
   protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
       @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean isLegacy)
