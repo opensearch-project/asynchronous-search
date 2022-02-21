@@ -53,14 +53,11 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
           plugins.stream().map(map -> map.get("name")).collect(Collectors.toSet());
       switch (CLUSTER_TYPE) {
         case OLD:
-          Assert.assertTrue(pluginNames.contains("opendistro-asynchronous-search"));
           testAsyncSearchAndSettingsApi(true);
           break;
         case MIXED:
           testAsyncSearchAndSettingsApi(true);
         case UPGRADED:
-          Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
-          testSubmitWithRetainedResponse(false);
           testAsyncSearchAndSettingsApi(true);
           break;
       }
