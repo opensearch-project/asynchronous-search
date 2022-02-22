@@ -11,8 +11,7 @@ buildscript {
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         opensearch_version = System.getProperty("opensearch.version", "1.3.0-SNAPSHOT")
         // 1.0.0 -> 1.0.0.0, and 1.0.0-SNAPSHOT -> 1.0.0.0-SNAPSHOT
-        os_as_bwc_version = System.getProperty("bwc.version", "1.13.0.1")
-        opensearch_bwc_version = "${os_as_bwc_version}"
+        opendistro_plugin_version = System.getProperty("bwc.version", "1.13.0.1")
         opensearch_build = opensearch_version.replaceAll(/(\.\d)([^\d]*)$/, '$1.0$2')
         common_utils_version = System.getProperty("common_utils.version", opensearch_build)
     }
@@ -199,7 +198,7 @@ String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/
                     return new RegularFile() {
                         @Override
                         File getAsFile() {
-                            return fileTree(bwcFilePath + os_as_bwc_version).getSingleFile()
+                            return fileTree(bwcFilePath + opendistro_plugin_version).getSingleFile()
                         }
                     }
                 }
@@ -247,7 +246,7 @@ task prepareBwcTests {
         }
         systemProperty 'tests.rest.bwcsuite_cluster', 'old_cluster'
         systemProperty 'tests.rest.bwcsuite_round', 'old'
-        systemProperty 'tests.plugin_bwc_version', os_as_bwc_version
+        systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
         nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}$i".allHttpSocketURI.join(",")}")
         nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}$i".getName()}")
     }
@@ -267,7 +266,7 @@ task "${baseName}#mixedClusterTask"(type: StandaloneRestIntegTestTask) {
     }
     systemProperty 'tests.rest.bwcsuite_cluster', 'mixed_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'first'
-    systemProperty 'tests.plugin_bwc_version', os_as_bwc_version
+    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
@@ -285,7 +284,7 @@ task "${baseName}#twoThirdsUpgradedClusterTask"(type: StandaloneRestIntegTestTas
     }
     systemProperty 'tests.rest.bwcsuite_cluster', 'mixed_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'second'
-    systemProperty 'tests.plugin_bwc_version', os_as_bwc_version
+    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
@@ -305,7 +304,7 @@ task "${baseName}#rollingUpgradeClusterTask"(type: StandaloneRestIntegTestTask) 
     mustRunAfter "${baseName}#mixedClusterTask"
     systemProperty 'tests.rest.bwcsuite_cluster', 'mixed_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'third'
-    systemProperty 'tests.plugin_bwc_version', os_as_bwc_version
+    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
@@ -323,7 +322,7 @@ task "${baseName}#fullRestartClusterTask"(type: StandaloneRestIntegTestTask) {
     }
     systemProperty 'tests.rest.bwcsuite_cluster', 'upgraded_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'fullrestart'
-    systemProperty 'tests.plugin_bwc_version', os_as_bwc_version
+    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}1".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}1".getName()}")
 }
