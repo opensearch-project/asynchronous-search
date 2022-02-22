@@ -51,10 +51,22 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest) throws IOException {
 
+        return buildHttpRequest(submitAsynchronousSearchRequest, false);
+    }
+
+    public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest
+    , boolean isLegacy) throws IOException {
+
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
-        Request request = new Request(HttpPost.METHOD_NAME,
-                /*trim first backslash*/
-                endpoint(searchRequest.indices(), AsynchronousSearchPlugin.BASE_URI.substring(1)));
+    Request request =
+        new Request(
+            HttpPost.METHOD_NAME,
+            /*trim first backslash*/
+            endpoint(
+                searchRequest.indices(),
+                isLegacy
+                    ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI.substring(1)
+                    : AsynchronousSearchPlugin.BASE_URI.substring(1)));
 
         Params params = new Params();
         addSearchRequestParams(params, searchRequest);
@@ -67,19 +79,41 @@ public class RestTestUtils {
         return request;
     }
 
+
+
+
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
-        Request request = new Request(HttpGet.METHOD_NAME,
-                AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
+        return buildHttpRequest(getAsynchronousSearchRequest, false);
+    }
+
+    public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) {
+    Request request =
+        new Request(
+            HttpGet.METHOD_NAME,
+            isLegacy
+                ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
+                    + "/"
+                    + getAsynchronousSearchRequest.getId()
+                : AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
         return request;
     }
-
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) {
-        return new Request(HttpDelete.METHOD_NAME,
-                AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+        return buildHttpRequest(deleteAsynchronousSearchRequest, false);
     }
+
+
+    public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean isLegacy) {
+    return new Request(
+        HttpDelete.METHOD_NAME,
+        isLegacy
+            ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
+                + "/"
+                + deleteAsynchronousSearchRequest.getId()
+            : AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+  }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         params.withKeepAlive(getAsynchronousSearchRequest.getKeepAlive());
