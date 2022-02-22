@@ -92,9 +92,9 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
   }
 
   protected AsynchronousSearchResponse executeGetAsynchronousSearch(
-      GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy)
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi)
       throws IOException {
-    Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, isLegacy);
+    Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, shouldUseLegacyApi);
     Response resp = client().performRequest(getRequest);
     return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
   }
@@ -106,9 +106,9 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
   }
 
   protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
-      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean isLegacy)
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
       throws IOException {
-        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, isLegacy);
+        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, shouldUseLegacyApi);
         Response resp = client().performRequest(request);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
@@ -185,10 +185,10 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
   protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
       AsynchronousSearchResponse submitResponse,
       GetAsynchronousSearchRequest getAsynchronousSearchRequest,
-      boolean isLegacy)
+      boolean shouldUseLegacyApi)
       throws IOException {
         AsynchronousSearchResponse getResponse;
-        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, isLegacy);
+        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, shouldUseLegacyApi);
         assertEquals(submitResponse.getId(), getResponse.getId());
         assertEquals(submitResponse.getStartTimeMillis(), getResponse.getStartTimeMillis());
         return getResponse;

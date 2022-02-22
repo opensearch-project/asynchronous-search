@@ -55,7 +55,7 @@ public class RestTestUtils {
     }
 
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest
-    , boolean isLegacy) throws IOException {
+    , boolean shouldUseLegacyApi) throws IOException {
 
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
     Request request =
@@ -64,7 +64,7 @@ public class RestTestUtils {
             /*trim first backslash*/
             endpoint(
                 searchRequest.indices(),
-                isLegacy
+                    shouldUseLegacyApi
                     ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI.substring(1)
                     : AsynchronousSearchPlugin.BASE_URI.substring(1)));
 
@@ -86,11 +86,11 @@ public class RestTestUtils {
         return buildHttpRequest(getAsynchronousSearchRequest, false);
     }
 
-    public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean isLegacy) {
+    public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
     Request request =
         new Request(
             HttpGet.METHOD_NAME,
-            isLegacy
+                shouldUseLegacyApi
                 ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
                     + "/"
                     + getAsynchronousSearchRequest.getId()
@@ -104,11 +104,11 @@ public class RestTestUtils {
         return buildHttpRequest(deleteAsynchronousSearchRequest, false);
     }
 
-
-    public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean isLegacy) {
+  public static Request buildHttpRequest(
+      DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
     return new Request(
         HttpDelete.METHOD_NAME,
-        isLegacy
+        shouldUseLegacyApi
             ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
                 + "/"
                 + deleteAsynchronousSearchRequest.getId()
