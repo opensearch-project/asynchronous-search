@@ -246,7 +246,6 @@ task prepareBwcTests {
         }
         systemProperty 'tests.rest.bwcsuite_cluster', 'old_cluster'
         systemProperty 'tests.rest.bwcsuite_round', 'old'
-        systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
         nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}$i".allHttpSocketURI.join(",")}")
         nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}$i".getName()}")
     }
@@ -266,7 +265,6 @@ task "${baseName}#mixedClusterTask"(type: StandaloneRestIntegTestTask) {
     }
     systemProperty 'tests.rest.bwcsuite_cluster', 'mixed_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'first'
-    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
@@ -284,7 +282,6 @@ task "${baseName}#twoThirdsUpgradedClusterTask"(type: StandaloneRestIntegTestTas
     }
     systemProperty 'tests.rest.bwcsuite_cluster', 'mixed_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'second'
-    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
@@ -304,7 +301,6 @@ task "${baseName}#rollingUpgradeClusterTask"(type: StandaloneRestIntegTestTask) 
     mustRunAfter "${baseName}#mixedClusterTask"
     systemProperty 'tests.rest.bwcsuite_cluster', 'mixed_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'third'
-    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
@@ -322,7 +318,6 @@ task "${baseName}#fullRestartClusterTask"(type: StandaloneRestIntegTestTask) {
     }
     systemProperty 'tests.rest.bwcsuite_cluster', 'upgraded_cluster'
     systemProperty 'tests.rest.bwcsuite_round', 'fullrestart'
-    systemProperty 'tests.plugin_bwc_version', opendistro_plugin_version
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}1".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}1".getName()}")
 }
