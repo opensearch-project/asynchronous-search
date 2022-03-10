@@ -11,6 +11,7 @@
 
 package org.opensearch.search.asynchronous.bwc;
 
+import org.junit.Assert;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
@@ -55,9 +56,16 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
                     plugins.stream().map(map -> map.get("name")).collect(Collectors.toSet());
             switch (CLUSTER_TYPE) {
                 case OLD:
-                case MIXED:
-                case UPGRADED:
+                    Assert.assertTrue(pluginNames.contains("opendistro-asynchronous-search"));
                     testAsyncSearchAndSettingsApi(true);
+                    break;
+                case MIXED:
+                    Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
+                    testAsyncSearchAndSettingsApi(true);
+                    break;
+                case UPGRADED:
+                    Assert.assertTrue(pluginNames.contains("opensearch-asynchronous-search"));
+                    testAsyncSearchAndSettingsApi(false);
                     break;
             }
             break;

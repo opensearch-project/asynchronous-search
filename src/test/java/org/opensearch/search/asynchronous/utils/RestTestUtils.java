@@ -79,9 +79,6 @@ public class RestTestUtils {
         return request;
     }
 
-
-
-
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         return buildHttpRequest(getAsynchronousSearchRequest, false);
     }
