@@ -72,7 +72,11 @@ The project in this package uses the [Gradle](https://docs.gradle.org/current/us
 4. `./gradlew integTest` launches a single node cluster with the asynchronous search plugin installed and runs all integ tests.
 5. `./gradlew integTest -PnumNodes=3` launches a multi-node cluster with the asynchronous search plugin installed and runs all integ tests.
 6. `./gradlew integTest -Dtests.class=*AsynchronousSearchRestIT` runs a single integ class
-7.  `./gradlew integTest -Dtests.class=*AsynchronousSearchRestIT -Dtests.method="testSubmitWithRetainedResponse"` runs a single integ test method (remember to quote the test method name if it contains spaces)
+7. `./gradlew integTest -Dtests.class=*AsynchronousSearchRestIT -Dtests.method="testSubmitWithRetainedResponse"` runs a single integ test method (remember to quote the test method name if it contains spaces)
+8. `./gradlew asynSearchCluster#mixedClusterTask -Dtests.security.manager=false` launches a cluster of three nodes of bwc version of OpenSearch with async search plugin and tests backwards compatibility by performing rolling upgrade of one node with the current version of OpenSearch with async search plugin.
+9. `./gradlew asynSearchCluster#rollingUpgradeClusterTask -Dtests.security.manager=false` launches a cluster with three nodes of bwc version of OpenSearch with async search plugin and tests backwards compatibility by performing rolling upgrade of all nodes with the current version of OpenSearch with async search plugin.
+10. `./gradlew asynSearchCluster#fullRestartClusterTask -Dtests.security.manager=false` launches a cluster with three nodes of bwc version of OpenSearch with async search plugin and tests backwards compatibility by performing a full restart on the cluster upgrading all the nodes with the current version of OpenSearch with async search plugin.
+11. `./gradlew bwcTestSuite -Dtests.security.manager=false` runs all the above bwc tests combined.
 
 When launching a cluster using one of the above commands, logs are placed in `build/testclusters/integTest-0/logs`. Though the logs are teed to the console, in practices it's best to check the actual log file.
 

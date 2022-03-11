@@ -86,15 +86,29 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         client().performRequest(new Request(HttpPost.METHOD_NAME, "/_refresh"));
     }
 
-    AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
-        Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest);
-        Response resp = client().performRequest(getRequest);
-        return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
-    }
+  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
+    return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
+  }
 
-    AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
-            throws IOException {
-        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest);
+  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+      throws IOException {
+    Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, shouldUseLegacyApi);
+    Response resp = client().performRequest(getRequest);
+    return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
+  }
+
+  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
+      throws IOException {
+    return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
+  }
+
+  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+      throws IOException {
+        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, shouldUseLegacyApi);
         Response resp = client().performRequest(request);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
@@ -165,12 +179,21 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
                                                                                GetAsynchronousSearchRequest getAsynchronousSearchRequest)
             throws IOException {
+        return getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, false);
+    }
+
+  protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
+      AsynchronousSearchResponse submitResponse,
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest,
+      boolean shouldUseLegacyApi)
+      throws IOException {
         AsynchronousSearchResponse getResponse;
-        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);
+        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, shouldUseLegacyApi);
         assertEquals(submitResponse.getId(), getResponse.getId());
         assertEquals(submitResponse.getStartTimeMillis(), getResponse.getStartTimeMillis());
         return getResponse;
     }
+
 
     protected void assertRnf(Exception e) {
         assertTrue(e instanceof ResponseException);
