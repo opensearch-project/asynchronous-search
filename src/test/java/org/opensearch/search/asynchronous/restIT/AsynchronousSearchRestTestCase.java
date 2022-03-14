@@ -54,7 +54,7 @@ import static org.hamcrest.Matchers.containsString;
 public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
-            new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
+            new SearchModule(Settings.EMPTY, Collections.emptyList()).getNamedXContents());
 
     @Before
     public void indexDocuments() throws IOException {

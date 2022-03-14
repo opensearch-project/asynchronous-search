@@ -54,9 +54,6 @@ public class AsynchronousSearchTask extends SearchTask {
         sb.append("indices[");
         Strings.arrayToDelimitedString(request.getSearchRequest().indices(), ",", sb);
         sb.append("], ");
-        sb.append("types[");
-        Strings.arrayToDelimitedString(request.getSearchRequest().types(), ",", sb);
-        sb.append("], ");
         sb.append("search_type[").append(request.getSearchRequest().searchType()).append("], ");
         sb.append("keep_on_completion[").append(request.getKeepOnCompletion()).append("], ");
         sb.append("keep_alive[").append(request.getKeepAlive()).append("], ");

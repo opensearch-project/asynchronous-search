@@ -52,7 +52,7 @@ import java.util.function.Function;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 
-@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, numDataNodes = 2, transportClientRatio = 0)
+@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, numDataNodes = 2)
 public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCase {
 
     @Override
@@ -72,7 +72,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
     @TestLogging(value = "_root:DEBUG", reason = "flaky")
     public void testSimulatedSearchRejectionLoad() throws Throwable {
         for (int i = 0; i < 10; i++) {
-            client().prepareIndex("test", "type", Integer.toString(i)).setSource("field", "1").get();
+            client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "1").get();
         }
         AtomicInteger numRejections = new AtomicInteger();
         AtomicInteger numRnf = new AtomicInteger();
@@ -172,7 +172,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
 
     public void testSearchFailures() throws Exception {
         for (int i = 0; i < 10; i++) {
-            client().prepareIndex("test", "type", Integer.toString(i)).setSource("field", "1").get();
+            client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "1").get();
         }
         int numberOfAsyncOps = randomIntBetween(100, 200);
         final CountDownLatch latch = new CountDownLatch(numberOfAsyncOps);

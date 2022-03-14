@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 
-@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, transportClientRatio = 0)
+@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
 public class AsynchronousSearchCancellationIT extends AsynchronousSearchIntegTestCase {
 
     @Override
@@ -70,7 +70,7 @@ public class AsynchronousSearchCancellationIT extends AsynchronousSearchIntegTes
             // Make sure we have a few segments
             BulkRequestBuilder bulkRequestBuilder = client().prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             for (int j = 0; j < 20; j++) {
-                bulkRequestBuilder.add(client().prepareIndex("test", "type", Integer.toString(i * 5 + j))
+                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j))
                         .setSource("field", "value"));
             }
             assertNoFailures(bulkRequestBuilder.get());
