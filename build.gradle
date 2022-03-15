@@ -193,6 +193,12 @@ task integTestRemote(type: RestIntegTestTask) {
     systemProperty "user", System.getProperty("user")
     systemProperty "password", System.getProperty("password")
 
+    if (System.getProperty("tests.rest.bwcsuite") == null) {
+        filter {
+            excludeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
+        }
+    }
+
     // Only rest case can run with remote cluster
     if (System.getProperty("tests.rest.cluster") != null) {
         filter {
