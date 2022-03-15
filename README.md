@@ -49,7 +49,7 @@ GET /_plugins/_asynchronous_search/stats
 
 1. Check out this package from version control.
 2. Launch Intellij IDEA, choose **Import Project**, and select the `settings.gradle` file in the root of this package. 
-3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 14 before running `./gradlew`.
+3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 8 before running `./gradlew`.
   - Unix System
     1. `export JAVA_HOME=jdk-install-dir`: Replace `jdk-install-dir` with the JAVA_HOME directory of your system.
     2. `export PATH=$JAVA_HOME/bin:$PATH`

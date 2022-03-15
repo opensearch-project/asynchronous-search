@@ -72,7 +72,8 @@ ext {
     noticeFile = rootProject.file('NOTICE.txt')
 }
 
-sourceCompatibility = 1.9
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 allprojects {
     group 'org.opensearch'
