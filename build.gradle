@@ -4,6 +4,7 @@
  */
 import java.util.concurrent.Callable
 import org.opensearch.gradle.testclusters.StandaloneRestIntegTestTask
+import org.opensearch.gradle.test.RestIntegTestTask
 buildscript {
     ext {
         distribution = 'oss-zip'
@@ -177,6 +178,31 @@ integTest {
     if (System.getProperty("tests.rest.bwcsuite") == null) {
         filter {
             excludeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
+        }
+    }
+}
+
+
+task integTestRemote(type: RestIntegTestTask) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    systemProperty 'tests.security.manager', 'false'
+    systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
+
+    systemProperty "https", System.getProperty("https")
+    systemProperty "user", System.getProperty("user")
+    systemProperty "password", System.getProperty("password")
+
+    if (System.getProperty("tests.rest.bwcsuite") == null) {
+        filter {
+            excludeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
+        }
+    }
+
+    // Only rest case can run with remote cluster
+    if (System.getProperty("tests.rest.cluster") != null) {
+        filter {
+            includeTestsMatching "org.opensearch.search.asynchronous.rest*"
         }
     }
 }
