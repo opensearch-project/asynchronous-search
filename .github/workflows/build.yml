@@ -15,6 +15,7 @@ jobs:
         java:
           - 11
           - 14
+          - 17
     # Job name
     name: Build Asynchronous Search
     # This job runs on Linux.
