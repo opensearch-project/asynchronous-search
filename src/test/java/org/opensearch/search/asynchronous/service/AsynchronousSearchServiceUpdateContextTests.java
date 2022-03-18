@@ -576,11 +576,11 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
                 ShardId shardId = new ShardId(new Index(ASYNC_SEARCH_RESPONSE_INDEX,
                         UUID.randomUUID().toString()), 1);
                 if (docNotFound) {
-                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testType", "testId", 1L, 1L, 1L,
+                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L,
                             DocWriteResponse.Result.NOT_FOUND);
                     listener.onResponse((Response) updateResponse);
                 } else {
-                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testType", "testId", 1L, 1L, 1L,
+                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L,
                             DocWriteResponse.Result.UPDATED);
                     try {
                         Map<String, Object> sourceMap = new HashMap<>();
@@ -590,7 +590,7 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
                         builder.map(sourceMap);
                         BytesReference source = BytesReference.bytes(builder);
                         updateResponse.setGetResult(new GetResult(ASYNC_SEARCH_RESPONSE_INDEX,
-                                "testType", "testId", 1L, 1L, 1L,
+                                "testId", 1L, 1L, 1L,
                                 true, source, emptyMap(), null));
                         listener.onResponse((Response) updateResponse);
                     } catch (IOException e) {

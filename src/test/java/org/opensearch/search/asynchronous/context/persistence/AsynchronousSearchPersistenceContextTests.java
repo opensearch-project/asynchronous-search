@@ -46,7 +46,7 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
         long startTimeMillis = randomNonNegativeLong();
         SearchResponse searchResponse = getMockSearchResponse();
         User user = TestClientUtils.randomUserOrNull();
-        SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
+        SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
         AsynchronousSearchPersistenceContext asPersistenceContext =
                 new AsynchronousSearchPersistenceContext(id, asContextId, new AsynchronousSearchPersistenceModel(startTimeMillis,
                         expirationTimeMillis, searchResponse, null, user), System::currentTimeMillis,
@@ -77,7 +77,7 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
         SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
                 new ShardSearchFailure[] {shardSearchFailure});
         User user = TestClientUtils.randomUser();
-        SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
+        SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
         AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(id, asContextId,
                 new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user),
                 System::currentTimeMillis,

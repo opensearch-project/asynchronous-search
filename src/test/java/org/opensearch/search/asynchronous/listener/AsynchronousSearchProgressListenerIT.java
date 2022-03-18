@@ -50,14 +50,14 @@ public class AsynchronousSearchProgressListenerIT extends OpenSearchSingleNodeTe
 
     public void testEmptyQueryString() throws InterruptedException {
         createIndex("test");
-        client().prepareIndex("test", "type1", "1").setSource("field1", "the quick brown fox jumps");
+        client().prepareIndex("test").setId("1").setSource("field1", "the quick brown fox jumps");
         SearchRequest searchRequest = new SearchRequest("test").source(new SearchSourceBuilder().query(queryStringQuery("quick")));
         testCase((NodeClient) client(), searchRequest);
     }
 
     public void testEmptyQueryStringNoDocs() throws InterruptedException {
         createIndex("test");
-        client().prepareIndex("test", "type1", "1").setSource("field1", "the quick brown fox jumps");
+        client().prepareIndex("test").setId("1").setSource("field1", "the quick brown fox jumps");
         SearchRequest searchRequest = new SearchRequest("test").source(new SearchSourceBuilder().query(queryStringQuery("")));
         testCase((NodeClient) client(), searchRequest);
     }
@@ -182,7 +182,7 @@ public class AsynchronousSearchProgressListenerIT extends OpenSearchSingleNodeTe
         for (int i = 0; i < numIndices; i++) {
             String indexName = String.format(Locale.ROOT, "index-%03d" , i);
             assertAcked(client.admin().indices().prepareCreate(indexName).get());
-            client.prepareIndex(indexName, "doc", Integer.toString(i)).setSource("number", i, "foo", "bar").get();
+            client.prepareIndex(indexName).setId(Integer.toString(i)).setSource("number", i, "foo", "bar").get();
         }
         client.admin().indices().prepareRefresh("index-*").get();
         ClusterSearchShardsResponse resp = client.admin().cluster().prepareSearchShards("index-*").get();

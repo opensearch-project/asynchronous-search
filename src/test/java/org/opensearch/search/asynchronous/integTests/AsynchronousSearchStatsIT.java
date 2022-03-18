@@ -59,10 +59,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testNodewiseStats() throws InterruptedException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                         .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest(index));
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
         submitAsynchronousSearchRequest.keepOnCompletion(true);
@@ -112,10 +112,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             threadPool = new TestThreadPool(AsynchronousSearchStatsIT.class.getName());
             String index = "idx";
             createIndex(index);
-            indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+            indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                             .setSource("field1", "the quick brown fox jumps"),
-                    client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                    client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                    client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                    client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
             List<DiscoveryNode> dataNodes = new LinkedList<>();
             clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
@@ -197,10 +197,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testRunningAsynchronousSearchCountStat() throws InterruptedException, ExecutionException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                         .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         SearchRequest searchRequest = client().prepareSearch(index).setQuery(
@@ -237,10 +237,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testThrottledAsynchronousSearchCount() throws InterruptedException, ExecutionException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                         .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
         List<DiscoveryNode> dataNodes = new LinkedList<>();
         clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {

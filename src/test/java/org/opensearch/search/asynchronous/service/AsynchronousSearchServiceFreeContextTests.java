@@ -85,7 +85,7 @@ import static java.util.Collections.emptyMap;
 import static org.opensearch.action.ActionListener.wrap;
 import static org.opensearch.common.unit.TimeValue.timeValueDays;
 import static org.opensearch.common.unit.TimeValue.timeValueHours;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME;
@@ -613,7 +613,7 @@ public class AsynchronousSearchServiceFreeContextTests extends OpenSearchTestCas
                 deleteCount++;
                 ShardId shardId = new ShardId(new Index(AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX,
                         UUID.randomUUID().toString()), 1);
-                UpdateResponse updateResponse = new UpdateResponse(shardId, "testType", "testId", 1L, 1L, 1L,
+                UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L,
                         persisted ? (userMatches ? DocWriteResponse.Result.DELETED : DocWriteResponse.Result.NOOP)
                                 : DocWriteResponse.Result.NOT_FOUND);
                 listener.onResponse((Response) updateResponse);
@@ -622,7 +622,7 @@ public class AsynchronousSearchServiceFreeContextTests extends OpenSearchTestCas
                 deleteCount++;
                 ShardId shardId = new ShardId(new Index(AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX,
                         UUID.randomUUID().toString()), 1);
-                DeleteResponse deleteResponse = new DeleteResponse(shardId, "testType", "testId",
+                DeleteResponse deleteResponse = new DeleteResponse(shardId, "testId",
                         1L, 1L, 1L, persisted);
                 listener.onResponse((Response) deleteResponse);
             } else if (action instanceof CancelTasksAction) {
