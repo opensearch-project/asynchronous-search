@@ -58,11 +58,6 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
     }
 
     @Override
-    protected double getPerTestTransportClientRatio() {
-        return 0;
-    }
-
-    @Override
     protected int maximumNumberOfReplicas() {
         return Math.min(2, cluster().numDataNodes() - 1);
     }

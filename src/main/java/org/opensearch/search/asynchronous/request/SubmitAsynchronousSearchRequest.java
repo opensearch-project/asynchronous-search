@@ -174,10 +174,6 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
                 sb.append("indices[");
                 Strings.arrayToDelimitedString(searchRequest.indices(), ",", sb);
                 sb.append("], ");
-                sb.append("types[");
-                Strings.arrayToDelimitedString(searchRequest.types(), ",", sb);
-                sb.append("], ");
-                sb.append("search_type[").append(searchRequest.types()).append("], ");
                 if (searchRequest.source() != null) {
                     sb.append("source[").append(searchRequest.source().toString(SearchRequest.FORMAT_PARAMS)).append("]");
                 } else {

@@ -28,8 +28,8 @@ public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
         ValidationException validationException = request.validate();
         assertNull(validationException);
         assertEquals(request, new SubmitAsynchronousSearchRequest(searchRequest));
-        String description = request.createTask(randomNonNegativeLong(), "type", SubmitAsynchronousSearchAction.NAME,
-                new TaskId("test", -1), new HashMap<>()).getDescription();
+        String description = request.createTask(randomNonNegativeLong(), "taskType", SubmitAsynchronousSearchAction.NAME,
+            new TaskId("test", -1), new HashMap<>()).getDescription();
         assertThat(description, containsString("indices[test]"));
     }
 

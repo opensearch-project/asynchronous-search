@@ -45,7 +45,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.equalTo;
 
-@OpenSearchIntegTestCase.ClusterScope(transportClientRatio = 0)
+@OpenSearchIntegTestCase.ClusterScope
 public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase {
 
     private int aggregationSize = randomIntBetween(2, 4);
@@ -90,7 +90,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
     protected List<IndexRequestBuilder> indexDoc(String shard, String key, int times) throws Exception {
         IndexRequestBuilder[] builders = new IndexRequestBuilder[times];
         for (int i = 0; i < times; i++) {
-            builders[i] = client().prepareIndex("idx", "type").setRouting(shard).setSource(jsonBuilder()
+            builders[i] = client().prepareIndex("idx").setRouting(shard).setSource(jsonBuilder()
                     .startObject()
                     .field("key", key)
                     .field("value", 1)
