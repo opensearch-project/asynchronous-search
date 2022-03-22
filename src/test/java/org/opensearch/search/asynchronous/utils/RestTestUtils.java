@@ -257,8 +257,8 @@ public class RestTestUtils {
             return this;
         }
 
-        Params withMasterTimeout(TimeValue masterTimeout) {
-            return putParam("master_timeout", masterTimeout);
+        Params withClusterManagerTimeout(TimeValue clusterManagerTimeout) {
+            return putParam("cluster_manager_timeout", clusterManagerTimeout);
         }
 
         Params withPipeline(String pipeline) {
