@@ -54,7 +54,8 @@ import java.util.stream.Stream;
 
 /**
  * The service takes care of cancelling ongoing searches which have been running past their expiration time and
- * cleaning up asynchronous search responses from disk by scheduling delete-by-query on master to be delegated to the least loaded node
+ * cleaning up asynchronous search responses from disk by scheduling delete-by-query on cluster_manager to be
+ * delegated to the least loaded node
  */
 public class AsynchronousSearchManagementService extends AbstractLifecycleComponent implements ClusterStateListener {
 
@@ -128,8 +129,8 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
     @Override
     public void clusterChanged(ClusterChangedEvent event) {
         if (event.localNodeMaster() && persistedResponseCleanUpRunnable.get() == null) {
-            logger.trace("elected as master, triggering response cleanup tasks");
-            triggerCleanUp(event.state(), "became master");
+            logger.trace("elected as cluster_manager, triggering response cleanup tasks");
+            triggerCleanUp(event.state(), "became cluster_manager");
 
             final PersistedResponseCleanUpAndRescheduleRunnable newRunnable = new PersistedResponseCleanUpAndRescheduleRunnable();
             persistedResponseCleanUpRunnable.set(newRunnable);
@@ -274,7 +275,7 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             if (this == persistedResponseCleanUpRunnable.get()) {
                 super.doRun();
             } else {
-                logger.trace("master changed, scheduled cleanup job is stale");
+                logger.trace("cluster_manager changed, scheduled cleanup job is stale");
             }
         }
 

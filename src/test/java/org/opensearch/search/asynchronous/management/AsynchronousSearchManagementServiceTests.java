@@ -151,10 +151,10 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
     }
 
     // Create a basic cluster state with a given set of indices
-    private static ClusterState createState(final int numNodes, final boolean isLocalMaster, final List<Index> indices) {
+    private static ClusterState createState(final int numNodes, final boolean isLocalClusterManager, final List<Index> indices) {
         final Metadata metadata = createMetadata(indices);
         return ClusterState.builder(TEST_CLUSTER_NAME)
-                .nodes(createDiscoveryNodes(numNodes, isLocalMaster))
+                .nodes(createDiscoveryNodes(numNodes, isLocalClusterManager))
                 .metadata(metadata)
                 .routingTable(createRoutingTable(1, metadata))
                 .build();
@@ -204,13 +204,15 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
     }
 
     // Create the discovery nodes for a cluster state.  For our testing purposes, we want
-    // the first to be master, the second to be master eligible, the third to be a data node,
-    // and the remainder can be any kinds of nodes (master eligible, data, or both).
-    private static DiscoveryNodes createDiscoveryNodes(final int numNodes, final boolean isLocalMaster) {
+    // the first to be cluster_manager, the second to be cluster_manager eligible, the third to be a data node,
+    // and the remainder can be any kinds of nodes (cluster_manager eligible, data, or both).
+    private static DiscoveryNodes createDiscoveryNodes(final int numNodes, final boolean isLocalClusterManager) {
         assert (numNodes >= 3) : "the initial cluster state for event change tests should have a minimum of 3 nodes " +
-                "so there are a minimum of 2 master nodes for testing master change events.";
+                "so there are a minimum of 2 cluster_manager nodes for testing cluster_manager change events.";
         final DiscoveryNodes.Builder builder = DiscoveryNodes.builder();
-        final int masterNodeIndex = isLocalMaster ? 0 : randomIntBetween(1, numNodes - 1); // randomly assign the local node if not master
+
+        // randomly assign the local node if not cluster_manager
+        final int clusterManagerNodeIndex = isLocalClusterManager ? 0 : randomIntBetween(1, numNodes - 1);
         for (int i = 0; i < numNodes; i++) {
             final String nodeId = NODE_ID_PREFIX + i;
             Set<DiscoveryNodeRole> roles = new HashSet<>();
@@ -219,13 +221,13 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
                 builder.localNodeId(nodeId);
                 roles.add(DiscoveryNodeRole.MASTER_ROLE);
             } else if (i == 1) {
-                // the alternate master node
+                // the alternate cluster_manager node
                 roles.add(DiscoveryNodeRole.MASTER_ROLE);
             } else if (i == 2) {
                 // we need at least one data node
                 roles.add(DiscoveryNodeRole.DATA_ROLE);
             } else {
-                // remaining nodes can be anything (except for master)
+                // remaining nodes can be anything (except for cluster_manager)
                 if (randomBoolean()) {
                     roles.add(DiscoveryNodeRole.MASTER_ROLE);
                 }
@@ -235,7 +237,7 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
             }
             final DiscoveryNode node = newNode(nodeId, roles);
             builder.add(node);
-            if (i == masterNodeIndex) {
+            if (i == clusterManagerNodeIndex) {
                 builder.masterNodeId(nodeId);
             }
         }
