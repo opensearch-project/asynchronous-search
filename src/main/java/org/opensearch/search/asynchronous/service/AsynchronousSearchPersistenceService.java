@@ -67,7 +67,6 @@ public class AsynchronousSearchPersistenceService {
 
     private static final Logger logger = LogManager.getLogger(AsynchronousSearchPersistenceService.class);
     public static final String ASYNC_SEARCH_RESPONSE_INDEX = ".opendistro-asynchronous-search-response";
-    private static final String MAPPING_TYPE = "_doc";
     /**
      * The backoff policy to use when saving a asynchronous search response fails. The total wait
      * time is 600000 milliseconds, ten minutes.
@@ -327,7 +326,7 @@ public class AsynchronousSearchPersistenceService {
 
     private void createIndexAndDoStoreResult(String id, AsynchronousSearchPersistenceModel persistenceModel,
                                              ActionListener<IndexResponse> listener) {
-        client.admin().indices().prepareCreate(ASYNC_SEARCH_RESPONSE_INDEX).addMapping(MAPPING_TYPE, mapping())
+        client.admin().indices().prepareCreate(ASYNC_SEARCH_RESPONSE_INDEX).setMapping(mapping())
                 .setSettings(indexSettings()).execute(ActionListener.wrap(createIndexResponse -> doStoreResult(id, persistenceModel,
                 listener), exception -> {
             if (ExceptionsHelper.unwrapCause(exception) instanceof ResourceAlreadyExistsException) {

@@ -63,7 +63,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
 
     protected void createIdx(String keyFieldMapping) {
         assertAcked(prepareCreate("idx")
-                .addMapping("type", "key", keyFieldMapping));
+                .setMapping("key", keyFieldMapping));
     }
 
     protected void indexData() throws Exception {

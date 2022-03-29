@@ -48,7 +48,7 @@ public class AsynchronousSearchRequestRoutingIT extends AsynchronousSearchIntegT
     public void testRequestForwardingToCoordinatorNodeForPersistedAsynchronousSearch() throws Exception {
         String idx = "idx";
         assertAcked(prepareCreate(idx)
-                .addMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
         indexRandom(true,
                 client().prepareIndex(idx).setId("1").setSource(
@@ -98,7 +98,7 @@ public class AsynchronousSearchRequestRoutingIT extends AsynchronousSearchIntegT
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         String index = "idx";
         assertAcked(prepareCreate(index)
-                .addMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
 
         indexRandom(true,
