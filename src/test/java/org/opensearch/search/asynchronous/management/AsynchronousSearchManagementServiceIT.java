@@ -124,7 +124,7 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
     public void testDeletesExpiredAsynchronousSearchResponseFromPersistedStore() throws Exception {
         String idx = "idx";
         assertAcked(prepareCreate(idx)
-                .addMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("type", "ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
         indexRandom(true,
                 client().prepareIndex(idx).setId("1").setSource(

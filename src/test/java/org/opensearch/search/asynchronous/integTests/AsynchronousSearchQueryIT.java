@@ -11,12 +11,12 @@
 
 package org.opensearch.search.asynchronous.integTests;
 
+import org.apache.lucene.tests.analysis.MockTokenizer;
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.TestClientUtils;
-import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.pattern.PatternReplaceCharFilter;
 import org.opensearch.action.admin.indices.refresh.RefreshRequest;
 import org.opensearch.action.search.SearchRequest;
@@ -120,14 +120,14 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
         // statement
         assertAcked(prepareCreate("test")
                 .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .addMapping(
+                .setMapping(
                         "book", "author", "type=keyword", "name", "type=text", "genre",
                         "type=keyword", "price", "type=float"));
         createIndex("idx_unmapped");
         // idx_unmapped_author is same as main index but missing author field
         assertAcked(prepareCreate("idx_unmapped_author")
                 .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .addMapping("book", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
+                .setMapping("book", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
 
         ensureGreen();
         String data[] = {
@@ -184,7 +184,7 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     public void testIpRangeQuery() throws InterruptedException {
         assertAcked(prepareCreate("idx")
-                .addMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("type", "ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
 
         indexRandom(true,
@@ -245,7 +245,7 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
                 .endObject().endObject();
         mappings.endObject();
         assertAcked(prepareCreate("test1")
-                .addMapping("type", mappings));
+                .setMapping(mappings));
         client().prepareIndex("test1").setId("1")
                 .setSource(jsonBuilder().startObject().field("text", "foo").endObject())
                 .get();
