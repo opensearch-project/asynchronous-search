@@ -12,14 +12,17 @@ buildscript {
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         opensearch_version = System.getProperty("opensearch.version", "2.0.0-alpha1-SNAPSHOT")
         opendistro_plugin_version = System.getProperty("bwc.version", "1.13.0.1")
+        buildVersionQualifier = System.getProperty("build.version_qualifier")
         // 2.0.0-alpha1-SNAPSHOT -> 2.0.0.0-alpha1-SNAPSHOT
         version_tokens = opensearch_version.tokenize('-')
         opensearch_build = version_tokens[0] + '.0'
-        for (int j = 1; j < version_tokens.size(); j++) {
-            opensearch_build = opensearch_build + '-' + version_tokens[j]
+        if (buildVersionQualifier) {
+            opensearch_build += "-${buildVersionQualifier}"
+        }
+        if (isSnapshot) {
+            opensearch_build += "-SNAPSHOT"
         }
         common_utils_version = System.getProperty("common_utils.version", opensearch_build)
-        buildVersionQualifier = System.getProperty("build.version_qualifier")
     }
 
     repositories {
