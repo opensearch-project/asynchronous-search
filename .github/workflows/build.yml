@@ -36,9 +36,11 @@ jobs:
           version=`./gradlew properties -q | grep "opensearch_version:" | awk '{print $2}'`
           IFS='-' read -r -a version_array <<< "$version"
           plugin_version="${version_array[0]}.0"; for entry in ${version_array[@]:1}; do plugin_version+="-$entry"; done
+          docker_version="${version_array[0]}-${version_array[1]}"
 
           echo version $version
           echo plugin_version $plugin_version
+          echo docker_version $docker_version
 
           pwd=`pwd`
           echo $pwd
@@ -49,9 +51,9 @@ jobs:
           echo "listing distributions"
           echo $list_of_all_files
 
-          if docker pull opensearchstaging/opensearch:$version
+          if docker pull opensearchstaging/opensearch:$docker_version
           then
-            echo "FROM docker.opensearch.org/opensearch:$version" >> Dockerfile
+            echo "FROM docker.opensearch.org/opensearch:$docker_version" >> Dockerfile
             echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-asynchronous-search ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
             echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version.zip /tmp/" >> Dockerfile
             echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version.zip" >> Dockerfile
