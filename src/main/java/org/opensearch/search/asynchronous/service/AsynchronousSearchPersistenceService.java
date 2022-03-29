@@ -392,7 +392,7 @@ public class AsynchronousSearchPersistenceService {
     private XContentBuilder mapping() {
         try {
             XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
-            builder
+            builder.startObject()
                     .startObject("properties")
                     .startObject(START_TIME_MILLIS)
                     .field("type", "date")
@@ -407,6 +407,7 @@ public class AsynchronousSearchPersistenceService {
                     .endObject()
                     .startObject(ERROR)
                     .field("type", "binary")
+                    .endObject()
                     .endObject()
                     .endObject();
             return builder;

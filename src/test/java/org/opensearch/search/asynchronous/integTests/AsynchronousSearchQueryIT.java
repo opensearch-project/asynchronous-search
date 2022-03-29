@@ -121,13 +121,12 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
         assertAcked(prepareCreate("test")
                 .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
                 .setMapping(
-                        "book", "author", "type=keyword", "name", "type=text", "genre",
-                        "type=keyword", "price", "type=float"));
+                        "author", "type=keyword", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
         createIndex("idx_unmapped");
         // idx_unmapped_author is same as main index but missing author field
         assertAcked(prepareCreate("idx_unmapped_author")
                 .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .setMapping("book", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
+                .setMapping("name", "type=text", "genre", "type=keyword", "price", "type=float"));
 
         ensureGreen();
         String data[] = {
@@ -184,7 +183,7 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     public void testIpRangeQuery() throws InterruptedException {
         assertAcked(prepareCreate("idx")
-                .setMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
 
         indexRandom(true,
@@ -235,15 +234,13 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     public void testHighlighterQuery() throws IOException, InterruptedException {
         XContentBuilder mappings = jsonBuilder();
-        mappings.startObject();
-        mappings.startObject("type")
+        mappings.startObject()
                 .startObject("properties")
                 .startObject("text")
                 .field("type", "keyword")
                 .field("store", true)
                 .endObject()
                 .endObject().endObject();
-        mappings.endObject();
         assertAcked(prepareCreate("test1")
                 .setMapping(mappings));
         client().prepareIndex("test1").setId("1")
