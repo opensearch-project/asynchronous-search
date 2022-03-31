@@ -53,7 +53,7 @@ jobs:
 
           if docker pull opensearchstaging/opensearch:$docker_version
           then
-            echo "FROM docker.opensearch.org/opensearch:$docker_version" >> Dockerfile
+            echo "FROM opensearchstaging/opensearch:$docker_version" >> Dockerfile
             echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-asynchronous-search ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
             echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version.zip /tmp/" >> Dockerfile
             echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version.zip" >> Dockerfile
