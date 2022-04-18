@@ -30,44 +30,43 @@ jobs:
         uses: actions/checkout@v2
       - name: Build with Gradle
         run: ./gradlew build
-      # Uncomment this once docker image is available which will result in successful CIs.
-#      - name: Pull and Run Docker for security tests
-#        run: |
-#          version=`./gradlew properties -q | grep "opensearch_version:" | awk '{print $2}'`
-#          IFS='-' read -r -a version_array <<< "$version"
-#          plugin_version="${version_array[0]}.0"; for entry in ${version_array[@]:1}; do plugin_version+="-$entry"; done
-#          docker_version="${version_array[0]}-${version_array[1]}"
-#
-#          echo version $version
-#          echo plugin_version $plugin_version
-#          echo docker_version $docker_version
-#
-#          pwd=`pwd`
-#          echo $pwd
-#          cd ..
-#          pwd1=`pwd`
-#          echo $pwd1
-#          list_of_all_files=`ls asynchronous-search/build/distributions/`
-#          echo "listing distributions"
-#          echo $list_of_all_files
-#
-#          if docker pull opensearchstaging/opensearch:$docker_version
-#          then
-#            echo "FROM opensearchstaging/opensearch:$docker_version" >> Dockerfile
-#            echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-asynchronous-search ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
-#            echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version.zip /tmp/" >> Dockerfile
-#            echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version.zip" >> Dockerfile
-#            docker build -t opensearch-asynchronous-search:test .
-#            echo "imagePresent=true" >> $GITHUB_ENV
-#          else
-#            echo "imagePresent=false" >> $GITHUB_ENV
-#          fi
-#      - name: Run Docker Image
-#        if: env.imagePresent == 'true'
-#        run: |
-#          cd ..
-#          docker run -p 9200:9200 -d -p 9600:9600 -e "discovery.type=single-node" opensearch-asynchronous-search:test
-#          sleep 90
+      - name: Pull and Run Docker for security tests
+        run: |
+          version=`./gradlew properties -q | grep "opensearch_version:" | awk '{print $2}'`
+          IFS='-' read -r -a version_array <<< "$version"
+          plugin_version="${version_array[0]}.0"; for entry in ${version_array[@]:1}; do plugin_version+="-$entry"; done
+          docker_version="${version_array[0]}-${version_array[1]}"
+
+          echo version $version
+          echo plugin_version $plugin_version
+          echo docker_version $docker_version
+
+          pwd=`pwd`
+          echo $pwd
+          cd ..
+          pwd1=`pwd`
+          echo $pwd1
+          list_of_all_files=`ls asynchronous-search/build/distributions/`
+          echo "listing distributions"
+          echo $list_of_all_files
+
+          if docker pull opensearchstaging/opensearch:$docker_version
+          then
+            echo "FROM opensearchstaging/opensearch:$docker_version" >> Dockerfile
+            echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-asynchronous-search ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
+            echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version.zip /tmp/" >> Dockerfile
+            echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version.zip" >> Dockerfile
+            docker build -t opensearch-asynchronous-search:test .
+            echo "imagePresent=true" >> $GITHUB_ENV
+          else
+            echo "imagePresent=false" >> $GITHUB_ENV
+          fi
+      - name: Run Docker Image
+        if: env.imagePresent == 'true'
+        run: |
+          cd ..
+          docker run -p 9200:9200 -d -p 9600:9600 -e "discovery.type=single-node" opensearch-asynchronous-search:test
+          sleep 90
       - name: Run Asynchronous Search Test
         if: env.imagePresent == 'true'
         run: |
