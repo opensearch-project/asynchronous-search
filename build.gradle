@@ -212,9 +212,19 @@ task integTestRemote(type: RestIntegTestTask) {
     }
 }
 
-String baseName = "asynSearchCluster"
-String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
+ext.getPluginResource = { download_to_folder, download_from_src ->
+    project.mkdir download_to_folder
+    ant.get(src: download_from_src,
+            dest: download_to_folder,
+            httpusecaches: false)
+    return fileTree(download_to_folder).getSingleFile()
+}
 
+String baseName = "asynSearchCluster"
+String bwcVersion = "1.13.0.1"
+String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
+String bwcRemoteFile = "https://d3g5vo6xdbdb9a.cloudfront.net/downloads/elasticsearch-plugins/opendistro-asynchronous-search/opendistro-asynchronous-search-1.13.0.1.zip"
+getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
 // Creates two test clusters of previous version and loads opensearch plugin of bwcVersion
 2.times { i ->
     testClusters {
