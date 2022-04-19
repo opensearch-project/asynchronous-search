@@ -1,26 +1,6 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
  */
 
 package org.opensearch.search.asynchronous.integTests;
@@ -72,7 +52,7 @@ import java.util.function.Function;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 
-@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, numDataNodes = 2, transportClientRatio = 0)
+@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, numDataNodes = 2)
 public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCase {
 
     @Override
@@ -92,7 +72,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
     @TestLogging(value = "_root:DEBUG", reason = "flaky")
     public void testSimulatedSearchRejectionLoad() throws Throwable {
         for (int i = 0; i < 10; i++) {
-            client().prepareIndex("test", "type", Integer.toString(i)).setSource("field", "1").get();
+            client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "1").get();
         }
         AtomicInteger numRejections = new AtomicInteger();
         AtomicInteger numRnf = new AtomicInteger();
@@ -192,7 +172,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
 
     public void testSearchFailures() throws Exception {
         for (int i = 0; i < 10; i++) {
-            client().prepareIndex("test", "type", Integer.toString(i)).setSource("field", "1").get();
+            client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "1").get();
         }
         int numberOfAsyncOps = randomIntBetween(100, 200);
         final CountDownLatch latch = new CountDownLatch(numberOfAsyncOps);

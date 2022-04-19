@@ -1,27 +1,8 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
  */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
- */
+
 package org.opensearch.search.asynchronous.utils;
 
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
@@ -70,10 +51,22 @@ public class RestTestUtils {
 
     public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest) throws IOException {
 
+        return buildHttpRequest(submitAsynchronousSearchRequest, false);
+    }
+
+    public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest
+    , boolean shouldUseLegacyApi) throws IOException {
+
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
-        Request request = new Request(HttpPost.METHOD_NAME,
-                /*trim first backslash*/
-                endpoint(searchRequest.indices(), AsynchronousSearchPlugin.BASE_URI.substring(1)));
+    Request request =
+        new Request(
+            HttpPost.METHOD_NAME,
+            /*trim first backslash*/
+            endpoint(
+                searchRequest.indices(),
+                    shouldUseLegacyApi
+                    ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI.substring(1)
+                    : AsynchronousSearchPlugin.BASE_URI.substring(1)));
 
         Params params = new Params();
         addSearchRequestParams(params, searchRequest);
@@ -87,18 +80,37 @@ public class RestTestUtils {
     }
 
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
-        Request request = new Request(HttpGet.METHOD_NAME,
-                AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
+        return buildHttpRequest(getAsynchronousSearchRequest, false);
+    }
+
+    public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
+    Request request =
+        new Request(
+            HttpGet.METHOD_NAME,
+                shouldUseLegacyApi
+                ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
+                    + "/"
+                    + getAsynchronousSearchRequest.getId()
+                : AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
         return request;
     }
-
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) {
-        return new Request(HttpDelete.METHOD_NAME,
-                AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+        return buildHttpRequest(deleteAsynchronousSearchRequest, false);
     }
+
+  public static Request buildHttpRequest(
+      DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
+    return new Request(
+        HttpDelete.METHOD_NAME,
+        shouldUseLegacyApi
+            ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
+                + "/"
+                + deleteAsynchronousSearchRequest.getId()
+            : AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
+  }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         params.withKeepAlive(getAsynchronousSearchRequest.getKeepAlive());
@@ -245,8 +257,8 @@ public class RestTestUtils {
             return this;
         }
 
-        Params withMasterTimeout(TimeValue masterTimeout) {
-            return putParam("master_timeout", masterTimeout);
+        Params withClusterManagerTimeout(TimeValue clusterManagerTimeout) {
+            return putParam("cluster_manager_timeout", clusterManagerTimeout);
         }
 
         Params withPipeline(String pipeline) {

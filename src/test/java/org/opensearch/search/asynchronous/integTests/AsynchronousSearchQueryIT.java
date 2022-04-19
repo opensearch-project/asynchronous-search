@@ -8,35 +8,19 @@
  * Modifications Copyright OpenSearch Contributors. See
  * GitHub history for details.
  */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
- */
 
 package org.opensearch.search.asynchronous.integTests;
 
+import org.apache.lucene.tests.analysis.MockTokenizer;
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.TestClientUtils;
-import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.pattern.PatternReplaceCharFilter;
-import org.apache.lucene.util.LuceneTestCase;
 import org.opensearch.action.admin.indices.refresh.RefreshRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.action.search.SearchType;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.regex.Regex;
 import org.opensearch.common.settings.Settings;
@@ -89,8 +73,6 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
  * The intent of these tests is to verify that various elements of a SearchResponse, including aggregations, hits, highlighters, are
  * serialized and deserialized successfully
  */
-@LuceneTestCase.SuppressCodecs("*")
-@OpenSearchIntegTestCase.ClusterScope(transportClientRatio = 0)// requires custom completion format
 public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     public static final int NUM_SHARDS = 2;
@@ -99,11 +81,6 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Arrays.asList(InternalSettingsPlugin.class, MockAnalysisPlugin.class, AsynchronousSearchPlugin.class);
-    }
-
-    @Override
-    protected Collection<Class<? extends Plugin>> transportClientPlugins() {
         return Arrays.asList(InternalSettingsPlugin.class, MockAnalysisPlugin.class, AsynchronousSearchPlugin.class);
     }
 
@@ -125,9 +102,9 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
     public void testEmptyQueryString() throws ExecutionException, InterruptedException, IOException {
         String index = UUID.randomUUID().toString();
         createIndex(index);
-        indexRandom(true, client().prepareIndex(index, "type1", "1").setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+        indexRandom(true, client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
         SearchRequest searchRequest = new SearchRequest(index);
         searchRequest.source(new SearchSourceBuilder());
         searchRequest.source().query(queryStringQuery("quick"));
@@ -143,14 +120,13 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
         // statement
         assertAcked(prepareCreate("test")
                 .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .addMapping(
-                        "book", "author", "type=keyword", "name", "type=text", "genre",
-                        "type=keyword", "price", "type=float"));
+                .setMapping(
+                        "author", "type=keyword", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
         createIndex("idx_unmapped");
         // idx_unmapped_author is same as main index but missing author field
         assertAcked(prepareCreate("idx_unmapped_author")
                 .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .addMapping("book", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
+                .setMapping("name", "type=text", "genre", "type=keyword", "price", "type=float"));
 
         ensureGreen();
         String data[] = {
@@ -170,15 +146,14 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
         for (int i = 0; i < data.length; i++) {
             String[] parts = data[i].split(",");
-            client().prepareIndex("test", "book", "" + i)
+            client().prepareIndex("test").setId("" + i)
                     .setSource("author", parts[5], "name", parts[2], "genre", parts[8], "price", Float.parseFloat(parts[3])).get();
-            client().prepareIndex("idx_unmapped_author", "book", "" + i)
+            client().prepareIndex("idx_unmapped_author").setId("" + i)
                     .setSource("name", parts[2], "genre", parts[8], "price", Float.parseFloat(parts[3])).get();
         }
         client().admin().indices().refresh(new RefreshRequest("test")).get();
         boolean asc = randomBoolean();
         SearchRequest searchRequest = new SearchRequest("test");
-        searchRequest.types("book").searchType(SearchType.QUERY_THEN_FETCH);
         searchRequest.source(new SearchSourceBuilder());
         searchRequest.source().aggregation(terms("genres")
                 .field("genre")
@@ -208,17 +183,17 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     public void testIpRangeQuery() throws InterruptedException {
         assertAcked(prepareCreate("idx")
-                .addMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
 
         indexRandom(true,
-                client().prepareIndex("idx", "type", "1").setSource(
+                client().prepareIndex("idx").setId("1").setSource(
                         "ip", "192.168.1.7",
                         "ips", Arrays.asList("192.168.0.13", "192.168.1.2")),
-                client().prepareIndex("idx", "type", "2").setSource(
+                client().prepareIndex("idx").setId("2").setSource(
                         "ip", "192.168.1.10",
                         "ips", Arrays.asList("192.168.1.25", "192.168.1.28")),
-                client().prepareIndex("idx", "type", "3").setSource(
+                client().prepareIndex("idx").setId("3").setSource(
                         "ip", "2001:db8::ff00:42:8329",
                         "ips", Arrays.asList("2001:db8::ff00:42:8329", "2001:db8::ff00:42:8380")));
 
@@ -259,18 +234,16 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
     public void testHighlighterQuery() throws IOException, InterruptedException {
         XContentBuilder mappings = jsonBuilder();
-        mappings.startObject();
-        mappings.startObject("type")
+        mappings.startObject()
                 .startObject("properties")
                 .startObject("text")
                 .field("type", "keyword")
                 .field("store", true)
                 .endObject()
                 .endObject().endObject();
-        mappings.endObject();
         assertAcked(prepareCreate("test1")
-                .addMapping("type", mappings));
-        client().prepareIndex("test1", "type", "1")
+                .setMapping(mappings));
+        client().prepareIndex("test1").setId("1")
                 .setSource(jsonBuilder().startObject().field("text", "foo").endObject())
                 .get();
         refresh();
@@ -295,8 +268,6 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
     }
 
     public static class MockAnalysisPlugin extends Plugin implements AnalysisPlugin {
-
-
         @Override
         public Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>> getCharFilters() {
             return singletonMap("mock_pattern_replace", (indexSettings, env, name, settings) -> {

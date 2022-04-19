@@ -1,26 +1,6 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
  */
 
 package org.opensearch.search.asynchronous.management;
@@ -104,7 +84,7 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
             // Make sure we have a few segments
             BulkRequestBuilder bulkRequestBuilder = client().prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             for (int j = 0; j < 20; j++) {
-                bulkRequestBuilder.add(client().prepareIndex("test", "type", Integer.toString(i * 5 + j))
+                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j))
                         .setSource("field", "value"));
             }
             assertNoFailures(bulkRequestBuilder.get());
@@ -144,16 +124,16 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
     public void testDeletesExpiredAsynchronousSearchResponseFromPersistedStore() throws Exception {
         String idx = "idx";
         assertAcked(prepareCreate(idx)
-                .addMapping("type", "ip", "type=ip", "ips", "type=ip"));
+                .setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
         indexRandom(true,
-                client().prepareIndex(idx, "type", "1").setSource(
+                client().prepareIndex(idx).setId("1").setSource(
                         "ip", "192.168.1.7",
                         "ips", Arrays.asList("192.168.0.13", "192.168.1.2")),
-                client().prepareIndex(idx, "type", "2").setSource(
+                client().prepareIndex(idx).setId("2").setSource(
                         "ip", "192.168.1.10",
                         "ips", Arrays.asList("192.168.1.25", "192.168.1.28")),
-                client().prepareIndex(idx, "type", "3").setSource(
+                client().prepareIndex(idx).setId("3").setSource(
                         "ip", "2001:db8::ff00:42:8329",
                         "ips", Arrays.asList("2001:db8::ff00:42:8329", "2001:db8::ff00:42:8380")));
 

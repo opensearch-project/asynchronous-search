@@ -3,36 +3,44 @@ name: Test and Build Workflow
 on:
   pull_request:
     branches:
-      - main
-      - opendistro-*
-      - plugin-dev
+      - "*"
   push:
     branches:
-      - main
-      - opendistro-*
-      - plugin-dev
+      - "*"
 
 jobs:
-  build:
+  linux-build:
+    strategy:
+      matrix:
+        java:
+          - 11
+          - 17
     # Job name
     name: Build Asynchronous Search
-    # This job runs on Linux. TODO Make it work for other OS distributions
+    # This job runs on Linux.
     runs-on: ubuntu-latest
     steps:
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
-      - name: Set Up JDK 14
+      - name: Set Up JDK ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
-          java-version: 14
+          java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
         uses: actions/checkout@v2
       - name: Build with Gradle
-        run: ./gradlew build -Dopensearch.version=1.1.0-SNAPSHOT
+        run: ./gradlew build
       - name: Pull and Run Docker for security tests
         run: |
-          version=1.1.0-SNAPSHOT
-          plugin_version=1.1.0.0-SNAPSHOT
+          version=`./gradlew properties -q | grep "opensearch_version:" | awk '{print $2}'`
+          IFS='-' read -r -a version_array <<< "$version"
+          plugin_version="${version_array[0]}.0"; for entry in ${version_array[@]:1}; do plugin_version+="-$entry"; done
+          docker_version="${version_array[0]}-${version_array[1]}"
+
+          echo version $version
+          echo plugin_version $plugin_version
+          echo docker_version $docker_version
+
           pwd=`pwd`
           echo $pwd
           cd ..
@@ -42,9 +50,9 @@ jobs:
           echo "listing distributions"
           echo $list_of_all_files
 
-          if docker pull opensearchstaging/opensearch:$version
+          if docker pull opensearchstaging/opensearch:$docker_version
           then
-            echo "FROM docker.opensearch.org/opensearch:$version" >> Dockerfile
+            echo "FROM opensearchstaging/opensearch:$docker_version" >> Dockerfile
             echo "RUN if [ -d /usr/share/opensearch/plugins/opensearch-asynchronous-search ]; then /usr/share/opensearch/bin/opensearch-plugin remove opensearch-asynchronous-search; fi" >> Dockerfile
             echo "ADD asynchronous-search/build/distributions/opensearch-asynchronous-search-$plugin_version.zip /tmp/" >> Dockerfile
             echo "RUN /usr/share/opensearch/bin/opensearch-plugin install --batch file:/tmp/opensearch-asynchronous-search-$plugin_version.zip" >> Dockerfile
@@ -89,5 +97,61 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v1
         with:
-          name: asynchronous-search-plugin
+          name: asynchronous-search-plugin-ubuntu
+          path: asynchronous-search-artifacts
+  windows-build:
+    # Job name
+    name: Build Asynchronous Search
+    # This job runs on Windows.
+    runs-on: windows-latest
+    steps:
+      # This step uses the setup-java Github action: https://github.com/actions/setup-java
+      - name: Set Up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      # This step uses the checkout Github action: https://github.com/actions/checkout
+      - name: Checkout Branch
+        uses: actions/checkout@v2
+      - name: Build with Gradle
+        run: ./gradlew.bat build -x integTest -x jacocoTestReport
+        env:
+          _JAVA_OPTIONS: -Xmx4096M
+      - name: Create Artifact Path
+        run: |
+          mkdir -p asynchronous-search-artifacts
+          cp ./build/distributions/*.zip asynchronous-search-artifacts
+      # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: asynchronous-search-plugin-windows
+          path: asynchronous-search-artifacts
+  mac-os-build:
+    # Job name
+    name: Build Asynchronous Search
+    # This job runs on Mac OS.
+    runs-on: macos-latest
+    steps:
+      # This step uses the setup-java Github action: https://github.com/actions/setup-java
+      - name: Set Up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      # This step uses the checkout Github action: https://github.com/actions/checkout
+      - name: Checkout Branch
+        uses: actions/checkout@v2
+      - name: Build with Gradle
+        run: ./gradlew build -x integTest -x jacocoTestReport
+        env:
+          _JAVA_OPTIONS: -Xmx4096M
+      - name: Create Artifact Path
+        run: |
+          mkdir -p asynchronous-search-artifacts
+          cp ./build/distributions/*.zip asynchronous-search-artifacts
+      # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: asynchronous-search-plugin-mac
           path: asynchronous-search-artifacts

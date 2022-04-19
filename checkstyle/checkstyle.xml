@@ -6,10 +6,6 @@
 <module name="Checker">
     <property name="charset" value="UTF-8" />
 
-    <module name="SuppressionFilter">
-        <property name="file" value="${config_loc}/checkstyle_suppressions.xml" />
-    </module>
-
     <module name="SuppressWarningsFilter" />
 
     <!-- Checks Java files and forbids empty Javadoc comments. -->
@@ -28,10 +24,11 @@
       characters then it'll need to scroll. This fails the build if it sees
       such snippets.
     -->
-    <module name="org.opensearch.gradle.checkstyle.SnippetLengthCheck">
-        <property name="id" value="SnippetLength" />
-        <property name="max" value="76" />
-    </module>
+<!-- Created a backlog issue to fix/replace snippet length check. https://github.com/opensearch-project/asynchronous-search/issues/59-->
+<!--   <module name="org.opensearch.gradle.checkstyle.SnippetLengthCheck">-->
+<!--        <property name="id" value="SnippetLength" />-->
+<!--        <property name="max" value="76" />-->
+<!--    </module>-->
 
     <!-- Its our official line length! See checkstyle_suppressions.xml for the files that don't pass this. For now we
       suppress the check there but enforce it everywhere else. This prevents the list from getting longer even if it is

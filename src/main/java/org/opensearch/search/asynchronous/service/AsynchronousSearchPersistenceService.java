@@ -1,26 +1,6 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
  */
 
 package org.opensearch.search.asynchronous.service;
@@ -87,7 +67,6 @@ public class AsynchronousSearchPersistenceService {
 
     private static final Logger logger = LogManager.getLogger(AsynchronousSearchPersistenceService.class);
     public static final String ASYNC_SEARCH_RESPONSE_INDEX = ".opendistro-asynchronous-search-response";
-    private static final String MAPPING_TYPE = "_doc";
     /**
      * The backoff policy to use when saving a asynchronous search response fails. The total wait
      * time is 600000 milliseconds, ten minutes.
@@ -347,7 +326,7 @@ public class AsynchronousSearchPersistenceService {
 
     private void createIndexAndDoStoreResult(String id, AsynchronousSearchPersistenceModel persistenceModel,
                                              ActionListener<IndexResponse> listener) {
-        client.admin().indices().prepareCreate(ASYNC_SEARCH_RESPONSE_INDEX).addMapping(MAPPING_TYPE, mapping())
+        client.admin().indices().prepareCreate(ASYNC_SEARCH_RESPONSE_INDEX).setMapping(mapping())
                 .setSettings(indexSettings()).execute(ActionListener.wrap(createIndexResponse -> doStoreResult(id, persistenceModel,
                 listener), exception -> {
             if (ExceptionsHelper.unwrapCause(exception) instanceof ResourceAlreadyExistsException) {
@@ -370,8 +349,8 @@ public class AsynchronousSearchPersistenceService {
         source.put(EXPIRATION_TIME_MILLIS, model.getExpirationTimeMillis());
         source.put(START_TIME_MILLIS, model.getStartTimeMillis());
         source.put(USER, model.getUser());
-        IndexRequestBuilder indexRequestBuilder = client.prepareIndex(ASYNC_SEARCH_RESPONSE_INDEX, MAPPING_TYPE,
-                id).setSource(source, XContentType.JSON);
+        IndexRequestBuilder indexRequestBuilder = client.prepareIndex(ASYNC_SEARCH_RESPONSE_INDEX)
+                .setId(id).setSource(source, XContentType.JSON);
         doStoreResult(STORE_BACKOFF_POLICY.iterator(), indexRequestBuilder, listener);
     }
 

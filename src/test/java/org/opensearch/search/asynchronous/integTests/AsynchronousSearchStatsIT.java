@@ -1,26 +1,6 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
  */
 
 package org.opensearch.search.asynchronous.integTests;
@@ -79,10 +59,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testNodewiseStats() throws InterruptedException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                         .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest(index));
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
         submitAsynchronousSearchRequest.keepOnCompletion(true);
@@ -132,10 +112,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             threadPool = new TestThreadPool(AsynchronousSearchStatsIT.class.getName());
             String index = "idx";
             createIndex(index);
-            indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+            indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                             .setSource("field1", "the quick brown fox jumps"),
-                    client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                    client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                    client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                    client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
             List<DiscoveryNode> dataNodes = new LinkedList<>();
             clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
@@ -217,10 +197,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testRunningAsynchronousSearchCountStat() throws InterruptedException, ExecutionException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                         .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         SearchRequest searchRequest = client().prepareSearch(index).setQuery(
@@ -257,10 +237,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testThrottledAsynchronousSearchCount() throws InterruptedException, ExecutionException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index, "type1", "1")
+        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
                         .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index, "type1", "2").setSource("field1", "quick brown"),
-                client().prepareIndex(index, "type1", "3").setSource("field1", "quick"));
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
         List<DiscoveryNode> dataNodes = new LinkedList<>();
         clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {

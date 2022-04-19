@@ -1,27 +1,8 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
  */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
- */
+
 package org.opensearch.search.asynchronous.listener;
 
 import org.opensearch.search.asynchronous.utils.AsynchronousSearchAssertions;
@@ -64,7 +45,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.equalTo;
 
-@OpenSearchIntegTestCase.ClusterScope(transportClientRatio = 0)
+@OpenSearchIntegTestCase.ClusterScope
 public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase {
 
     private int aggregationSize = randomIntBetween(2, 4);
@@ -82,7 +63,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
 
     protected void createIdx(String keyFieldMapping) {
         assertAcked(prepareCreate("idx")
-                .addMapping("type", "key", keyFieldMapping));
+                .setMapping("key", keyFieldMapping));
     }
 
     protected void indexData() throws Exception {
@@ -109,7 +90,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
     protected List<IndexRequestBuilder> indexDoc(String shard, String key, int times) throws Exception {
         IndexRequestBuilder[] builders = new IndexRequestBuilder[times];
         for (int i = 0; i < times; i++) {
-            builders[i] = client().prepareIndex("idx", "type").setRouting(shard).setSource(jsonBuilder()
+            builders[i] = client().prepareIndex("idx").setRouting(shard).setSource(jsonBuilder()
                     .startObject()
                     .field("key", key)
                     .field("value", 1)

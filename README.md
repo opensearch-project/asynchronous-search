@@ -49,7 +49,7 @@ GET /_plugins/_asynchronous_search/stats
 
 1. Check out this package from version control.
 2. Launch Intellij IDEA, choose **Import Project**, and select the `settings.gradle` file in the root of this package. 
-3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 14 before running `./gradlew`.
+3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 8 before running `./gradlew`.
   - Unix System
     1. `export JAVA_HOME=jdk-install-dir`: Replace `jdk-install-dir` with the JAVA_HOME directory of your system.
     2. `export PATH=$JAVA_HOME/bin:$PATH`
@@ -72,7 +72,12 @@ The project in this package uses the [Gradle](https://docs.gradle.org/current/us
 4. `./gradlew integTest` launches a single node cluster with the asynchronous search plugin installed and runs all integ tests.
 5. `./gradlew integTest -PnumNodes=3` launches a multi-node cluster with the asynchronous search plugin installed and runs all integ tests.
 6. `./gradlew integTest -Dtests.class=*AsynchronousSearchRestIT` runs a single integ class
-7.  `./gradlew integTest -Dtests.class=*AsynchronousSearchRestIT -Dtests.method="testSubmitWithRetainedResponse"` runs a single integ test method (remember to quote the test method name if it contains spaces)
+7. `./gradlew integTest -Dtests.class=*AsynchronousSearchRestIT -Dtests.method="testSubmitWithRetainedResponse"` runs a single integ test method (remember to quote the test method name if it contains spaces)
+8. `./gradlew asynSearchCluster#mixedClusterTask -Dtests.security.manager=false` launches a cluster of three nodes of bwc version of OpenSearch with async search plugin and tests backwards compatibility by performing rolling upgrade of one node with the current version of OpenSearch with async search plugin.
+9. `./gradlew asynSearchCluster#rollingUpgradeClusterTask -Dtests.security.manager=false` launches a cluster with three nodes of bwc version of OpenSearch with async search plugin and tests backwards compatibility by performing rolling upgrade of all nodes with the current version of OpenSearch with async search plugin.
+10. `./gradlew asynSearchCluster#fullRestartClusterTask -Dtests.security.manager=false` launches a cluster with three nodes of bwc version of OpenSearch with async search plugin and tests backwards compatibility by performing a full restart on the cluster upgrading all the nodes with the current version of OpenSearch with async search plugin.
+11. `./gradlew bwcTestSuite -Dtests.security.manager=false` runs all the above bwc tests combined.
+12. `./gradlew integTestRemote -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin` launches integration tests against a local cluster and run tests with security
 
 When launching a cluster using one of the above commands, logs are placed in `build/testclusters/integTest-0/logs`. Though the logs are teed to the console, in practices it's best to check the actual log file.
 
@@ -118,4 +123,8 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the [Apache v2.0 License](LICENSE).
+
+## Copyright
+
+Copyright OpenSearch Contributors. See [NOTICE](NOTICE) for details.

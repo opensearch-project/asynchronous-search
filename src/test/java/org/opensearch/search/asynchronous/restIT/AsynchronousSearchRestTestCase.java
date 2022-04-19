@@ -1,26 +1,6 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-/*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
  */
 
 package org.opensearch.search.asynchronous.restIT;
@@ -74,7 +54,7 @@ import static org.hamcrest.Matchers.containsString;
 public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
-            new SearchModule(Settings.EMPTY, false, Collections.emptyList()).getNamedXContents());
+            new SearchModule(Settings.EMPTY, Collections.emptyList()).getNamedXContents());
 
     @Before
     public void indexDocuments() throws IOException {
@@ -106,15 +86,29 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         client().performRequest(new Request(HttpPost.METHOD_NAME, "/_refresh"));
     }
 
-    AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
-        Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest);
-        Response resp = client().performRequest(getRequest);
-        return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
-    }
+  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
+    return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
+  }
 
-    AsynchronousSearchResponse executeSubmitAsynchronousSearch(@Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
-            throws IOException {
-        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest);
+  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+      throws IOException {
+    Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, shouldUseLegacyApi);
+    Response resp = client().performRequest(getRequest);
+    return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
+  }
+
+  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
+      throws IOException {
+    return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
+  }
+
+  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+      throws IOException {
+        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, shouldUseLegacyApi);
         Response resp = client().performRequest(request);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
@@ -185,12 +179,21 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
                                                                                GetAsynchronousSearchRequest getAsynchronousSearchRequest)
             throws IOException {
+        return getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, false);
+    }
+
+  protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
+      AsynchronousSearchResponse submitResponse,
+      GetAsynchronousSearchRequest getAsynchronousSearchRequest,
+      boolean shouldUseLegacyApi)
+      throws IOException {
         AsynchronousSearchResponse getResponse;
-        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);
+        getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, shouldUseLegacyApi);
         assertEquals(submitResponse.getId(), getResponse.getId());
         assertEquals(submitResponse.getStartTimeMillis(), getResponse.getStartTimeMillis());
         return getResponse;
     }
+
 
     protected void assertRnf(Exception e) {
         assertTrue(e instanceof ResponseException);
