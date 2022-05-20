@@ -1,6 +1,6 @@
-## Version 2.0.0.0-rc1 Release Notes
+## Version 2.0.0.0 Release Notes
 
-Compatible with OpenSearch 2.0.0-rc1
+Compatible with OpenSearch 2.0.0
 
 ### Maintenance
 * Upgrades to Opensearch 2.0, Gradle 7.3 and fixes ([#110](https://github.com/opensearch-project/asynchronous-search/pull/110))
@@ -9,6 +9,7 @@ Compatible with OpenSearch 2.0.0-rc1
 * Remove hardcoding of versions in workflow ([#120](https://github.com/opensearch-project/asynchronous-search/pull/120))
 * Add qualifier default as alpha ([#123](https://github.com/opensearch-project/asynchronous-search/pull/123))
 * Change 2.0-alpha1 to 2.0-rc1 ([#131](https://github.com/opensearch-project/asynchronous-search/pull/131))
+* Change 2.0-rc1 to 2.0 ([#143](https://github.com/opensearch-project/asynchronous-search/pull/143))
 
 ### Infrastructure
 * Adding support for integration tests with remote cluster ([#111](https://github.com/opensearch-project/asynchronous-search/pull/111))
