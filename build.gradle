@@ -58,6 +58,7 @@ apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.rest-test'
+apply plugin: 'opensearch.pluginzip'
 
 
 checkstyle {
@@ -86,6 +87,29 @@ targetCompatibility = JavaVersion.VERSION_11
 allprojects {
     group 'org.opensearch'
     version = opensearch_build
+}
+
+publishing {
+    publications {
+        pluginZip(MavenPublication) { publication ->
+            pom {
+                name = "opensearch-asynchronous-search"
+                description = "OpenSearch Asynchronous Search plugin"
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        name = "OpenSearch"
+                        url = "https://github.com/opensearch-project/asynchronous-search"
+                    }
+                }
+            }
+        }
+    }
 }
 
 dependencies {
