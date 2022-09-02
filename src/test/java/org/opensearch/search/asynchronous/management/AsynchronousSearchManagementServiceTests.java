@@ -219,17 +219,17 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
             if (i == 0) {
                 //local node id
                 builder.localNodeId(nodeId);
-                roles.add(DiscoveryNodeRole.MASTER_ROLE);
+                roles.add(DiscoveryNodeRole.CLUSTER_MANAGER_ROLE);
             } else if (i == 1) {
                 // the alternate cluster_manager node
-                roles.add(DiscoveryNodeRole.MASTER_ROLE);
+                roles.add(DiscoveryNodeRole.CLUSTER_MANAGER_ROLE);
             } else if (i == 2) {
                 // we need at least one data node
                 roles.add(DiscoveryNodeRole.DATA_ROLE);
             } else {
                 // remaining nodes can be anything (except for cluster_manager)
                 if (randomBoolean()) {
-                    roles.add(DiscoveryNodeRole.MASTER_ROLE);
+                    roles.add(DiscoveryNodeRole.CLUSTER_MANAGER_ROLE);
                 }
                 if (randomBoolean()) {
                     roles.add(DiscoveryNodeRole.DATA_ROLE);
@@ -238,7 +238,7 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
             final DiscoveryNode node = newNode(nodeId, roles);
             builder.add(node);
             if (i == clusterManagerNodeIndex) {
-                builder.masterNodeId(nodeId);
+                builder.clusterManagerNodeId(nodeId);
             }
         }
         return builder.build();
