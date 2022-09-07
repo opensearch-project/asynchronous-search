@@ -37,12 +37,12 @@ public class TestUtils {
                 .nodes(DiscoveryNodes.builder()
                         .add(localNode)
                         .localNodeId(localNode.getId())
-                        .masterNodeId(localNode.getId()))
+                        .clusterManagerNodeId(localNode.getId()))
                 .blocks(ClusterBlocks.EMPTY_CLUSTER_BLOCK).build();
         clusterService.getClusterApplierService().setInitialState(initialClusterState);
-        clusterService.getMasterService().setClusterStatePublisher(
+        clusterService.getClusterManagerService().setClusterStatePublisher(
                 createClusterStatePublisher(clusterService.getClusterApplierService()));
-        clusterService.getMasterService().setClusterStateSupplier(clusterService.getClusterApplierService()::state);
+        clusterService.getClusterManagerService().setClusterStateSupplier(clusterService.getClusterApplierService()::state);
         clusterService.start();
         return clusterService;
     }
