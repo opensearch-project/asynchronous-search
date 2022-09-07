@@ -128,14 +128,14 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
 
     @Override
     public void clusterChanged(ClusterChangedEvent event) {
-        if (event.localNodeMaster() && persistedResponseCleanUpRunnable.get() == null) {
+        if (event.localNodeClusterManager() && persistedResponseCleanUpRunnable.get() == null) {
             logger.trace("elected as cluster_manager, triggering response cleanup tasks");
             triggerCleanUp(event.state(), "became cluster_manager");
 
             final PersistedResponseCleanUpAndRescheduleRunnable newRunnable = new PersistedResponseCleanUpAndRescheduleRunnable();
             persistedResponseCleanUpRunnable.set(newRunnable);
             threadPool.scheduleUnlessShuttingDown(persistedResponseCleanUpInterval, RESPONSE_CLEANUP_SCHEDULING_EXECUTOR, newRunnable);
-        } else if (event.localNodeMaster() == false) {
+        } else if (event.localNodeClusterManager() == false) {
             persistedResponseCleanUpRunnable.set(null);
             return;
         }
