@@ -116,6 +116,11 @@ Additionally, it is possible to attach one debugger to the cluster JVM and anoth
 ```
 
 
+## Getting Help
+
+If you find a bug, or have a feature request, please don't hesitate to open an issue in this repository.
+
+For more information, see the [project website](https://opensearch.org/) and [technical documentation](https://opensearch.org/docs/latest/search-plugins/async/index/). If you need help and are unsure where to open an issue, try the OpenSearch [Forum](https://forum.opensearch.org/).
 
 ## Security
 
