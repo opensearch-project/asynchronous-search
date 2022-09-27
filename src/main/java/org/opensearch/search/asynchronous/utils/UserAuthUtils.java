@@ -52,7 +52,7 @@ public class UserAuthUtils {
 
     public static boolean isUserValid(@Nullable User currentUser, @Nullable User originalUser) {
         if(originalUser == null || currentUser == null) {
-            return true;
+            return false;
         }
         if(currentUser.getBackendRoles() == null) {
             return originalUser.getBackendRoles() == null;
