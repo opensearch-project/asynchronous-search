@@ -52,10 +52,10 @@ public class UserAuthUtils {
 
     public static boolean isUserValid(@Nullable User currentUser, @Nullable User originalUser) {
         if(originalUser == null || currentUser == null) {
-            return false;
+            return true;
         }
-        if(currentUser.getBackendRoles() == null) {
-            return originalUser.getBackendRoles() == null;
+        if(currentUser.getBackendRoles() == null || originalUser.getBackendRoles() == null) {
+            return false;
         }
         return currentUser.getBackendRoles().containsAll(originalUser.getBackendRoles());
     }
