@@ -12,10 +12,7 @@ jobs:
   linux-build:
     strategy:
       matrix:
-        java:
-          - 8
-          - 11
-          - 14
+        java: [8 ,11, 14]
     # Job name
     name: Build Asynchronous Search
     # This job runs on Linux.
