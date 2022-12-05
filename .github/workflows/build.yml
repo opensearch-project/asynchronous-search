@@ -12,13 +12,12 @@ jobs:
   linux-build:
     strategy:
       matrix:
-        java:
-          - 11
-          - 17
+        os: [ubuntu-latest, windows-latest]
+        java: [11, 17]
     # Job name
     name: Build Asynchronous Search
     # This job runs on Linux.
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
       - name: Set Up JDK ${{ matrix.java }}
