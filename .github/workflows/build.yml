@@ -12,12 +12,9 @@ jobs:
   linux-build:
     strategy:
       matrix:
-        java:
-          - 8
-          - 11
-          - 14
+        java: [8 ,11, 14]
     # Job name
-    name: Build Asynchronous Search
+    name: Build Asynchronous Search for linux
     # This job runs on Linux.
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +92,7 @@ jobs:
           path: asynchronous-search-artifacts
   windows-build:
     # Job name
-    name: Build Asynchronous Search
+    name: Build Asynchronous Search for windows
     # This job runs on Windows.
     runs-on: windows-latest
     steps:
@@ -123,7 +120,7 @@ jobs:
           path: asynchronous-search-artifacts
   mac-os-build:
     # Job name
-    name: Build Asynchronous Search
+    name: Build Asynchronous Search for mac-os
     # This job runs on Mac OS.
     runs-on: macos-latest
     steps:
