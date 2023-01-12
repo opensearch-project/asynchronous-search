@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.management;
 
+import org.opensearch.index.reindex.ReindexModulePlugin;
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase;
 import org.opensearch.search.asynchronous.action.DeleteAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.action.GetAsynchronousSearchAction;
@@ -27,7 +28,7 @@ import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.index.reindex.ReindexPlugin;
+import org.opensearch.index.reindex.ReindexModulePlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
@@ -56,7 +57,7 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         return Arrays.asList(
                 ScriptedBlockPlugin.class,
                 AsynchronousSearchPlugin.class,
-                ReindexPlugin.class);
+                ReindexModulePlugin.class);
     }
 
     //We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
