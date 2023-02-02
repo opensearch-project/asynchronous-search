@@ -13,7 +13,7 @@ import org.opensearch.search.asynchronous.context.permits.NoopAsynchronousSearch
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchIdConverter;
 import org.opensearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
-import org.apache.lucene.util.SetOnce;
+import org.opensearch.common.SetOnce;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.search.SearchProgressActionListener;
 import org.opensearch.action.search.SearchResponse;

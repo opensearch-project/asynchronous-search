@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.management;
 
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.reindex.ReindexModulePlugin;
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase;
 import org.opensearch.search.asynchronous.action.DeleteAsynchronousSearchAction;
@@ -291,7 +292,7 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         waitUntil(() -> verifyTaskCancelled(AsynchronousSearchTask.NAME, taskId));
         //ensure the second asynchronous search is not cleaned up
         assertBusy(() -> assertFalse(verifyAsynchronousSearchDoesNotExists(nonExpiredAsynchronousSearchResponseRef.get().getId())));
-        logger.info("Segments {}", Strings.toString(client().admin().indices().prepareSegments("test").get()));
+        logger.info("Segments {}", Strings.toString(XContentType.JSON, client().admin().indices().prepareSegments("test").get()));
         CountDownLatch deleteLatch = new CountDownLatch(1);
         //explicitly clean up the second request
         DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
