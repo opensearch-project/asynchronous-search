@@ -10,7 +10,6 @@ import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
-//import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
@@ -166,22 +165,15 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
             try {
                 final TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
                         .setSslContext(SSLContextBuilder.create().loadTrustMaterial(null, (chains, authType) -> true).build())
-                        //.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                         .build();
 
                 final PoolingAsyncClientConnectionManager connectionManager = PoolingAsyncClientConnectionManagerBuilder.create()
                         .setTlsStrategy(tlsStrategy)
                         .build();
 
-
-
                 return httpClientBuilder
                         .setConnectionManager(connectionManager)
                         .setDefaultCredentialsProvider(credentialsProvider);
-
-                        // disable the certificate since our testing cluster just uses the default security configuration
-                        //.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-                        //.setSSLContext(SSLContextBuilder.create().loadTrustMaterial(null, (chains, authType) -> true).build());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

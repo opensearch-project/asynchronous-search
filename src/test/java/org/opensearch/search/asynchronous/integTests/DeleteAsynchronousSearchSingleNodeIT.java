@@ -194,7 +194,7 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             operationThreads.forEach(runnable -> finalTestThreadPool.executor("generic").execute(runnable));
             countDownLatch.await();
             disableBlocks(plugins);
-            assertionConsumer.apply(numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound);
+            assertionConsumer.accept(numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound);
         } finally {
             ThreadPool.terminate(testThreadPool, 500, TimeUnit.MILLISECONDS);
         }
@@ -239,7 +239,7 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             TestThreadPool finalTestThreadPool = testThreadPool;
             operationThreads.forEach(runnable -> finalTestThreadPool.executor("generic").execute(runnable));
             countDownLatch.await();
-            assertionConsumer.apply(numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound);
+            assertionConsumer.accept(numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound);
         } finally {
             ThreadPool.terminate(testThreadPool, 500, TimeUnit.MILLISECONDS);
         }
