@@ -11,9 +11,9 @@ import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.RestTestUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.lucene.search.TotalHits;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -166,9 +166,9 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         if (entity.getContentType() == null) {
             throw new IllegalStateException("Elasticsearch didn't return the [Content-Type] header, unable to parse response body");
         }
-        XContentType xContentType = XContentType.fromMediaType(entity.getContentType().getValue());
+        XContentType xContentType = XContentType.fromMediaType(entity.getContentType());
         if (xContentType == null) {
-            throw new IllegalStateException("Unsupported Content-Type: " + entity.getContentType().getValue());
+            throw new IllegalStateException("Unsupported Content-Type: " + entity.getContentType());
         }
         try (XContentParser parser = xContentType.xContent().createParser(
                 registry, DeprecationHandler.IGNORE_DEPRECATIONS, entity.getContent())) {

@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.listener;
 
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.util.SetOnce;
+import org.opensearch.common.SetOnce;
 import org.opensearch.action.search.SearchProgressActionListener;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchShard;

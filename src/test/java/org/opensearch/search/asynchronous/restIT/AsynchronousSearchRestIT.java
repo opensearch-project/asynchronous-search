@@ -11,9 +11,9 @@ import org.opensearch.search.asynchronous.request.DeleteAsynchronousSearchReques
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
