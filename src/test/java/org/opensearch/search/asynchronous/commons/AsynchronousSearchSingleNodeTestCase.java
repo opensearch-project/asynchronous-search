@@ -5,6 +5,8 @@
 
 package org.opensearch.search.asynchronous.commons;
 
+import org.opensearch.index.reindex.ReindexModulePlugin;
+import org.opensearch.painless.PainlessModulePlugin;
 import org.opensearch.search.asynchronous.action.DeleteAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.action.GetAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
@@ -30,8 +32,8 @@ import org.opensearch.action.search.ShardSearchFailure;
 import org.opensearch.client.Client;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.index.IndexNotFoundException;
-import org.opensearch.index.reindex.ReindexPlugin;
-import org.opensearch.painless.PainlessPlugin;
+import org.opensearch.index.reindex.ReindexModulePlugin;
+import org.opensearch.painless.PainlessModulePlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginsService;
 import org.opensearch.script.MockScriptPlugin;
@@ -82,8 +84,8 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSin
         LinkedList<Class<? extends Plugin>> plugins = new LinkedList<>(super.getPlugins());
         plugins.add(SearchDelayPlugin.class);
         plugins.add(AsynchronousSearchPlugin.class);
-        plugins.add(ReindexPlugin.class);
-        plugins.add(PainlessPlugin.class);
+        plugins.add(ReindexModulePlugin.class);
+        plugins.add(PainlessModulePlugin.class);
         return plugins;
     }
 

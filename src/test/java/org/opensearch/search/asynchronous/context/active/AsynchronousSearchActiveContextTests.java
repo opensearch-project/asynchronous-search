@@ -15,7 +15,7 @@ import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchReques
 import org.opensearch.search.asynchronous.task.AsynchronousSearchTask;
 import org.opensearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.util.SetOnce;
+import org.opensearch.common.SetOnce;
 import org.opensearch.action.search.SearchAction;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;

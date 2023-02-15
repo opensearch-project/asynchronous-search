@@ -23,7 +23,7 @@ import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.search.SearchPhaseExecutionException;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Client;
-import org.opensearch.index.reindex.ReindexPlugin;
+import org.opensearch.index.reindex.ReindexModulePlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginsService;
 import org.opensearch.script.MockScriptPlugin;
@@ -54,7 +54,7 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
         return Arrays.asList(
                 ScriptedBlockPlugin.class,
                 AsynchronousSearchPlugin.class,
-                ReindexPlugin.class);
+                ReindexModulePlugin.class);
     }
 
     @Override
