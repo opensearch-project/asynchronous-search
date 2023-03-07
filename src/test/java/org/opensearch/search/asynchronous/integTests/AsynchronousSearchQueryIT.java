@@ -12,6 +12,7 @@
 package org.opensearch.search.asynchronous.integTests;
 
 import org.apache.lucene.tests.analysis.MockTokenizer;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
@@ -25,7 +26,6 @@ import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.regex.Regex;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.index.analysis.CharFilterFactory;
 import org.opensearch.index.analysis.NormalizingCharFilterFactory;
 import org.opensearch.index.analysis.TokenizerFactory;
