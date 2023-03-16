@@ -130,6 +130,7 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         submitAsynchronousSearchRequest.keepAlive(keepAlive);
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
+        keepAlive = TimeValue.timeValueHours(6);
         getAsynchronousSearchRequest.setKeepAlive(keepAlive);
         AsynchronousSearchResponse getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);
         assertThat(getResponse.getExpirationTimeMillis(), greaterThan(submitResponse.getExpirationTimeMillis()));
