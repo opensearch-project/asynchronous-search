@@ -11,7 +11,7 @@ buildscript {
         opensearch_group = "org.opensearch"
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         opensearch_version = System.getProperty("opensearch.version", "3.0.0-SNAPSHOT")
-        opensearch_plugin_version = System.getProperty("bwc.version", "2.6.0.0")
+        opensearch_plugin_version = System.getProperty("bwc.version", "2.7.0.0")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         // 2.0.0-rc1-SNAPSHOT -> 2.0.0.0-rc1-SNAPSHOT
         version_tokens = opensearch_version.tokenize('-')
@@ -246,16 +246,16 @@ ext.getPluginResource = { download_to_folder, download_from_src ->
 }
 
 String baseName = "asynSearchCluster"
-String bwcVersion = "2.6.0.0"
+String bwcVersion = "2.7.0.0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
-String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/2.6.0/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-2.6.0.0.zip"
+String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/2.7.0/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-2.7.0.0.zip"
 getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
 // Creates two test clusters of previous version and loads opensearch plugin of bwcVersion
 2.times { i ->
     testClusters {
         "${baseName}$i" {
             testDistribution = "ARCHIVE"
-            versions = ["2.6.0",opensearch_version]
+            versions = ["2.7.0",opensearch_version]
             numberOfNodes = 3
             plugin(provider(new Callable<RegularFile>() {
                 @Override

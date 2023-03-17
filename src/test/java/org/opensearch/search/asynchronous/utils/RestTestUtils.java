@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.utils;
 
+import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import org.opensearch.search.asynchronous.request.DeleteAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
@@ -27,7 +28,6 @@ import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.lucene.uid.Versions;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.xcontent.ToXContent;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.VersionType;
