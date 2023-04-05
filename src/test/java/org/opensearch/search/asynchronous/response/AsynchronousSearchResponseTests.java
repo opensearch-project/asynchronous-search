@@ -5,6 +5,9 @@
 
 package org.opensearch.search.asynchronous.response;
 
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.action.search.SearchResponse;
@@ -13,11 +16,8 @@ import org.opensearch.client.Requests;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.Writeable;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.common.xcontent.NamedXContentRegistry;
-import org.opensearch.common.xcontent.XContentHelper;
-import org.opensearch.common.xcontent.XContentParser;
-import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.NamedXContentRegistry;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;

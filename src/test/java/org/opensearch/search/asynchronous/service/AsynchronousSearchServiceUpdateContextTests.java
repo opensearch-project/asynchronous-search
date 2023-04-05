@@ -5,6 +5,8 @@
 
 package org.opensearch.search.asynchronous.service;
 
+import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.commons.authuser.User;
 import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
@@ -36,9 +38,7 @@ import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
-import org.opensearch.common.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.index.Index;
 import org.opensearch.index.get.GetResult;
 import org.opensearch.index.shard.ShardId;
