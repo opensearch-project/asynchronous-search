@@ -24,7 +24,7 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.TriConsumer;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
