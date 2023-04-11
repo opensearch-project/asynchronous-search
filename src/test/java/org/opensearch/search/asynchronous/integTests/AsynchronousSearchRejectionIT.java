@@ -30,7 +30,7 @@ import org.opensearch.action.search.SearchType;
 import org.opensearch.action.search.ShardSearchFailure;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.aggregations.InternalAggregation;
