@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.integTests;
 
+import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
@@ -24,7 +25,6 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.TriConsumer;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
