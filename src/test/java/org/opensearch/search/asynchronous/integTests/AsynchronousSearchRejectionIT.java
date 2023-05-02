@@ -5,7 +5,7 @@
 
 package org.opensearch.search.asynchronous.integTests;
 
-import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.search.asynchronous.action.DeleteAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase;

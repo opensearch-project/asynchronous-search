@@ -5,7 +5,7 @@
 
 package org.opensearch.search.asynchronous.context.active;
 
-import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.opensearch.search.asynchronous.listener.AsynchronousSearchContextEventListener;
 import org.opensearch.search.asynchronous.listener.AsynchronousSearchProgressListener;

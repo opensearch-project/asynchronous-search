@@ -48,7 +48,7 @@ public class AsynchronousSearchPersistenceModel {
             return null;
         }
         try (BytesStreamOutput out = new BytesStreamOutput()) {
-            Version.writeVersion(Version.CURRENT, out);
+            out.writeVersion(Version.CURRENT);
             response.writeTo(out);
             byte[] bytes = BytesReference.toBytes(out.bytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -68,7 +68,7 @@ public class AsynchronousSearchPersistenceModel {
             return null;
         }
         try (BytesStreamOutput out = new BytesStreamOutput()) {
-            Version.writeVersion(Version.CURRENT, out);
+            out.writeVersion(Version.CURRENT);
             out.writeException(error instanceof OpenSearchException ? error : new OpenSearchException(error));
             byte[] bytes = BytesReference.toBytes(out.bytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);

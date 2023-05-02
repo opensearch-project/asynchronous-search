@@ -5,7 +5,7 @@
 
 package org.opensearch.search.asynchronous.service;
 
-import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.commons.authuser.User;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.search.asynchronous.context.persistence.AsynchronousSearchPersistenceModel;
