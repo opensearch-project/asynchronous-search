@@ -8,4 +8,10 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | --------------------- | ----------------------------------------------- | ----------- |
 | Bukhtawar Khan        | [Bukhtawar](https://github.com/Bukhtawar)       | Amazon      |
 | Surya Sashank Nistala | [eirsep](https://github.com/eirsep)             | Amazon      |
-| Anshul Agarwal        | [anshul291995](https://github.com/anshul291995) | Amazon      |
+
+## Emeritus
+
+| Maintainer  | GitHub ID                                  | Affiliation |
+|-------------| ------------------------------------------ | ----------- |
+| Anshul Agarwal | [anshul291995](https://github.com/anshul291995)     | Amazon      |
+
