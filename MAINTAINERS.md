@@ -4,13 +4,13 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 
 ## Current Maintainers
 
-| Maintainer      | GitHub ID                                                 | Affiliation |
-|-----------------|-----------------------------------------------------------|-------------|
-| Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)       | Amazon      |
-| Arpit Bandejiya | [Arpit-Bandedjiya](https://github.com/Arpit-Bandejiya)    | Amazon      |
-| Dhrubajyoti Das | [dhruv16dhr](https://github.com/dhruv16dhr)               | Amazon      |
-| Pranit Kumar    | [pranikum](https://github.com/pranikum)                   | Amazon      |
-| Bukhtawar Khan  | [Bukhtawar](https://github.com/Bukhtawar)                 | Amazon      |
+| Maintainer      | GitHub ID                                                | Affiliation |
+|-----------------|----------------------------------------------------------|-------------|
+| Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)      | Amazon      |
+| Arpit Bandejiya | [Arpit-Bandejiya](https://github.com/Arpit-Bandejiya)    | Amazon      |
+| Dhrubajyoti Das | [dhruv16dhr](https://github.com/dhruv16dhr)              | Amazon      |
+| Pranit Kumar    | [pranikum](https://github.com/pranikum)                  | Amazon      |
+| Bukhtawar Khan  | [Bukhtawar](https://github.com/Bukhtawar)                | Amazon      |
 
 ## Emeritus
 
