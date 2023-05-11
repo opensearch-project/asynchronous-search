@@ -9,10 +9,18 @@ buildscript {
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
-        opensearch_version = System.getProperty("opensearch.version", "1.3.9-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "1.3.10-SNAPSHOT")
         // 1.0.0 -> 1.0.0.0, and 1.0.0-SNAPSHOT -> 1.0.0.0-SNAPSHOT
         opendistro_plugin_version = System.getProperty("bwc.version", "1.13.0.1")
-        opensearch_build = opensearch_version.replaceAll(/(\.\d)([^\d]*)$/, '$1.0$2')
+        buildVersionQualifier = System.getProperty("build.version_qualifier", "")
+        version_tokens = opensearch_version.tokenize('-')
+        opensearch_build = version_tokens[0] + '.0'
+        if (buildVersionQualifier) {
+            opensearch_build += "-${buildVersionQualifier}"
+        }
+        if (isSnapshot) {
+            opensearch_build += "-SNAPSHOT"
+        }
         common_utils_version = System.getProperty("common_utils.version", opensearch_build)
     }
 
@@ -52,7 +60,7 @@ apply plugin: 'opensearch.rest-test'
 
 
 checkstyle {
-    toolVersion = '8.24'
+    toolVersion = '8.29'
     configFile file("checkstyle/checkstyle.xml")
 }
 
