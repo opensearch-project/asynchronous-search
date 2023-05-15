@@ -4,8 +4,17 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 
 ## Current Maintainers
 
-| Maintainer            | GitHub ID                                       | Affiliation |
-| --------------------- | ----------------------------------------------- | ----------- |
-| Bukhtawar Khan        | [Bukhtawar](https://github.com/Bukhtawar)       | Amazon      |
-| Surya Sashank Nistala | [eirsep](https://github.com/eirsep)             | Amazon      |
-| Anshul Agarwal        | [anshul291995](https://github.com/anshul291995) | Amazon      |
+| Maintainer      | GitHub ID                                                | Affiliation |
+|-----------------|----------------------------------------------------------|-------------|
+| Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)      | Amazon      |
+| Arpit Bandejiya | [Arpit-Bandejiya](https://github.com/Arpit-Bandejiya)    | Amazon      |
+| Dhrubajyoti Das | [dhruv16dhr](https://github.com/dhruv16dhr)              | Amazon      |
+| Pranit Kumar    | [pranikum](https://github.com/pranikum)                  | Amazon      |
+| Bukhtawar Khan  | [Bukhtawar](https://github.com/Bukhtawar)                | Amazon      |
+
+## Emeritus
+
+| Maintainer  | GitHub ID                                  | Affiliation |
+|-------------| ------------------------------------------ | ----------- |
+| Anshul Agarwal | [anshul291995](https://github.com/anshul291995)     | Amazon      |
+
