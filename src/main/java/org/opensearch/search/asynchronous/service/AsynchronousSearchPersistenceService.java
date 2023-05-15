@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.service;
 
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.commons.authuser.User;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.search.asynchronous.context.persistence.AsynchronousSearchPersistenceModel;
@@ -30,7 +31,6 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.io.stream.NotSerializableExceptionWrapper;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.engine.DocumentMissingException;
