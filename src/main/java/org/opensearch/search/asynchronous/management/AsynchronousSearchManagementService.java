@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.management;
 
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
@@ -23,7 +24,6 @@ import org.opensearch.cluster.ClusterStateListener;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.Randomness;
-import org.opensearch.common.collect.ImmutableOpenMap;
 import org.opensearch.common.component.AbstractLifecycleComponent;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.common.io.stream.StreamInput;
@@ -32,7 +32,6 @@ import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.util.concurrent.AbstractRunnable;
-import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousSearchSettings;
 import org.opensearch.tasks.Task;
@@ -46,6 +45,7 @@ import org.opensearch.transport.TransportService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -196,8 +196,8 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
         try (ThreadContext.StoredContext ignore = threadContext.stashContext()) {
             // we have to execute under the system context so that if security is enabled the sync is authorized
             threadContext.markAsSystemContext();
-            ImmutableOpenMap<String, DiscoveryNode> dataNodes = clusterService.state().nodes().getDataNodes();
-            List<DiscoveryNode> nodes = Stream.of(dataNodes.values().toArray(DiscoveryNode.class))
+            final Map<String, DiscoveryNode> dataNodes = clusterService.state().nodes().getDataNodes();
+            List<DiscoveryNode> nodes = Stream.of(dataNodes.values().toArray(new DiscoveryNode[0]))
                     .collect(Collectors.toList());
             if (nodes == null || nodes.isEmpty()) {
                 logger.debug("Found empty data nodes with asynchronous search enabled attribute [{}] for response clean up", dataNodes);

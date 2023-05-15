@@ -67,8 +67,8 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         List<DiscoveryNode> dataNodes = new LinkedList<>();
-        clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
-            dataNodes.add(node.value);
+        clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> {
+            dataNodes.add(node);
         });
         assertFalse(dataNodes.isEmpty());
         DiscoveryNode randomDataNode = dataNodes.get(randomInt(dataNodes.size() - 1));
@@ -118,8 +118,8 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
                     client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
             List<DiscoveryNode> dataNodes = new LinkedList<>();
-            clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
-                dataNodes.add(node.value);
+            clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> {
+                dataNodes.add(node);
             });
             assertFalse(dataNodes.isEmpty());
             int numThreads = 20;
@@ -243,8 +243,8 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
                 client().prepareIndex(index).setId("3").setSource("field1", "quick"));
 
         List<DiscoveryNode> dataNodes = new LinkedList<>();
-        clusterService().state().nodes().getDataNodes().iterator().forEachRemaining(node -> {
-            dataNodes.add(node.value);
+        clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> {
+            dataNodes.add(node);
         });
         assertFalse(dataNodes.isEmpty());
         DiscoveryNode randomDataNode = dataNodes.get(randomInt(dataNodes.size() - 1));
