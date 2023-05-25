@@ -24,7 +24,7 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.TriConsumer;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.util.concurrent.OpenSearchRejectedExecutionException;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
@@ -152,7 +152,7 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             operationThreads.forEach(runnable -> finalTestThreadPool.executor("generic").execute(runnable));
             countDownLatch.await();
             disableBlocks(plugins);
-            assertionConsumer.accept(numStartedAsynchronousSearch, numFailedAsynchronousSearch, numRejectedAsynchronousSearch);
+            assertionConsumer.apply(numStartedAsynchronousSearch, numFailedAsynchronousSearch, numRejectedAsynchronousSearch);
         } finally {
             ThreadPool.terminate(testThreadPool, 500, TimeUnit.MILLISECONDS);
         }
@@ -230,7 +230,7 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             TestThreadPool finalTestThreadPool = testThreadPool;
             operationThreads.forEach(runnable -> finalTestThreadPool.executor("generic").execute(runnable));
             countDownLatch.await();
-            assertionConsumer.accept(numStartedAsynchronousSearch, numFailedAsynchronousSearch, numErrorResponseAsynchronousSearch);
+            assertionConsumer.apply(numStartedAsynchronousSearch, numFailedAsynchronousSearch, numErrorResponseAsynchronousSearch);
         } finally {
             ThreadPool.terminate(testThreadPool, 500, TimeUnit.MILLISECONDS);
         }

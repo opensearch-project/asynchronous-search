@@ -253,7 +253,7 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
             ActionListener.wrap(() -> deleteLatch.countDown()));
             deleteLatch.await();
             disableBlocks(plugins);
-            assertionConsumer.accept(numGetSuccess, numGetFailures, numVersionConflictFailures);
+            assertionConsumer.apply(numGetSuccess, numGetFailures, numVersionConflictFailures);
         } finally {
             ThreadPool.terminate(testThreadPool, 500, TimeUnit.MILLISECONDS);
         }
