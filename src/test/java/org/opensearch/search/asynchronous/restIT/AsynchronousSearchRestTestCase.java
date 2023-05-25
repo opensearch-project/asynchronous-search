@@ -5,6 +5,8 @@
 
 package org.opensearch.search.asynchronous.restIT;
 
+import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.search.asynchronous.SecurityEnabledRestTestCase;
 import org.opensearch.search.asynchronous.request.DeleteAsynchronousSearchRequest;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
@@ -25,12 +27,10 @@ import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.DeprecationHandler;
-import org.opensearch.common.xcontent.NamedXContentRegistry;
-import org.opensearch.common.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.common.xcontent.XContentParser;
-import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.DeprecationHandler;
+import org.opensearch.core.xcontent.NamedXContentRegistry;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchModule;
 

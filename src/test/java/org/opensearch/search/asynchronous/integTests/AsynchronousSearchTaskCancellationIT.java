@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.integTests;
 
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchIntegTestCase;
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
@@ -141,7 +142,7 @@ public class AsynchronousSearchTaskCancellationIT extends AsynchronousSearchInte
         awaitForBlock(plugins);
         cancelAsynchronousSearch(SubmitAsynchronousSearchAction.NAME);
         disableBlocks(plugins);
-        logger.info("Segments {}", Strings.toString(client().admin().indices().prepareSegments("test").get()));
+        logger.info("Segments {}", Strings.toString(XContentType.JSON, client().admin().indices().prepareSegments("test").get()));
         latch.await();
         ensureSearchWasCancelled(searchResponseRef.get(), exceptionRef.get());
     }
