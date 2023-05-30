@@ -5,13 +5,15 @@
 
 package org.opensearch.search.asynchronous.response;
 
+import org.opensearch.OpenSearchException;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
-import org.opensearch.OpenSearchException;
+import org.opensearch.BaseOpenSearchException;
 import org.opensearch.ExceptionsHelper;
+import org.opensearch.BaseExceptionsHelper;
 import org.opensearch.action.ActionResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Requests;
@@ -51,7 +53,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     @Nullable
     private SearchResponse searchResponse;
     @Nullable
-    private OpenSearchException error;
+    private BaseOpenSearchException error;
 
     public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
                                SearchResponse searchResponse, Exception error) {
@@ -64,7 +66,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     }
 
     public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, OpenSearchException error) {
+                               SearchResponse searchResponse, BaseOpenSearchException error) {
         this.id = id;
         this.state = state;
         this.startTimeMillis = startTimeMillis;
@@ -74,7 +76,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     }
 
     public AsynchronousSearchResponse(AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, OpenSearchException error) {
+                               SearchResponse searchResponse, BaseOpenSearchException error) {
         this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
@@ -123,7 +125,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         }
         if (error != null) {
             builder.startObject(ERROR.getPreferredName());
-            OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, error);
+            BaseExceptionsHelper.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, error);
             builder.endObject();
         }
         builder.endObject();
@@ -142,7 +144,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         return searchResponse;
     }
 
-    public OpenSearchException getError() {
+    public BaseOpenSearchException getError() {
         return error;
     }
 
@@ -166,7 +168,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
 
 
     /**
-     * {@linkplain SearchResponse} and {@linkplain OpenSearchException} don't override hashcode, hence cannot be included in
+     * {@linkplain SearchResponse} and {@linkplain BaseOpenSearchException} don't override hashcode, hence cannot be included in
      * the hashcode calculation for {@linkplain AsynchronousSearchResponse}. Given that we are using these methods only in tests; on the
      * off-chance that the {@link #equals(Object)} ()} comparison fails and hashcode is equal for 2
      * {@linkplain AsynchronousSearchResponse} objects, we are wary of the @see
@@ -201,12 +203,12 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         }
     }
 
-    private Map<String, Object> getErrorAsMap(OpenSearchException exception) throws IOException {
+    private Map<String, Object> getErrorAsMap(BaseOpenSearchException exception) throws IOException {
         if (exception != null) {
             BytesReference error;
             try (XContentBuilder builder = XContentFactory.contentBuilder(Requests.INDEX_CONTENT_TYPE)) {
                 builder.startObject();
-                OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
+                BaseExceptionsHelper.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
                 builder.endObject();
                 error = BytesReference.bytes(builder);
                 return convertToMap(error, false, Requests.INDEX_CONTENT_TYPE).v2();
@@ -241,7 +243,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         long startTimeMillis = -1;
         long expirationTimeMillis = -1;
         SearchResponse searchResponse = null;
-        OpenSearchException error = null;
+        BaseOpenSearchException error = null;
         String currentFieldName = null;
         for (XContentParser.Token token = parser.nextToken(); token != XContentParser.Token.END_OBJECT; token = parser.nextToken()) {
             currentFieldName = parser.currentName();
