@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.restIT;
 
+import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.DeprecationHandler;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -27,7 +28,6 @@ import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Nullable;
-import org.opensearch.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
@@ -222,7 +222,7 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
                 .endObject()
                 .endObject();
         Request request = new Request("PUT", "_cluster/settings");
-        request.setJsonEntity(Strings.toString(builder));
+        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
         Response response = client().performRequest(request);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
