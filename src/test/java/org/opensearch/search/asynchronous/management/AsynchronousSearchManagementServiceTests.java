@@ -8,7 +8,6 @@ package org.opensearch.search.asynchronous.management;
 import org.opensearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
 import org.opensearch.search.asynchronous.service.AsynchronousSearchService;
-import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.cluster.ClusterChangedEvent;
@@ -197,8 +196,8 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
     // Create the routing table for a cluster state.
     private static RoutingTable createRoutingTable(final long version, final Metadata metadata) {
         final RoutingTable.Builder builder = RoutingTable.builder().version(version);
-        for (ObjectCursor<IndexMetadata> cursor : metadata.indices().values()) {
-            builder.addAsNew(cursor.value);
+        for (IndexMetadata cursor : metadata.indices().values()) {
+            builder.addAsNew(cursor);
         }
         return builder.build();
     }

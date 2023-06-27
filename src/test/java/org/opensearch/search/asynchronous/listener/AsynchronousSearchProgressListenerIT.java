@@ -138,7 +138,7 @@ public class AsynchronousSearchProgressListenerIT extends OpenSearchSingleNodeTe
         try {
             threadPool = new TestThreadPool(AsynchronousSearchProgressListenerIT.class.getName());
             SearchService service = getInstanceFromNode(SearchService.class);
-            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
+            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
             AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
