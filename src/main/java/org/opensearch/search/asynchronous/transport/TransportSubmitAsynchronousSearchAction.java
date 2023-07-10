@@ -72,7 +72,7 @@ public class TransportSubmitAsynchronousSearchAction extends HandledTransportAct
         try {
             final long relativeStartTimeInMillis = threadPool.relativeTimeInMillis();
             asynchronousSearchContext = asynchronousSearchService.createAndStoreContext(request, relativeStartTimeInMillis,
-                    () -> searchService.aggReduceContextBuilder(request.getSearchRequest()), user);
+                    () -> searchService.aggReduceContextBuilder(request.getSearchRequest().source()), user);
             assert asynchronousSearchContext.getAsynchronousSearchProgressListener() != null
                     : "missing progress listener for an active context";
             AsynchronousSearchProgressListener progressListener = asynchronousSearchContext.getAsynchronousSearchProgressListener();

@@ -189,7 +189,7 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                 AtomicInteger reduceContextInvocation = new AtomicInteger();
                 AsynchronousSearchProgressListener listener;
                 SearchService service = internalCluster().getInstance(SearchService.class);
-                InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
+                InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
                 AtomicReference<Exception> exceptionRef = new AtomicReference<>();
                 Function<SearchResponse, AsynchronousSearchResponse> responseFunction =
                         (r) -> null;
