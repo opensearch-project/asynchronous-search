@@ -5,7 +5,6 @@
 
 package org.opensearch.search.asynchronous.response;
 
-import org.opensearch.BaseExceptionsHelper;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -124,7 +123,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         }
         if (error != null) {
             builder.startObject(ERROR.getPreferredName());
-            BaseExceptionsHelper.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, error);
+            OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, error);
             builder.endObject();
         }
         builder.endObject();
@@ -207,7 +206,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
             BytesReference error;
             try (XContentBuilder builder = XContentFactory.contentBuilder(Requests.INDEX_CONTENT_TYPE)) {
                 builder.startObject();
-                BaseExceptionsHelper.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
+                OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
                 builder.endObject();
                 error = BytesReference.bytes(builder);
                 return convertToMap(error, false, Requests.INDEX_CONTENT_TYPE).v2();
