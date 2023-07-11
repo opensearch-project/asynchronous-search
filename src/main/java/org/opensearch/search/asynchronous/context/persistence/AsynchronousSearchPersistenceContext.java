@@ -12,7 +12,6 @@ import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.opensearch.Version;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
@@ -82,7 +81,7 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
                             asynchronousSearchPersistenceModel.getResponse())));
             try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
                     namedWriteableRegistry)) {
-                wrapperStreamInput.setVersion(Version.readVersion(wrapperStreamInput));
+                wrapperStreamInput.setVersion(wrapperStreamInput.readVersion());
                 return new SearchResponse(wrapperStreamInput);
             } catch (IOException e) {
                 logger.error(() -> new ParameterizedMessage("Failed to parse search response for asynchronous search [{}] Response : [{}] ",
@@ -102,7 +101,7 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
                         .decode(asynchronousSearchPersistenceModel.getError())));
         try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
                 namedWriteableRegistry)) {
-            wrapperStreamInput.setVersion(Version.readVersion(wrapperStreamInput));
+            wrapperStreamInput.setVersion(wrapperStreamInput.readVersion());
             return wrapperStreamInput.readException();
         } catch (IOException e) {
             logger.error(() -> new ParameterizedMessage("Failed to parse search error for asynchronous search [{}] Error : [{}] ",
