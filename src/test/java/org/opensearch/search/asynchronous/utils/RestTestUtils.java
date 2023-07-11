@@ -25,7 +25,7 @@ import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.client.Request;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.Priority;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.lucene.uid.Versions;
 import org.opensearch.common.unit.TimeValue;
