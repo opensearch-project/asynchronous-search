@@ -18,13 +18,13 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Requests;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Strings;
-import org.opensearch.common.bytes.BytesReference;
-import org.opensearch.common.io.stream.StreamInput;
-import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.rest.RestStatus;
+import org.opensearch.core.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,7 +32,7 @@ import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
 import static org.opensearch.common.xcontent.XContentHelper.convertToMap;
-import static org.opensearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
+import static org.opensearch.core.xcontent.XContentParserUtils.ensureExpectedToken;
 
 public class AsynchronousSearchResponse extends ActionResponse implements StatusToXContentObject {
 

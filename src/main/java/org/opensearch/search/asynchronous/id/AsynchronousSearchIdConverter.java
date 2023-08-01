@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.id;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.apache.lucene.store.ByteArrayDataInput;
-import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 
 import java.io.IOException;
