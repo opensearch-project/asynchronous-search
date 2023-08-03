@@ -5,7 +5,6 @@
 
 package org.opensearch.search.asynchronous.service;
 
-import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.commons.authuser.User;
 import org.apache.lucene.search.TotalHits;
@@ -39,6 +38,7 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.index.Index;
 import org.opensearch.index.get.GetResult;
 import org.opensearch.core.index.shard.ShardId;
@@ -586,7 +586,7 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
                         Map<String, Object> sourceMap = new HashMap<>();
                         sourceMap.put(EXPIRATION_TIME_MILLIS, randomNonNegativeLong());
                         sourceMap.put(START_TIME_MILLIS, randomNonNegativeLong());
-                        XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
+                        XContentBuilder builder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
                         builder.map(sourceMap);
                         BytesReference source = BytesReference.bytes(builder);
                         updateResponse.setGetResult(new GetResult(ASYNC_SEARCH_RESPONSE_INDEX,

@@ -6,7 +6,6 @@
 package org.opensearch.search.asynchronous.response;
 
 import org.opensearch.common.xcontent.StatusToXContentObject;
-import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.ParseField;
@@ -17,12 +16,13 @@ import org.opensearch.action.ActionResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Requests;
 import org.opensearch.common.Nullable;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.core.rest.RestStatus;
 
@@ -204,7 +204,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     private Map<String, Object> getErrorAsMap(OpenSearchException exception) throws IOException {
         if (exception != null) {
             BytesReference error;
-            try (XContentBuilder builder = XContentFactory.contentBuilder(Requests.INDEX_CONTENT_TYPE)) {
+            try (XContentBuilder builder = MediaTypeRegistry.contentBuilder(Requests.INDEX_CONTENT_TYPE)) {
                 builder.startObject();
                 OpenSearchException.generateThrowableXContent(builder, ToXContent.EMPTY_PARAMS, exception);
                 builder.endObject();
