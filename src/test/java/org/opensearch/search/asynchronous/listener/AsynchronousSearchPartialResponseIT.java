@@ -21,7 +21,7 @@ import org.opensearch.search.aggregations.BucketOrder;
 import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.aggregations.bucket.terms.Terms;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
@@ -119,7 +119,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
         try {
             threadPool = new TestThreadPool(AsynchronousSearchProgressListenerIT.class.getName());
             SearchService service = internalCluster().getInstance(SearchService.class);
-            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
+            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
             Function<SearchResponse, AsynchronousSearchResponse> responseFunction =

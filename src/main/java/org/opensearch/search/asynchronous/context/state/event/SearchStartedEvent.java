@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.context.state.event;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchContextEvent;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.search.SearchTask;
 

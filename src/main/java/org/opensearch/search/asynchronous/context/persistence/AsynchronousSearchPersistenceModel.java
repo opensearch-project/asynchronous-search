@@ -9,7 +9,7 @@ import org.opensearch.commons.authuser.User;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 
 import java.io.IOException;

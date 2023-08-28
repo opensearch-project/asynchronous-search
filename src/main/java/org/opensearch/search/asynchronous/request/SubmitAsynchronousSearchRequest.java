@@ -11,10 +11,10 @@ import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.Nullable;
 import org.opensearch.core.common.Strings;
-import org.opensearch.common.io.stream.StreamInput;
-import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 
 import java.io.IOException;
 import java.util.Map;

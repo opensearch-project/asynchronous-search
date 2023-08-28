@@ -11,7 +11,7 @@ import org.opensearch.common.ValidationException;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.suggest.SuggestBuilder;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.HashMap;

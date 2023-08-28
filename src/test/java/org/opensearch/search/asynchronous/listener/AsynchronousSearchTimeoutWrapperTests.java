@@ -6,7 +6,7 @@
 package org.opensearch.search.asynchronous.listener;
 
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.cluster.coordination.DeterministicTaskQueue;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;

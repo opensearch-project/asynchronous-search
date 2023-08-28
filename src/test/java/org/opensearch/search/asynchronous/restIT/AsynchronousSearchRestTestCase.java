@@ -7,6 +7,7 @@ package org.opensearch.search.asynchronous.restIT;
 
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.DeprecationHandler;
+import org.opensearch.core.xcontent.MediaType;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
@@ -30,8 +31,7 @@ import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.rest.RestStatus;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.search.SearchModule;
 
 import javax.management.MBeanServerInvocationHandler;
@@ -166,7 +166,7 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         if (entity.getContentType() == null) {
             throw new IllegalStateException("Elasticsearch didn't return the [Content-Type] header, unable to parse response body");
         }
-        XContentType xContentType = XContentType.fromMediaType(entity.getContentType());
+        MediaType xContentType = MediaType.fromMediaType(entity.getContentType());
         if (xContentType == null) {
             throw new IllegalStateException("Unsupported Content-Type: " + entity.getContentType());
         }
@@ -222,7 +222,7 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
                 .endObject()
                 .endObject();
         Request request = new Request("PUT", "_cluster/settings");
-        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
+        request.setJsonEntity(builder.toString());
         Response response = client().performRequest(request);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }

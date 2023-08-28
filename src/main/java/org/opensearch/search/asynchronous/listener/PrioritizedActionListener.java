@@ -6,7 +6,7 @@
 package org.opensearch.search.asynchronous.listener;
 
 
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 
 public interface PrioritizedActionListener<Response> extends ActionListener<Response> {
 

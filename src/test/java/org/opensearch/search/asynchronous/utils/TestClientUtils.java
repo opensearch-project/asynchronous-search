@@ -16,8 +16,8 @@ import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchReques
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
-import org.opensearch.action.ActionFuture;
-import org.opensearch.action.ActionListener;
+import org.opensearch.common.action.ActionFuture;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.bulk.BackoffPolicy;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
