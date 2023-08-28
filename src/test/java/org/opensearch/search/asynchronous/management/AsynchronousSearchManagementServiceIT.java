@@ -19,7 +19,7 @@ import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchReques
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.task.AsynchronousSearchTask;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.support.WriteRequest;
@@ -33,7 +33,7 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
 import org.opensearch.search.SearchService;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 import org.opensearch.test.OpenSearchIntegTestCase;
 
 import java.util.Arrays;

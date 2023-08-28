@@ -5,7 +5,7 @@
 
 package org.opensearch.search.asynchronous.response;
 
-import org.opensearch.action.ActionResponse;
+import org.opensearch.core.action.ActionResponse;
 import org.opensearch.common.xcontent.StatusToXContentObject;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.StreamInput;

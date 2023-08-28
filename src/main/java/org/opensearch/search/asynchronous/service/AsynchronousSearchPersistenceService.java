@@ -16,7 +16,7 @@ import org.opensearch.OpenSearchSecurityException;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.DocWriteResponse;
 import org.opensearch.action.bulk.BackoffPolicy;
 import org.opensearch.action.delete.DeleteRequest;

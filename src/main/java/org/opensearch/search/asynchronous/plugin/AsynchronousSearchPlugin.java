@@ -24,7 +24,7 @@ import org.opensearch.search.asynchronous.transport.TransportDeleteAsynchronousS
 import org.opensearch.search.asynchronous.transport.TransportGetAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.transport.TransportSubmitAsynchronousSearchAction;
 import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionResponse;
+import org.opensearch.core.action.ActionResponse;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.node.DiscoveryNodes;

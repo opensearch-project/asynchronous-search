@@ -6,13 +6,12 @@
 package org.opensearch.search.asynchronous.response;
 
 import org.opensearch.common.xcontent.StatusToXContentObject;
-import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.ParseField;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.opensearch.OpenSearchException;
 import org.opensearch.ExceptionsHelper;
-import org.opensearch.action.ActionResponse;
+import org.opensearch.core.action.ActionResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Requests;
 import org.opensearch.common.Nullable;
@@ -218,7 +217,8 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
 
     private Map<String, Object> getResponseAsMap(SearchResponse searchResponse) throws IOException {
         if (searchResponse != null) {
-            BytesReference response = XContentHelper.toXContent(searchResponse, Requests.INDEX_CONTENT_TYPE, true);
+            BytesReference response = org.opensearch.core.xcontent.XContentHelper.toXContent(
+                    searchResponse, Requests.INDEX_CONTENT_TYPE,true);
             if (response == null) {
                 return emptyMap();
             }

@@ -12,7 +12,7 @@ import org.opensearch.ExceptionsHelper;
 import org.opensearch.OpenSearchSecurityException;
 import org.opensearch.OpenSearchTimeoutException;
 import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
 import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse;
 import org.opensearch.action.search.SearchAction;
@@ -58,7 +58,7 @@ import org.opensearch.search.asynchronous.settings.LegacyOpendistroAsynchronousS
 import org.opensearch.search.asynchronous.stats.AsynchronousSearchStats;
 import org.opensearch.search.asynchronous.stats.InternalAsynchronousSearchStats;
 import org.opensearch.search.asynchronous.utils.AsynchronousSearchExceptionUtils;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 import org.opensearch.threadpool.ThreadPool;
 
 import java.util.Collections;
@@ -75,8 +75,8 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.opensearch.action.ActionListener.runAfter;
-import static org.opensearch.action.ActionListener.wrap;
+import static org.opensearch.core.action.ActionListener.runAfter;
+import static org.opensearch.core.action.ActionListener.wrap;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.CLOSED;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.FAILED;
 import static org.opensearch.search.asynchronous.context.state.AsynchronousSearchState.INIT;

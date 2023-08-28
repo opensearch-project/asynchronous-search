@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.response;
 
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentHelper;
-import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.MediaType;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.action.search.SearchResponse;
@@ -29,8 +29,6 @@ import org.opensearch.test.AbstractSerializingTestCase;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
-
-import static org.opensearch.common.xcontent.XContentHelper.toXContent;
 
 public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase<AsynchronousSearchResponse> {
 
@@ -90,8 +88,9 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
                 randomNonNegativeLong(), randomNonNegativeLong(), null, new RuntimeException("test"));
 
         BytesReference serializedResponse;
-        XContentType xContentType = Requests.INDEX_CONTENT_TYPE;
-        serializedResponse = toXContent(asResponse, xContentType, true);
+        MediaType xContentType = Requests.INDEX_CONTENT_TYPE;
+
+        serializedResponse = org.opensearch.core.xcontent.XContentHelper.toXContent(asResponse, xContentType, true);
         try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
                 LoggingDeprecationHandler.INSTANCE, serializedResponse, xContentType)) {
             AsynchronousSearchResponse asResponse1 = AsynchronousSearchResponse.fromXContent(parser);

@@ -5,7 +5,7 @@
 
 package org.opensearch.search.asynchronous.listener;
 
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.search.SearchProgressActionListener;
 
 import java.util.ArrayList;
