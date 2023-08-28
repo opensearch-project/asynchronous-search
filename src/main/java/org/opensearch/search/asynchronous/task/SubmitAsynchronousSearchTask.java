@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.task;
 
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.tasks.CancellableTask;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 
 import java.util.Map;
 

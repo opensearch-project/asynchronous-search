@@ -28,7 +28,7 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginsService;
 import org.opensearch.script.MockScriptPlugin;
 import org.opensearch.search.lookup.LeafFieldsLookup;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 import org.opensearch.test.OpenSearchIntegTestCase;
 
 import java.util.ArrayList;

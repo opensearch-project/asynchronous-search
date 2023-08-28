@@ -13,10 +13,9 @@ import org.opensearch.cluster.block.ClusterBlocks;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.threadpool.ThreadPool;
 
 import java.io.IOException;
@@ -49,7 +48,9 @@ public class TestUtils {
 
     public static Map<String, Object> getResponseAsMap(SearchResponse searchResponse) throws IOException {
         if (searchResponse != null) {
-            BytesReference response = XContentHelper.toXContent(searchResponse, Requests.INDEX_CONTENT_TYPE, true);
+
+            BytesReference response = org.opensearch.core.xcontent.XContentHelper.toXContent(
+                    searchResponse, Requests.INDEX_CONTENT_TYPE, true);
             if (response == null) {
                 return emptyMap();
             }
