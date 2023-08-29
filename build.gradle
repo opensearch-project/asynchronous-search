@@ -261,7 +261,7 @@ String baseName = "asynSearchCluster"
 String bwcVersionShort = "2.10.0"
 String bwcVersion = bwcVersionShort + ".0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
-String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/"+ bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-"+ bwcVersion +".zip"
+String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/2.10.0/8288/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-2.10.0.0.zip"
 getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
 // Creates two test clusters of previous version and loads opensearch plugin of bwcVersion
 2.times { i ->
