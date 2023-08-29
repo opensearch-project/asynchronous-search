@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.context.permits;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchContextClosedException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.LatchedActionListener;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.test.OpenSearchTestCase;

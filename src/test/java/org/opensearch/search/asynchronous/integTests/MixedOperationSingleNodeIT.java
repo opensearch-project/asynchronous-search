@@ -14,7 +14,7 @@ import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.QuadConsumer;
 import org.opensearch.OpenSearchTimeoutException;
 import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.LatchedActionListener;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.unit.TimeValue;

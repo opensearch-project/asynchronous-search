@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.response;
 
+import org.opensearch.core.xcontent.MediaType;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
@@ -13,11 +14,10 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.ShardSearchFailure;
 import org.opensearch.client.Requests;
 import org.opensearch.common.Randomness;
-import org.opensearch.common.bytes.BytesReference;
-import org.opensearch.common.io.stream.Writeable;
+import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentHelper;
-import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.opensearch.common.xcontent.XContentHelper.toXContent;
 
 public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase<AsynchronousSearchResponse> {
 
@@ -90,8 +89,8 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
                 randomNonNegativeLong(), randomNonNegativeLong(), null, new RuntimeException("test"));
 
         BytesReference serializedResponse;
-        XContentType xContentType = Requests.INDEX_CONTENT_TYPE;
-        serializedResponse = toXContent(asResponse, xContentType, true);
+        MediaType xContentType = Requests.INDEX_CONTENT_TYPE;
+        serializedResponse = org.opensearch.core.xcontent.XContentHelper.toXContent(asResponse, xContentType, true);
         try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
                 LoggingDeprecationHandler.INSTANCE, serializedResponse, xContentType)) {
             AsynchronousSearchResponse asResponse1 = AsynchronousSearchResponse.fromXContent(parser);

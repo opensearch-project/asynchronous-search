@@ -7,6 +7,7 @@ package org.opensearch.search.asynchronous.service;
 
 import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.commons.authuser.User;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.search.asynchronous.context.persistence.AsynchronousSearchPersistenceModel;
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
@@ -17,7 +18,7 @@ import org.opensearch.OpenSearchSecurityException;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.DocWriteResponse;
 import org.opensearch.action.bulk.BackoffPolicy;
 import org.opensearch.action.delete.DeleteRequest;
@@ -28,16 +29,15 @@ import org.opensearch.action.update.UpdateRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.io.stream.NotSerializableExceptionWrapper;
+import org.opensearch.core.common.io.stream.NotSerializableExceptionWrapper;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.engine.DocumentMissingException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.index.reindex.DeleteByQueryAction;
 import org.opensearch.index.reindex.DeleteByQueryRequest;
-import org.opensearch.rest.RestStatus;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.script.Script;
 import org.opensearch.script.ScriptType;
 import org.opensearch.search.fetch.subphase.FetchSourceContext;
@@ -391,7 +391,7 @@ public class AsynchronousSearchPersistenceService {
 
     private XContentBuilder mapping() {
         try {
-            XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
+            XContentBuilder builder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
             builder.startObject()
                     .startObject("properties")
                     .startObject(START_TIME_MILLIS)

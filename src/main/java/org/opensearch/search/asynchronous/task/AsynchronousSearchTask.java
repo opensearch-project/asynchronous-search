@@ -12,7 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchTask;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 
 import java.util.Map;
 import java.util.Objects;

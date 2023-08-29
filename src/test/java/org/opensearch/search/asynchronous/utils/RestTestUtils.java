@@ -28,7 +28,6 @@ import org.opensearch.common.Priority;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.lucene.uid.Versions;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.VersionType;
 import org.opensearch.index.seqno.SequenceNumbers;
@@ -449,14 +448,14 @@ public class RestTestUtils {
             return this;
         }
 
-        Params withTaskId(org.opensearch.tasks.TaskId taskId) {
+        Params withTaskId(org.opensearch.core.tasks.TaskId taskId) {
             if (taskId != null && taskId.isSet()) {
                 return putParam("task_id", taskId.toString());
             }
             return this;
         }
 
-        Params withParentTaskId(org.opensearch.tasks.TaskId parentTaskId) {
+        Params withParentTaskId(org.opensearch.core.tasks.TaskId parentTaskId) {
             if (parentTaskId != null && parentTaskId.isSet()) {
                 return putParam("parent_task_id", parentTaskId.toString());
             }
@@ -506,7 +505,8 @@ public class RestTestUtils {
 
     static HttpEntity createEntity(ToXContent toXContent, XContentType xContentType, ToXContent.Params toXContentParams)
             throws IOException {
-        BytesRef source = XContentHelper.toXContent(toXContent, xContentType, toXContentParams, false).toBytesRef();
+        BytesRef source = org.opensearch.core.xcontent.XContentHelper.toXContent(
+                toXContent, xContentType, toXContentParams, false).toBytesRef();
         return new ByteArrayEntity(source.bytes, source.offset, source.length, createContentType(xContentType));
     }
 

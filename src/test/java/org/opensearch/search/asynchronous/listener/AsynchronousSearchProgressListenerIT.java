@@ -23,7 +23,7 @@ import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.sort.FieldSortBuilder;
 import org.opensearch.search.sort.SortOrder;
-import org.opensearch.tasks.TaskId;
+import org.opensearch.core.tasks.TaskId;
 import org.opensearch.test.OpenSearchSingleNodeTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
@@ -138,7 +138,7 @@ public class AsynchronousSearchProgressListenerIT extends OpenSearchSingleNodeTe
         try {
             threadPool = new TestThreadPool(AsynchronousSearchProgressListenerIT.class.getName());
             SearchService service = getInstanceFromNode(SearchService.class);
-            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request);
+            InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
             AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);

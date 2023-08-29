@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.util.CollectionUtils;
+import org.opensearch.core.common.util.CollectionUtils;
 import org.opensearch.common.util.concurrent.ConcurrentMapLong;
 import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;

@@ -7,7 +7,7 @@ package org.opensearch.search.asynchronous.action;
 
 import org.opensearch.search.asynchronous.response.AsynchronousSearchStatsResponse;
 import org.opensearch.action.ActionType;
-import org.opensearch.common.io.stream.Writeable;
+import org.opensearch.core.common.io.stream.Writeable;
 
 public class AsynchronousSearchStatsAction extends ActionType<AsynchronousSearchStatsResponse> {
 

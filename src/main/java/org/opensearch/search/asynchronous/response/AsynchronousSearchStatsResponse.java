@@ -11,9 +11,8 @@ import org.opensearch.search.asynchronous.stats.AsynchronousSearchStats;
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.nodes.BaseNodesResponse;
 import org.opensearch.cluster.ClusterName;
-import org.opensearch.common.Strings;
-import org.opensearch.common.io.stream.StreamInput;
-import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
@@ -66,7 +65,7 @@ public class AsynchronousSearchStatsResponse extends BaseNodesResponse<Asynchron
             builder.startObject();
             toXContent(builder, EMPTY_PARAMS);
             builder.endObject();
-            return Strings.toString(builder);
+            return builder.toString();
         } catch (IOException e) {
             return "{ \"error\" : \"" + e.getMessage() + "\"}";
         }
