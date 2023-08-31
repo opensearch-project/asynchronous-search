@@ -118,6 +118,7 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
                 new ActionHandler<>(DeleteAsynchronousSearchAction.INSTANCE, TransportDeleteAsynchronousSearchAction.class));
     }
 
+    //test pr
     @Override
     public List<Setting<?>> getSettings() {
         return Arrays.asList(
