@@ -109,6 +109,7 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
         return Arrays.asList(persistenceService, asynchronousSearchService);
     }
 
+    // TEST PR
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return Arrays.asList(
