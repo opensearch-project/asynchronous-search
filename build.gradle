@@ -62,7 +62,7 @@ apply plugin: 'opensearch.pluginzip'
 
 
 checkstyle {
-    toolVersion = '8.29'
+    toolVersion = '10.12.1'
     configFile file("checkstyle/checkstyle.xml")
 }
 
@@ -134,6 +134,7 @@ dependencies {
     implementation "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
+            force "com.google.guava:guava:32.0.1-jre"
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
         }
     }
@@ -170,6 +171,7 @@ def securityEnabled = System.getProperty("security", "false") == "true"
 test {
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'es.set.netty.runtime.available.processors', 'false'
+    systemProperty 'tests.heap.size', '1G'
 
 }
 
@@ -196,6 +198,7 @@ testClusters.integTest {
 
 integTest {
     systemProperty 'tests.security.manager', 'false'
+    systemProperty 'tests.heap.size', '1G'
     systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
     systemProperty 'buildDir', buildDir.path
     systemProperty "https", System.getProperty("https", securityEnabled.toString())
@@ -229,6 +232,7 @@ task integTestRemote(type: RestIntegTestTask) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     systemProperty 'tests.security.manager', 'false'
+    systemProperty 'tests.heap.size', '1G'
     systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
 
     systemProperty "https", System.getProperty("https")

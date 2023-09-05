@@ -24,14 +24,15 @@ jobs:
         with:
           java-version: ${{ env.java_version }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
+      # Custom setting - heap size = 1G ( 512MB is default )
       - name: Checkout Branch
         uses: actions/checkout@v2
       - name: Run integration tests with multi node config
-        run: ./gradlew integTest -PnumNodes=5
+        run: ./gradlew integTest -PnumNodes=5 -Dtests.heap.size=1G
       - name: Run Backwards Compatibility Tests
         run: |
           echo "Running backwards compatibility tests ..."
-          ./gradlew bwcTestSuite -Dtests.security.manager=false
+          ./gradlew bwcTestSuite -Dtests.security.manager=false -Dtests.heap.size=1G
       - name: Upload failed logs
         uses: actions/upload-artifact@v2
         if: failure()
