@@ -5,6 +5,7 @@
 
 package org.opensearch.search.asynchronous.restIT;
 
+import org.opensearch.action.search.SearchRequest;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.DeprecationHandler;
 import org.opensearch.core.xcontent.MediaType;
@@ -105,6 +106,12 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
   }
 
+    protected SearchResponse executeSubmitAsynchronousSearch(
+            @Nullable SearchRequest submitAsynchronousSearchRequest)
+            throws IOException {
+        return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
+    }
+
   protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
       @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
       throws IOException {
@@ -113,6 +120,14 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
     }
 
+
+    protected SearchResponse executeSubmitAsynchronousSearch(
+            @Nullable SearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+            throws IOException {
+        Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, shouldUseLegacyApi);
+        Response resp = client().performRequest(request);
+        return parseEntity(resp.getEntity(), SearchResponse::fromXContent);
+    }
     Response executeDeleteAsynchronousSearch(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) throws IOException {
         Request request = RestTestUtils.buildHttpRequest(deleteAsynchronousSearchRequest);
         return client().performRequest(request);

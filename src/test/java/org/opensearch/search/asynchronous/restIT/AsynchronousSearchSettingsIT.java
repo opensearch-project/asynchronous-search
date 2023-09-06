@@ -5,6 +5,8 @@
 
 package org.opensearch.search.asynchronous.restIT;
 
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.monitor.jvm.JvmInfo;
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.opensearch.search.asynchronous.request.GetAsynchronousSearchRequest;
@@ -16,6 +18,8 @@ import org.opensearch.client.ResponseException;
 import org.opensearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,33 +63,46 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
     }
 
     public void testMaxRunningAsynchronousSearchContexts() throws Exception {
-        int numThreads = 50;
-        List<Thread> threadsList = new LinkedList<>();
-        CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
-        for (int i = 0; i < numThreads; i++) {
-            threadsList.add(new Thread(() -> {
-                try {
-                    SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
-                    validRequest.keepAlive(TimeValue.timeValueHours(1));
-                    AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
-                    assertNotNull(asResponse.getSearchResponse());
-                } catch (IOException e) {
-                    fail("submit request failed");
-                } finally {
+        JvmInfo jvmInfo = JvmInfo.jvmInfo();
+        //ByteSizeValue maxHeapSize = jvmInfo.getMem().getHeapMax();
+        String useCompressedOops = jvmInfo.useCompressedOops();
+        MemoryMXBean MEMORY_MX_BEAN = ManagementFactory.getMemoryMXBean();
+        double size =MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed();
+        logger.info("USED size here : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed()/1024/1024);
+        logger.info("heap size [{}], compressed ordinary object pointers [{}]", JvmInfo.jvmInfo().getMem().getHeapMax(), useCompressedOops);
+        try {
+            int numThreads = 50;
+            List<Thread> threadsList = new LinkedList<>();
+            logger.info(threadsList.size());
+            CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
+            for (int i = 0; i < numThreads; i++) {
+                threadsList.add(new Thread(() -> {
                     try {
-                        barrier.await();
-                    } catch (Exception e) {
-                        fail();
+                        SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
+                        validRequest.keepAlive(TimeValue.timeValueHours(1));
+                        logger.info("USED size before : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+                        AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
+                        assertNotNull(asResponse.getSearchResponse());
+                        logger.info("USED size after : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+                    } catch (IOException e) {
+                        fail("submit request failed");
+                    } finally {
+                        try {
+                            barrier.await();
+                        } catch (Exception e) {
+                            fail();
+                        }
                     }
                 }
+                ));
             }
-            ));
-        }
-        threadsList.forEach(Thread::start);
-        barrier.await();
-        for (Thread thread : threadsList) {
-            thread.join();
-        }
+            threadsList.forEach(Thread::start);
+            barrier.await();
+            for (Thread thread : threadsList) {
+                logger.info("USED size thread : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+                thread.join();
+            }
+
 
         updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 0);
         threadsList.clear();
@@ -116,9 +133,96 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
         for (Thread thread : threadsList) {
             thread.join();
         }
-        assertEquals(numFailures.get(), 50);
+        assertEquals(numFailures.get(), 170);
         updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
                 AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
+        } catch (Exception e) {
+            logger.info("========== EXCEPTION : " + e.getMessage());
+            logger.info("============== USED SIZE : " + MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+        }
+    }
+
+    public void testMaxRunningAsynchronousSearchContexts1() throws Exception {
+        JvmInfo jvmInfo = JvmInfo.jvmInfo();
+        //ByteSizeValue maxHeapSize = jvmInfo.getMem().getHeapMax();
+        String useCompressedOops = jvmInfo.useCompressedOops();
+        MemoryMXBean MEMORY_MX_BEAN = ManagementFactory.getMemoryMXBean();
+        double size =MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed();
+        logger.info("USED size here : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed()/1024/1024);
+        logger.info("heap size [{}], compressed ordinary object pointers [{}]", JvmInfo.jvmInfo().getMem().getHeapMax(), useCompressedOops);
+        try {
+            int numThreads = 50;
+            List<Thread> threadsList = new LinkedList<>();
+            logger.info(threadsList.size());
+            CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
+            for (int i = 0; i < numThreads; i++) {
+                threadsList.add(new Thread(() -> {
+                    try {
+                        SearchRequest validRequest = new SearchRequest();
+                        validRequest.indices("test");
+                        //validRequest.keepAlive(TimeValue.timeValueHours(1));
+                        logger.info("USED size before : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+                        SearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
+                        assertNotNull(asResponse);
+                        logger.info("USED size after : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+                    } catch (IOException e) {
+                        fail("submit request failed");
+                    } finally {
+                        try {
+
+                            barrier.await();
+                        } catch (Exception e) {
+                            fail();
+                        }
+                    }
+                }
+                ));
+            }
+            threadsList.forEach(Thread::start);
+            barrier.await();
+            for (Thread thread : threadsList) {
+                logger.info("USED size thread : {}", MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+                thread.join();
+            }
+
+
+            //updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 0);
+            threadsList.clear();
+            AtomicInteger numFailures = new AtomicInteger();
+            for (int i = 0; i < numThreads; i++) {
+                threadsList.add(new Thread(() -> {
+                    try {
+                        SearchRequest validRequest = new SearchRequest();
+                        //validRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
+                        SearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
+                    } catch (Exception e) {
+                        assertTrue(e instanceof ResponseException);
+                        assertThat(e.getMessage(), containsString("Trying to create too many concurrent searches"));
+                        numFailures.getAndIncrement();
+
+                    } finally {
+                        try {
+                            numFailures.getAndIncrement();
+                            barrier.await();
+                        } catch (Exception e) {
+                            fail();
+                        }
+                    }
+                }
+                ));
+            }
+            threadsList.forEach(Thread::start);
+            barrier.await();
+            for (Thread thread : threadsList) {
+                thread.join();
+            }
+            assertEquals(numFailures.get(), 50);
+//            updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+//                    AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
+        } catch (Exception e) {
+            logger.info("========== EXCEPTION : " + e.getMessage());
+            logger.info("============== USED SIZE : " + MEMORY_MX_BEAN.getHeapMemoryUsage().getUsed() / 1024 / 1024);
+        }
     }
 
     public void testStoreAsyncSearchWithFailures() throws Exception {

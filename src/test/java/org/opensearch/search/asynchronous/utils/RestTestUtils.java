@@ -78,6 +78,29 @@ public class RestTestUtils {
         return request;
     }
 
+    public static Request buildHttpRequest(SearchRequest submitAsynchronousSearchRequest
+            , boolean shouldUseLegacyApi) throws IOException {
+
+        SearchRequest searchRequest = submitAsynchronousSearchRequest;
+        Request request =
+                new Request(
+                        HttpGet.METHOD_NAME,
+                        /*trim first backslash*/
+                        endpoint(
+                                searchRequest.indices(),
+                                "_search"));
+
+        Params params = new Params();
+        //addSearchRequestParams(params, searchRequest);
+        //addSubmitAsynchronousSearchRequestParams(params, submitAsynchronousSearchRequest);
+
+        if (searchRequest.source() != null) {
+            request.setEntity(createEntity(searchRequest.source(), REQUEST_BODY_CONTENT_TYPE));
+        }
+        request.addParameters(params.asMap());
+        return request;
+    }
+
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         return buildHttpRequest(getAsynchronousSearchRequest, false);
     }
