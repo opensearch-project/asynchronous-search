@@ -30,6 +30,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Build with Gradle
         run: ./gradlew build
+        env:
+          _JAVA_OPTIONS: -Xmx600M
       - name: Pull and Run Docker for security tests
         run: |
           version=`./gradlew properties -q | grep "opensearch_version:" | awk '{print $2}'`
