@@ -60,8 +60,8 @@ apply plugin: 'opensearch.rest-test'
 
 
 checkstyle {
-    toolVersion = '8.29'
-    configFile file("checkstyle/checkstyle.xml")
+    toolVersion "10.3.3"
+    configDirectory.set(rootProject.file("checkstyle/"))
 }
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
@@ -99,7 +99,7 @@ dependencies {
     compile "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
-            force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
+            force "com.google.guava:guava:32.1.1-jre"
         }
     }
 }
