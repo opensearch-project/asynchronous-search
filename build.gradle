@@ -62,7 +62,7 @@ apply plugin: 'opensearch.pluginzip'
 
 
 checkstyle {
-    toolVersion = '10.12.1'
+    toolVersion = '8.29'
     configFile file("checkstyle/checkstyle.xml")
 }
 
@@ -134,7 +134,6 @@ dependencies {
     implementation "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
-            force "com.google.guava:guava:32.0.1-jre"
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
         }
     }
