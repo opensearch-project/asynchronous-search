@@ -171,7 +171,6 @@ def securityEnabled = System.getProperty("security", "false") == "true"
 test {
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'es.set.netty.runtime.available.processors', 'false'
-    systemProperty 'tests.heap.size', '1G'
 
 }
 
@@ -198,7 +197,6 @@ testClusters.integTest {
 
 integTest {
     systemProperty 'tests.security.manager', 'false'
-    systemProperty 'tests.heap.size', '1G'
     systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
     systemProperty 'buildDir', buildDir.path
     systemProperty "https", System.getProperty("https", securityEnabled.toString())
@@ -232,7 +230,6 @@ task integTestRemote(type: RestIntegTestTask) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     systemProperty 'tests.security.manager', 'false'
-    systemProperty 'tests.heap.size', '1G'
     systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
 
     systemProperty "https", System.getProperty("https")

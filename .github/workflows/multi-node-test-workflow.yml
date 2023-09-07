@@ -28,11 +28,11 @@ jobs:
       - name: Checkout Branch
         uses: actions/checkout@v2
       - name: Run integration tests with multi node config
-        run: ./gradlew integTest -PnumNodes=5 -Dtests.heap.size=1G
+        run: ./gradlew integTest -PnumNodes=5
       - name: Run Backwards Compatibility Tests
         run: |
           echo "Running backwards compatibility tests ..."
-          ./gradlew bwcTestSuite -Dtests.security.manager=false -Dtests.heap.size=1G
+          ./gradlew bwcTestSuite -Dtests.security.manager=false
       - name: Upload failed logs
         uses: actions/upload-artifact@v2
         if: failure()
