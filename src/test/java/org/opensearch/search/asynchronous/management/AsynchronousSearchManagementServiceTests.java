@@ -25,6 +25,7 @@ import org.opensearch.common.UUIDs;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.set.Sets;
 import org.opensearch.core.index.Index;
+import org.opensearch.telemetry.tracing.noop.NoopTracer;
 import org.opensearch.test.ClusterServiceUtils;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.transport.MockTransport;
@@ -115,7 +116,8 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
         };
         final TransportService transportService = mockTransport.createTransportService(settings,
                 deterministicTaskQueue.getThreadPool(), NOOP_TRANSPORT_INTERCEPTOR, boundTransportAddress ->
-                        new DiscoveryNode("local-node", buildNewFakeTransportAddress(), Version.CURRENT), null, emptySet());
+                        new DiscoveryNode("local-node", buildNewFakeTransportAddress(), Version.CURRENT), null, emptySet(),
+                NoopTracer.INSTANCE);
         transportService.start();
         transportService.acceptIncomingRequests();
         AsynchronousSearchManagementService managementService = new AsynchronousSearchManagementService(settings, mockClusterService,
