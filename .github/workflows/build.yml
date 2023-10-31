@@ -136,16 +136,6 @@ jobs:
         with:
           name: logs
           path: build/testclusters/integTest-*/logs/*
-      - name: Create Artifact Path
-        run: |
-          mkdir -p asynchronous-search-artifacts
-          cp ./build/distributions/*.zip asynchronous-search-artifacts     
-      # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: asynchronous-search-plugin-ubuntu
-          path: asynchronous-search-artifacts
 
 #  windows-build:
 #    # Job name
