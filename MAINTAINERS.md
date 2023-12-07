@@ -6,9 +6,9 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 
 | Maintainer      | GitHub ID                                                | Affiliation |
 |-----------------|----------------------------------------------------------|-------------|
+| Rishav Sagar    | [RS146BIJAY](https://github.com/RS146BIJAY)      | Amazon      |
 | Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)      | Amazon      |
 | Arpit Bandejiya | [Arpit-Bandejiya](https://github.com/Arpit-Bandejiya)    | Amazon      |
-| Dhrubajyoti Das | [dhruv16dhr](https://github.com/dhruv16dhr)              | Amazon      |
 | Pranit Kumar    | [pranikum](https://github.com/pranikum)                  | Amazon      |
 | Bukhtawar Khan  | [Bukhtawar](https://github.com/Bukhtawar)                | Amazon      |
 
