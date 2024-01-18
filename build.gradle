@@ -11,7 +11,7 @@ buildscript {
         opensearch_group = "org.opensearch"
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         opensearch_version = System.getProperty("opensearch.version", "3.0.0-SNAPSHOT")
-        opensearch_plugin_version = System.getProperty("bwc.version", "2.11.0.0")
+        opensearch_plugin_version = System.getProperty("bwc.version", "2.11.1.0")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         // 2.0.0-rc1-SNAPSHOT -> 2.0.0.0-rc1-SNAPSHOT
         version_tokens = opensearch_version.tokenize('-')
@@ -34,7 +34,7 @@ buildscript {
 
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
-        classpath "org.jacoco:org.jacoco.agent:0.8.5"
+        classpath "org.jacoco:org.jacoco.agent:0.8.11"
     }
 }
 //****************************************************************************/
@@ -42,7 +42,7 @@ buildscript {
 //****************************************************************************/
 
 plugins {
-    id 'nebula.ospackage' version "8.3.0"
+    id 'com.netflix.nebula.ospackage' version "11.6.0"
     id 'checkstyle'
 }
 
@@ -81,8 +81,10 @@ ext {
     noticeFile = rootProject.file('NOTICE.txt')
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 
 allprojects {
     group 'org.opensearch'
@@ -134,7 +136,7 @@ dependencies {
     implementation "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
-            force "com.google.guava:guava:32.0.1-jre"
+            force "com.google.guava:guava:32.1.1-jre"
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
         }
     }
@@ -259,7 +261,7 @@ ext.getPluginResource = { download_to_folder, download_from_src ->
 }
 
 String baseName = "asynSearchCluster"
-String bwcVersionShort = "2.11.0"
+String bwcVersionShort = "2.11.1"
 String bwcVersion = bwcVersionShort + ".0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
 String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/"+ bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-"+ bwcVersion +".zip"
