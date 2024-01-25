@@ -62,9 +62,9 @@ jacocoTestReport {
     sourceDirectories.from = "src/main/java"
     classDirectories.from = sourceSets.main.output
     reports {
-        html.enabled = true // human readable
-        csv.enabled = true
-        xml.enabled = true // for coverlay
+        html.required = true // human readable
+        csv.required = true
+        xml.required = true // for coverlay
     }
 }
 
