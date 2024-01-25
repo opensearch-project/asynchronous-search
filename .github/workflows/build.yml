@@ -21,6 +21,7 @@ jobs:
         java:
           - 11
           - 17
+          - 21
     # Job name
     name: Build Asynchronous Search
     # This job runs on Linux.
@@ -69,6 +70,7 @@ jobs:
         java:
           - 11
           - 17
+          - 21
     # Job name
     name: Test Asynchronous Search with opensearchstaging docker
     # This job runs on Linux.
