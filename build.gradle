@@ -34,7 +34,7 @@ buildscript {
 
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
-        classpath "org.jacoco:org.jacoco.agent:0.8.5"
+        classpath "org.jacoco:org.jacoco.agent:0.8.11"
     }
 }
 //****************************************************************************/
@@ -42,7 +42,7 @@ buildscript {
 //****************************************************************************/
 
 plugins {
-    id 'nebula.ospackage' version "8.3.0"
+    id 'com.netflix.nebula.ospackage' version "11.6.0"
     id 'checkstyle'
 }
 
@@ -81,8 +81,10 @@ ext {
     noticeFile = rootProject.file('NOTICE.txt')
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 
 allprojects {
     group 'org.opensearch'
@@ -134,7 +136,7 @@ dependencies {
     implementation "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
         resolutionStrategy {
-            force "com.google.guava:guava:32.0.1-jre"
+            force "com.google.guava:guava:32.1.1-jre"
             force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
         }
     }
@@ -201,7 +203,7 @@ integTest {
     systemProperty 'buildDir', buildDir.path
     systemProperty "https", System.getProperty("https", securityEnabled.toString())
     systemProperty "user", System.getProperty("user", "admin")
-    systemProperty "password", System.getProperty("password", "admin")
+    systemProperty "password", System.getProperty("password", "myStrongPassword123!") // this change is needed for >= 2.12 and should not be backported to < 2.12
     // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
     // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
     doFirst {
@@ -263,7 +265,7 @@ String bwcVersionShort = "2.10.0"
 String bwcVersion = bwcVersionShort + ".0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
 String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/"+ bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-"+ bwcVersion +".zip"
-getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
+//getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
 // Creates two test clusters of previous version and loads opensearch plugin of bwcVersion
 2.times { i ->
     testClusters {
