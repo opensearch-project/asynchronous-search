@@ -201,7 +201,7 @@ integTest {
     systemProperty 'buildDir', buildDir.path
     systemProperty "https", System.getProperty("https", securityEnabled.toString())
     systemProperty "user", System.getProperty("user", "admin")
-    systemProperty "password", System.getProperty("password", "admin")
+    systemProperty "password", System.getProperty("password", "myStrongPassword123!") // this change is needed for >= 2.12 and should not be backported to < 2.12
     // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
     // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
     doFirst {
