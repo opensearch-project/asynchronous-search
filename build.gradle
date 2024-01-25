@@ -11,7 +11,7 @@ buildscript {
         opensearch_group = "org.opensearch"
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         opensearch_version = System.getProperty("opensearch.version", "2.12.0-SNAPSHOT")
-        opensearch_plugin_version = System.getProperty("bwc.version", "2.12.0.0")
+        opensearch_plugin_version = System.getProperty("bwc.version", "2.10.0.0")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         // 2.0.0-rc1-SNAPSHOT -> 2.0.0.0-rc1-SNAPSHOT
         version_tokens = opensearch_version.tokenize('-')
@@ -203,7 +203,7 @@ integTest {
     systemProperty 'buildDir', buildDir.path
     systemProperty "https", System.getProperty("https", securityEnabled.toString())
     systemProperty "user", System.getProperty("user", "admin")
-    systemProperty "password", System.getProperty("password", "admin")
+    systemProperty "password", System.getProperty("password", "myStrongPassword123!") // this change is needed for >= 2.12 and should not be backported to < 2.12
     // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
     // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
     doFirst {
@@ -261,7 +261,7 @@ ext.getPluginResource = { download_to_folder, download_from_src ->
 }
 
 String baseName = "asynSearchCluster"
-String bwcVersionShort = "2.12.0"
+String bwcVersionShort = "2.10.0"
 String bwcVersion = bwcVersionShort + ".0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
 String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/"+ bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-"+ bwcVersion +".zip"
