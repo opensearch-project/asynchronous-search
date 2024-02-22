@@ -10,7 +10,7 @@ buildscript {
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
-        opensearch_version = System.getProperty("opensearch.version", "2.12.0-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "2.12.1-SNAPSHOT")
         opensearch_plugin_version = System.getProperty("bwc.version", "2.10.0.0")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         // 2.0.0-rc1-SNAPSHOT -> 2.0.0.0-rc1-SNAPSHOT
