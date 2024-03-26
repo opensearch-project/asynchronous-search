@@ -68,7 +68,7 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
     protected void onListShards(List<SearchShard> shards, List<SearchShard> skippedShards, SearchResponse.Clusters clusters,
                                 boolean fetchPhase) {
         partialResultsHolder.hasFetchPhase.set(fetchPhase);
-        partialResultsHolder.totalShards.set(shards.size());
+        partialResultsHolder.totalShards.set(shards.size() + skippedShards.size());
         partialResultsHolder.skippedShards.set(skippedShards.size());
         partialResultsHolder.successfulShards.set(skippedShards.size());
         partialResultsHolder.clusters.set(clusters);
