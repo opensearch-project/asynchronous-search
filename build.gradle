@@ -259,7 +259,7 @@ ext.getPluginResource = { download_to_folder, download_from_src ->
 }
 
 String baseName = "asynSearchCluster"
-String bwcVersionShort = "2.14.0"
+String bwcVersionShort = "2.15.0"
 String bwcVersion = bwcVersionShort + ".0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
 String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/"+ bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-"+ bwcVersion +".zip"
