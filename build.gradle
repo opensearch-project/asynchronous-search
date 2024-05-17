@@ -258,33 +258,50 @@ ext.getPluginResource = { download_to_folder, download_from_src ->
     return fileTree(download_to_folder).getSingleFile()
 }
 
+Boolean bwcBundleTest = (project.findProperty('customDistributionDownloadType') != null &&
+        project.properties['customDistributionDownloadType'] == "bundle");
+
+/*
+When testing between major versions note that ONLY the latest minor release of the previous version is api compatible. 
+*/
+
+String bwcVersion = "2.15.0.0"
+String bwcVersionShort = bwcVersion.replaceAll(/\.0+$/, "")
+
 String baseName = "asynSearchCluster"
-String bwcVersionShort = "2.15.0"
-String bwcVersion = bwcVersionShort + ".0"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
-String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/"+ bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-"+ bwcVersion +".zip"
+String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/" + bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-" + bwcVersion + ".zip"
+
 // Creates two test clusters of previous version and loads opensearch plugin of bwcVersion
 2.times { i ->
     testClusters {
         "${baseName}$i" {
             testDistribution = "ARCHIVE"
-            versions = [bwcVersionShort,opensearch_version]
+            versions = [bwcVersionShort, opensearch_version]
             numberOfNodes = 3
-            plugin(provider(new Callable<RegularFile>() {
-                @Override
-                RegularFile call() throws Exception {
-                    return new RegularFile() {
-                        @Override
-                        File getAsFile() {
-                            if (new File(bwcFilePath + bwcVersion).exists()) {
-                                project.delete(files(bwcFilePath + bwcVersion))
+
+            if (!bwcBundleTest) {
+                plugin(provider(new Callable<RegularFile>() {
+                    @Override
+                    RegularFile call() throws Exception {
+                        return new RegularFile() {
+                            @Override
+                            File getAsFile() {
+                                if (new File(bwcFilePath + bwcVersion).exists()) {
+                                    project.delete(files(bwcFilePath + bwcVersion))
+                                }
+                                getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
+                                return fileTree(bwcFilePath + bwcVersion).getSingleFile()
                             }
-                            getPluginResource(bwcFilePath + bwcVersion, bwcRemoteFile)
-                            return fileTree(bwcFilePath + bwcVersion).getSingleFile()
                         }
                     }
+                }))
+            } else {
+                nodes.each { node ->
+                    node.setting("plugins.security.disabled", "true")
                 }
-            }))
+            }
+
             setting 'path.repo', "${buildDir}/cluster/shared/repo/${baseName}"
             setting 'http.content_type.required', 'true'
             systemProperty "java.library.path", "$rootDir/src/test/resources/org/opensearch/search/asynchronous/lib:$rootDir/jni/release"
@@ -339,8 +356,14 @@ task prepareBwcTests {
 task "${baseName}#mixedClusterTask"(type: StandaloneRestIntegTestTask) {
     useCluster testClusters."${baseName}0"
     dependsOn "${baseName}#oldVersionClusterTask0"
-    doFirst {
-        testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
+    if (bwcBundleTest){
+        doFirst {
+            testClusters."${baseName}0".nextNodeToNextVersion()
+        }
+    } else {
+        doFirst {
+            testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
+        }
     }
     filter {
         includeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
@@ -350,14 +373,21 @@ task "${baseName}#mixedClusterTask"(type: StandaloneRestIntegTestTask) {
     nonInputProperties.systemProperty('tests.rest.cluster', "${-> testClusters."${baseName}0".allHttpSocketURI.join(",")}")
     nonInputProperties.systemProperty('tests.clustername', "${-> testClusters."${baseName}0".getName()}")
 }
+
 // Upgrades the second node to new OpenSearch version with upgraded plugin version after the first node is upgraded.
 // This results in a mixed cluster with 1 node on the old version and 2 upgraded nodes.
 // This is used for rolling upgrade.
 task "${baseName}#twoThirdsUpgradedClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#mixedClusterTask"
     useCluster testClusters."${baseName}0"
-    doFirst {
-        testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
+    if (bwcBundleTest){
+        doFirst {
+            testClusters."${baseName}0".nextNodeToNextVersion()
+        }
+    } else {
+        doFirst {
+            testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
+        }
     }
     filter {
         includeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
@@ -374,8 +404,14 @@ task "${baseName}#twoThirdsUpgradedClusterTask"(type: StandaloneRestIntegTestTas
 task "${baseName}#rollingUpgradeClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#twoThirdsUpgradedClusterTask"
     useCluster testClusters."${baseName}0"
-    doFirst {
-        testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
+    if (bwcBundleTest){
+        doFirst {
+            testClusters."${baseName}0".nextNodeToNextVersion()
+        }
+    } else {
+        doFirst {
+            testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
+        }
     }
     filter {
         includeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
@@ -392,8 +428,14 @@ task "${baseName}#rollingUpgradeClusterTask"(type: StandaloneRestIntegTestTask) 
 task "${baseName}#fullRestartClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#oldVersionClusterTask1"
     useCluster testClusters."${baseName}1"
-    doFirst {
-        testClusters."${baseName}1".upgradeAllNodesAndPluginsToNextVersion(plugins)
+    if (bwcBundleTest){
+        doFirst {
+            testClusters."${baseName}1".nextNodeToNextVersion()
+        }
+    } else {
+        doFirst {
+            testClusters."${baseName}1".upgradeNodeAndPluginToNextVersion(plugins)
+        }
     }
     filter {
         includeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
