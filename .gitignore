@@ -30,3 +30,6 @@ build
 
 # OSX files
 .DS_Store
+
+# VSCode
+.vscode
