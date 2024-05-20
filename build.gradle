@@ -268,6 +268,9 @@ When testing between major versions note that ONLY the latest minor release of t
 String bwcVersion = "2.15.0.0"
 String bwcVersionShort = bwcVersion.replaceAll(/\.0+$/, "")
 
+String nxtVersion = opensearch_version
+String nxtVersionShort = nxtVersion.replaceAll(/\.0+$/, "").replaceAll("-SNAPSHOT", "")
+
 String baseName = "asynSearchCluster"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
 String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/" + bwcVersionShort + "/latest/linux/x64/tar/builds/opensearch/plugins/opensearch-asynchronous-search-" + bwcVersion + ".zip"
@@ -277,7 +280,7 @@ String bwcRemoteFile = "https://ci.opensearch.org/ci/dbc/distribution-build-open
     testClusters {
         "${baseName}$i" {
             testDistribution = "ARCHIVE"
-            versions = [bwcVersionShort, opensearch_version]
+            versions = [bwcVersionShort, nxtVersionShort]
             numberOfNodes = 3
 
             if (!bwcBundleTest) {
