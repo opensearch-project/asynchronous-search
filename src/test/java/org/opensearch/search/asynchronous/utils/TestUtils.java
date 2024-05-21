@@ -17,6 +17,7 @@ import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.test.ClusterServiceUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class TestUtils {
 
     public static ClusterService createClusterService(Settings settings, ThreadPool threadPool, DiscoveryNode localNode,
                                                       ClusterSettings clusterSettings) {
-        ClusterService clusterService = new ClusterService(settings, clusterSettings, threadPool);
+        ClusterService clusterService = ClusterServiceUtils.createClusterService(settings, clusterSettings, threadPool);
         clusterService.setNodeConnectionsService(createNoOpNodeConnectionsService());
         ClusterState initialClusterState = ClusterState.builder(new ClusterName(TestUtils.class.getSimpleName()))
                 .nodes(DiscoveryNodes.builder()
