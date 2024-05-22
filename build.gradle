@@ -5,6 +5,7 @@
 import java.util.concurrent.Callable
 import org.opensearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.opensearch.gradle.test.RestIntegTestTask
+
 buildscript {
     ext {
         distribution = 'oss-zip'
@@ -35,6 +36,7 @@ buildscript {
         classpath "org.jacoco:org.jacoco.agent:0.8.11"
     }
 }
+
 //****************************************************************************/
 // Build configurations
 //****************************************************************************/
@@ -267,9 +269,7 @@ When testing between major versions note that ONLY the latest minor release of t
 
 String bwcVersion = "2.15.0.0"
 String bwcVersionShort = bwcVersion.replaceAll(/\.0+$/, "")
-
-String nxtVersion = opensearch_version
-String nxtVersionShort = nxtVersion.replaceAll(/\.0+$/, "").replaceAll("-SNAPSHOT", "")
+String nxtVersionShort = opensearch_version.replaceAll(/\.0+$/, "").replaceAll("-SNAPSHOT", "")
 
 String baseName = "asynSearchCluster"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
@@ -359,12 +359,10 @@ task prepareBwcTests {
 task "${baseName}#mixedClusterTask"(type: StandaloneRestIntegTestTask) {
     useCluster testClusters."${baseName}0"
     dependsOn "${baseName}#oldVersionClusterTask0"
-    if (bwcBundleTest){
-        doFirst {
+    doFirst {
+        if (bwcBundleTest){
             testClusters."${baseName}0".nextNodeToNextVersion()
-        }
-    } else {
-        doFirst {
+        } else {
             testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
         }
     }
@@ -383,12 +381,10 @@ task "${baseName}#mixedClusterTask"(type: StandaloneRestIntegTestTask) {
 task "${baseName}#twoThirdsUpgradedClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#mixedClusterTask"
     useCluster testClusters."${baseName}0"
-    if (bwcBundleTest){
-        doFirst {
+    doFirst {
+        if (bwcBundleTest){
             testClusters."${baseName}0".nextNodeToNextVersion()
-        }
-    } else {
-        doFirst {
+        } else {
             testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
         }
     }
@@ -407,12 +403,10 @@ task "${baseName}#twoThirdsUpgradedClusterTask"(type: StandaloneRestIntegTestTas
 task "${baseName}#rollingUpgradeClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#twoThirdsUpgradedClusterTask"
     useCluster testClusters."${baseName}0"
-    if (bwcBundleTest){
-        doFirst {
+    doFirst {
+        if (bwcBundleTest){
             testClusters."${baseName}0".nextNodeToNextVersion()
-        }
-    } else {
-        doFirst {
+        } else {
             testClusters."${baseName}0".upgradeNodeAndPluginToNextVersion(plugins)
         }
     }
@@ -431,12 +425,10 @@ task "${baseName}#rollingUpgradeClusterTask"(type: StandaloneRestIntegTestTask) 
 task "${baseName}#fullRestartClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#oldVersionClusterTask1"
     useCluster testClusters."${baseName}1"
-    if (bwcBundleTest){
-        doFirst {
+    doFirst {
+        if (bwcBundleTest){
             testClusters."${baseName}1".nextNodeToNextVersion()
-        }
-    } else {
-        doFirst {
+        } else {
             testClusters."${baseName}1".upgradeNodeAndPluginToNextVersion(plugins)
         }
     }
