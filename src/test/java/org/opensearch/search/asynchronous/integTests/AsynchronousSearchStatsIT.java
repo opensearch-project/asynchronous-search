@@ -105,6 +105,7 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         }
     }
 
+    @AwaitsFix(bugUrl = "https://github.com/opensearch-project/asynchronous-search/issues/87")
     @TestLogging(value = "_root:DEBUG", reason = "flaky")
     public void testStatsAcrossNodes() throws InterruptedException, ExecutionException {
         TestThreadPool threadPool = null;
