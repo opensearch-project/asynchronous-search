@@ -264,10 +264,10 @@ Boolean bwcBundleTest = (project.findProperty('customDistributionDownloadType') 
         project.properties['customDistributionDownloadType'] == "bundle");
 
 /*
-When testing between major versions note that ONLY the latest minor release of the previous version is api compatible. 
+When testing between major versions note that ONLY the latest minor release of the previous version is api compatible.
 */
 
-String bwcVersion = "2.17.0.0"
+String bwcVersion = "2.18.0.0"
 String bwcVersionShort = bwcVersion.replaceAll(/\.0+$/, "")
 String nxtVersionShort = opensearch_version.replaceAll(/\.0+$/, "").replaceAll("-SNAPSHOT", "")
 
