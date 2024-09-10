@@ -21,7 +21,7 @@ jobs:
         java:
           - 21
     # Job name
-    name: Build Asynchronous Search
+    name: Linux - Build Asynchronous Search
     # This job runs on Linux.
     outputs:
       build-test-linux: ${{ steps.step-build-test-linux.outputs.build-test-linux }}
@@ -139,7 +139,7 @@ jobs:
 
   windows-build:
     # Job name
-    name: Build Asynchronous Search
+    name: Windows - Build Asynchronous Search
     # This job runs on Windows.
     runs-on: windows-latest
     steps:
@@ -168,7 +168,7 @@ jobs:
 
   mac-os-build:
     # Job name
-    name: Build Asynchronous Search
+    name: MacOS - Build Asynchronous Search
     # This job runs on Mac OS.
     runs-on: macos-latest
     steps:
