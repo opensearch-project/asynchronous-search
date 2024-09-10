@@ -58,7 +58,7 @@ jobs:
         uses: codecov/codecov-action@v1.2.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: async-plugin-linux-${{ matrix.java }}
           path: ${{ steps.step-build-test-linux.outputs.build-test-linux }}
@@ -77,7 +77,7 @@ jobs:
     steps:
       - name: Checkout Branch
         uses: actions/checkout@v2
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: async-plugin-linux-${{ matrix.java }}
       - name: Pull and Run Docker for security tests
@@ -131,7 +131,7 @@ jobs:
             ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
           fi
       - name: Upload failed logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: logs
@@ -161,7 +161,7 @@ jobs:
           cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: asynchronous-search-plugin-windows
           path: asynchronous-search-artifacts
@@ -190,7 +190,7 @@ jobs:
           cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: asynchronous-search-plugin-mac
           path: asynchronous-search-artifacts
