@@ -9,12 +9,6 @@ on:
     branches:
       - "*"
 
-anchors:
-  job_defaults: &job_defaults
-    strategy:
-      matrix:
-        java: [21]
-
 jobs:
   Get-CI-Image-Tag:
     uses: opensearch-project/opensearch-build/.github/workflows/get-ci-image-tag.yml@main
@@ -22,6 +16,9 @@ jobs:
       product: opensearch
 
   build:
+    strategy:
+      matrix:
+        java: [ 21 ]
     # Job name
     needs: Get-CI-Image-Tag
     name: Build Asynchronous Search

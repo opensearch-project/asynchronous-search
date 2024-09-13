@@ -12,7 +12,7 @@ anchors:
   job_defaults: &job_defaults
     strategy:
       matrix:
-        java: [21]
+        java: [ 11,17,21 ]
 
 jobs:
   Get-CI-Image-Tag:

@@ -9,6 +9,10 @@ on:
 
 jobs:
   build-and-publish-snapshots:
+    strategy:
+      matrix:
+        java: [ 11,17,21 ]
+
     runs-on: ubuntu-latest
 
     permissions:
