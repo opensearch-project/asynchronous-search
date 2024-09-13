@@ -426,11 +426,7 @@ task "${baseName}#fullRestartClusterTask"(type: StandaloneRestIntegTestTask) {
     dependsOn "${baseName}#oldVersionClusterTask1"
     useCluster testClusters."${baseName}1"
     doFirst {
-        if (bwcBundleTest){
-            testClusters."${baseName}1".nextNodeToNextVersion()
-        } else {
-            testClusters."${baseName}1".upgradeNodeAndPluginToNextVersion(plugins)
-        }
+        testClusters."${baseName}1".upgradeAllNodesAndPluginsToNextVersion(plugins)
     }
     filter {
         includeTestsMatching "org.opensearch.search.asynchronous.bwc.*IT"
