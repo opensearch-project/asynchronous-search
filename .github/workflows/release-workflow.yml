@@ -19,9 +19,6 @@ jobs:
     # This job runs on Linux
     runs-on: ubuntu-latest
 
-    env: # actions/checkout uses node 16
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
     steps:
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch

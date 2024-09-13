@@ -19,9 +19,6 @@ jobs:
       id-token: write
       contents: write
 
-    env: # actions/checkout uses node 16
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
     steps:
       - name: Set Up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
