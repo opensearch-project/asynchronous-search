@@ -8,6 +8,12 @@ on:
     branches:
       - "*"
 
+anchors:
+  job_defaults: &job_defaults
+    strategy:
+      matrix:
+        java: [21]
+
 jobs:
   Get-CI-Image-Tag:
     uses: opensearch-project/opensearch-build/.github/workflows/get-ci-image-tag.yml@main
@@ -15,11 +21,8 @@ jobs:
       product: opensearch
 
   linux-build:
+    <<: *job_defaults
     needs: Get-CI-Image-Tag
-    strategy:
-      matrix:
-        java:
-          - 21
     # Job name
     name: Linux - Build Asynchronous Search
     # This job runs on Linux.
@@ -33,19 +36,19 @@ jobs:
       # need to switch to root so that github actions can install runner binary on container without permission issues.
       options: --user root
 
-    env:
+    env: # actions/checkout uses node 16
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
     steps:
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
-      - name: Set up JDK for build and test
+      - name: Set up JDK ${{ matrix.java }} for build and test
         uses: actions/setup-java@v4
         with:
           distribution: temurin # Temurin is a distribution of adoptium
-          java-version: 21
+          java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build with Gradle
         id: step-build-test-linux
         run: |
@@ -61,23 +64,24 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       - uses: actions/upload-artifact@v3
         with:
-          name: async-plugin-linux-21
+          name: async-plugin-linux-${{ matrix.java }}
           path: ${{ steps.step-build-test-linux.outputs.build-test-linux }}
           if-no-files-found: error
 
   linux-test-docker:
+    <<: *job_defaults
     needs: linux-build
-    strategy:
-      matrix:
-        java:
-          - 21
     # Job name
     name: Test Asynchronous Search with opensearchstaging docker
     # This job runs on Linux.
     runs-on: ubuntu-latest
+
+    env: # actions/checkout uses node 16
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     steps:
       - name: Checkout Branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           name: async-plugin-linux-${{ matrix.java }}
@@ -139,20 +143,25 @@ jobs:
           path: build/testclusters/integTest-*/logs/*
 
   windows-build:
+    <<: *job_defaults
     # Job name
     name: Windows - Build Asynchronous Search
     # This job runs on Windows.
     runs-on: windows-latest
+
+    env: # actions/checkout uses node 16
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     steps:
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
-      - name: Set Up JDK 21
+      - name: Set Up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin # Temurin is a distribution of adoptium
-          java-version: 21
+          java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build with Gradle
         run: ./gradlew.bat build -x integTest -x jacocoTestReport
         env:
@@ -169,20 +178,25 @@ jobs:
           path: asynchronous-search-artifacts
 
   mac-os-build:
+    <<: *job_defaults
     # Job name
     name: MacOS - Build Asynchronous Search
     # This job runs on Mac OS.
     runs-on: macos-latest
+
+    env: # actions/checkout uses node 16
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     steps:
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
-      - name: Set Up JDK 21
+      - name: Set Up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin # Temurin is a distribution of adoptium
-          java-version: 21
+          java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build with Gradle
         run: ./gradlew build -x integTest -x jacocoTestReport
         env:

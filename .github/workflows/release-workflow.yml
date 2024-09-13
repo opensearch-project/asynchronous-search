@@ -18,12 +18,16 @@ jobs:
     name: Build Asynchronous Search with JDK ${{ matrix.java }}
     # This job runs on Linux
     runs-on: ubuntu-latest
+
+    env: # actions/checkout uses node 16
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     steps:
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
-      - name: Set Up JDK
+      - name: Set Up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin # Temurin is a distribution of adoptium
