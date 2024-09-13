@@ -23,9 +23,10 @@ jobs:
       - name: Checkout Branch
         uses: actions/checkout@v2
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
-      - name: Set Up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v1
+      - name: Set Up JDK
+        uses: actions/setup-java@v4
         with:
+          distribution: temurin # Temurin is a distribution of adoptium
           java-version: ${{ matrix.java }}
 
       # Building zip, deb and rpm files
