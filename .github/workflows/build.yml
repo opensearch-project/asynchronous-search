@@ -8,12 +8,6 @@ on:
     branches:
       - "*"
 
-anchors:
-  job_defaults: &job_defaults
-    strategy:
-      matrix:
-        java: [ 11,17,21 ]
-
 jobs:
   Get-CI-Image-Tag:
     uses: opensearch-project/opensearch-build/.github/workflows/get-ci-image-tag.yml@main
@@ -21,7 +15,9 @@ jobs:
       product: opensearch
 
   linux-build:
-    <<: *job_defaults
+    strategy:
+      matrix:
+        java: [ 11,17,21 ]
     needs: Get-CI-Image-Tag
     # Job name
     name: Linux - Build Asynchronous Search
@@ -73,7 +69,9 @@ jobs:
           if-no-files-found: error
 
   linux-test-docker:
-    <<: *job_defaults
+    strategy:
+      matrix:
+        java: [ 11,17,21 ]
     needs: linux-build
     # Job name
     name: Test Asynchronous Search with opensearchstaging docker
@@ -147,7 +145,9 @@ jobs:
           path: build/testclusters/integTest-*/logs/*
 
   windows-build:
-    <<: *job_defaults
+    strategy:
+      matrix:
+        java: [ 11,17,21 ]
     # Job name
     name: Windows - Build Asynchronous Search
     # This job runs on Windows.
@@ -179,7 +179,9 @@ jobs:
           path: asynchronous-search-artifacts
 
   mac-os-build:
-    <<: *job_defaults
+    strategy:
+      matrix:
+        java: [ 11,17,21 ]
     # Job name
     name: MacOS - Build Asynchronous Search
     # This job runs on Mac OS.
