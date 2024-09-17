@@ -166,11 +166,15 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             TestThreadPool finalThreadPool = threadPool;
             threads.forEach(t -> finalThreadPool.generic().execute(t));
             latch.await();
-            AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
-                    new AsynchronousSearchStatsRequest()).get();
+
             AtomicLong actualNumSuccesses = new AtomicLong();
             AtomicLong actualNumFailures = new AtomicLong();
             AtomicLong actualNumPersisted = new AtomicLong();
+
+            AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
+                    new AsynchronousSearchStatsRequest()).get();
+            waitForAsyncSearchTasksToComplete();
+
             for (AsynchronousSearchStats node : statsResponse.getNodes()) {
                 AsynchronousSearchCountStats asCountStats = node.getAsynchronousSearchCountStats();
                 assertEquals(asCountStats.getRunningCount(), 0);
@@ -188,7 +192,6 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             assertEquals(expectedNumPersisted.get(), actualNumPersisted.get());
             assertEquals(expectedNumFailures.get(), actualNumFailures.get());
             assertEquals(expectedNumSuccesses.get(), actualNumSuccesses.get());
-            waitForAsyncSearchTasksToComplete();
         } finally {
             ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
         }

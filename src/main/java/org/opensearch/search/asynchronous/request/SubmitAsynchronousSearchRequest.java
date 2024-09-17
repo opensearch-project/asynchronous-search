@@ -42,7 +42,7 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
     private TimeValue waitForCompletionTimeout = DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT;
 
     /**
-     * Determines whether the resource resource should be kept on completion or failure (defaults to false).
+     * Determines whether the resource should be kept on completion or failure (defaults to false).
      */
     @Nullable
     private Boolean keepOnCompletion = DEFAULT_KEEP_ON_COMPLETION;
