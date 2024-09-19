@@ -16,6 +16,7 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | Kunal Kotwani    | [kotwanikunal](https://github.com/kotwanikunal) | Amazon      |
 | Poojita Raj      | [Poojita-Raj](https://github.com/Poojita-Raj) | Amazon      |
 | Rishikesh Pasham | [Rishikesh1159](https://github.com/Rishikesh1159)         | Amazon      |
+| Finn Carroll     | [finnegancarroll](https://github.com/finnegancarroll)         | Amazon      |
 
 ## Emeritus
 
