@@ -269,7 +269,7 @@ When testing between major versions note that ONLY the latest minor release of t
 
 String bwcVersion = "2.18.0.0"
 String bwcVersionShort = bwcVersion.replaceAll(/\.0+$/, "")
-String nxtVersionShort = opensearch_version.replaceAll(/\.0+$/, "").replaceAll("-SNAPSHOT", "")
+String nxtVersionShort = opensearch_version.replaceAll("-SNAPSHOT", "")
 
 String baseName = "asynSearchCluster"
 String bwcFilePath = "src/test/resources/org/opensearch/search/asynchronous/bwc/"
