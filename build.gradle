@@ -6,8 +6,6 @@ import java.util.concurrent.Callable
 import org.opensearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.opensearch.gradle.test.RestIntegTestTask
 
-import java.nio.file.Paths
-
 buildscript {
     ext {
         distribution = 'oss-zip'
