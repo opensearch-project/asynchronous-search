@@ -6,6 +6,8 @@ import java.util.concurrent.Callable
 import org.opensearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.opensearch.gradle.test.RestIntegTestTask
 
+import java.nio.file.Paths
+
 buildscript {
     ext {
         distribution = 'oss-zip'
@@ -42,6 +44,7 @@ buildscript {
 //****************************************************************************/
 
 plugins {
+    id "de.undercouch.download" version "5.3.0"
     id 'com.netflix.nebula.ospackage' version "11.6.0"
     id 'checkstyle'
 }
@@ -79,6 +82,20 @@ ext {
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.txt')
     noticeFile = rootProject.file('NOTICE.txt')
+
+    ['sample.pem', 'test-kirk.jks'].forEach { file ->
+        File local = getLayout().getBuildDirectory().file(file).get().getAsFile()
+        download.run {
+            src "https://raw.githubusercontent.com/opensearch-project/security/main/bwc-test/src/test/resources/security/" + file
+            dest local
+            overwrite false
+        }
+    }
+
+    processResources {
+        from(getLayout().getBuildDirectory().file('sample.pem').get().getAsFile())
+        from(getLayout().getBuildDirectory().file('test-kirk.jks').get().getAsFile())
+    }
 }
 
 java {
