@@ -99,7 +99,7 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
                 } catch (URISyntaxException e) {
                     throw new RuntimeException(e);
                 }
-                Path configPath = PathUtils.get(uri).toAbsolutePath();
+                Path configPath = PathUtils.get(uri).getParent().toAbsolutePath();
                 return new SecureRestClientBuilder(settings, configPath).build();
             } else {
                 configureHttpsClient(builder, settings);
