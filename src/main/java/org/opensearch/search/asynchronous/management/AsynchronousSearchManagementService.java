@@ -194,8 +194,6 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
     public final void performCleanUp() {
         final ThreadContext threadContext = threadPool.getThreadContext();
         try (ThreadContext.StoredContext ignore = threadContext.stashContext()) {
-            // we have to execute under the system context so that if security is enabled the sync is authorized
-            threadContext.markAsSystemContext();
             final Map<String, DiscoveryNode> dataNodes = clusterService.state().nodes().getDataNodes();
             List<DiscoveryNode> nodes = Stream.of(dataNodes.values().toArray(new DiscoveryNode[0]))
                     .collect(Collectors.toList());
