@@ -84,7 +84,7 @@ ext {
     ['sample.pem', 'test-kirk.jks'].forEach { file ->
         File local = getLayout().getBuildDirectory().file(file).get().getAsFile()
         download.run {
-            src "https://raw.githubusercontent.com/opensearch-project/security/main/bwc-test/src/test/resources/security/" + file
+            src "https://raw.githubusercontent.com/opensearch-project/index-management/refs/heads/main/src/test/resources/security/" + file
             dest local
             overwrite false
         }
