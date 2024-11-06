@@ -90,7 +90,7 @@ jobs:
           java-version: ${{ matrix.java }}
       - name: Checkout Branch
         uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: async-plugin-linux-${{ matrix.java }}
       - name: Pull and Run Docker for security tests
