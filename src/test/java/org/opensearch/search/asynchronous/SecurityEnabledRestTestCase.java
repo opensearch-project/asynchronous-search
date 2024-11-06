@@ -33,8 +33,11 @@ import org.opensearch.test.rest.OpenSearchRestTestCase;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -92,7 +95,7 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
             if (Objects.nonNull(keystore)) {
                 URI uri = null;
                 try {
-                    uri = this.getClass().getClassLoader().getResource("security/sample.pem").toURI();
+                    uri = this.getClass().getClassLoader().getResource("sample.pem").toURI();
                 } catch (URISyntaxException e) {
                     throw new RuntimeException(e);
                 }
@@ -142,7 +145,15 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
     }
 
     protected static void configureHttpsClient(RestClientBuilder builder, Settings settings) throws IOException {
-        Map<String, String> headers = ThreadContext.buildDefaultHeaders(settings);
+        Map<String, String> headers = new HashMap<>(ThreadContext.buildDefaultHeaders(settings));
+        if (System.getProperty("user") != null && System.getProperty("password") != null) {
+            String userName = System.getProperty("user");
+            String password = System.getProperty("password");
+            headers.put(
+                "Authorization",
+                "Basic " + Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8))
+            );
+        }
         Header[] defaultHeaders = new Header[headers.size()];
         int i = 0;
         for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -150,17 +161,8 @@ public abstract class SecurityEnabledRestTestCase extends OpenSearchRestTestCase
         }
         builder.setDefaultHeaders(defaultHeaders);
         builder.setHttpClientConfigCallback(httpClientBuilder -> {
-            String userName = Optional
-                    .ofNullable(System.getProperty("user"))
-                    .orElseThrow(() -> new RuntimeException("user name is missing"));
-            String password = Optional
-                    .ofNullable(System.getProperty("password"))
-                    .orElseThrow(() -> new RuntimeException("password is missing"));
-            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(userName, password));
             try {
                 return httpClientBuilder
-                        .setDefaultCredentialsProvider(credentialsProvider)
                         // disable the certificate since our testing cluster just uses the default security configuration
                         .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                         .setSSLContext(SSLContextBuilder.create().loadTrustMaterial(null, (chains, authType) -> true).build());
