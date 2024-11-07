@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.listener;
 
 import org.opensearch.search.asynchronous.utils.AsynchronousSearchAssertions;
@@ -60,9 +63,9 @@ public class AsynchronousSearchCancellationIT extends AsynchronousSearchIntegTes
         boolean lowLevelCancellation = randomBoolean();
         logger.info("Using lowLevelCancellation: {}", lowLevelCancellation);
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), lowLevelCancellation)
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), lowLevelCancellation)
+            .build();
     }
 
     private void indexTestData() {
@@ -70,8 +73,7 @@ public class AsynchronousSearchCancellationIT extends AsynchronousSearchIntegTes
             // Make sure we have a few segments
             BulkRequestBuilder bulkRequestBuilder = client().prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             for (int j = 0; j < 20; j++) {
-                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j))
-                        .setSource("field", "value"));
+                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j)).setSource("field", "value"));
             }
             assertNoFailures(bulkRequestBuilder.get());
         }
@@ -93,23 +95,20 @@ public class AsynchronousSearchCancellationIT extends AsynchronousSearchIntegTes
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         indexTestData();
 
-        SearchRequest searchRequest = client().prepareSearch("test").setQuery(
-                scriptQuery(new Script(
-                        ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
-                .request();
-        //We need a NodeClient to make sure the listener gets injected in the search request execution.
-        //Randomized client randomly return NodeClient/TransportClient
+        SearchRequest searchRequest = client().prepareSearch("test")
+            .setQuery(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
+            .request();
+        // We need a NodeClient to make sure the listener gets injected in the search request execution.
+        // Randomized client randomly return NodeClient/TransportClient
         testCase(client(), searchRequest, plugins);
     }
-
 
     public void testCancellationDuringFetchPhase() throws Exception {
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         indexTestData();
         SearchRequest searchRequest = client().prepareSearch("test")
-                .addScriptField("test_field",
-                        new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())
-                ).request();
+            .addScriptField("test_field", new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap()))
+            .request();
         testCase(client(), searchRequest, plugins);
     }
 
@@ -123,17 +122,19 @@ public class AsynchronousSearchCancellationIT extends AsynchronousSearchIntegTes
             InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            Function<SearchResponse, AsynchronousSearchResponse> responseFunction =
-                    (r) -> null;
-            Function<Exception, AsynchronousSearchResponse> failureFunction =
-                    (e) -> null;
-            AsynchronousSearchProgressListener listener = new AsynchronousSearchProgressListener(threadPool.relativeTimeInMillis(),
-                    responseFunction,
-                    failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis,
-                    () -> {
-                        assertTrue(reduceContextInvocation.compareAndSet(false, true));
-                        return reduceContextBuilder;
-                    }) {
+            Function<SearchResponse, AsynchronousSearchResponse> responseFunction = (r) -> null;
+            Function<Exception, AsynchronousSearchResponse> failureFunction = (e) -> null;
+            AsynchronousSearchProgressListener listener = new AsynchronousSearchProgressListener(
+                threadPool.relativeTimeInMillis(),
+                responseFunction,
+                failureFunction,
+                threadPool.generic(),
+                threadPool::relativeTimeInMillis,
+                () -> {
+                    assertTrue(reduceContextInvocation.compareAndSet(false, true));
+                    return reduceContextBuilder;
+                }
+            ) {
                 @Override
                 public void onResponse(SearchResponse searchResponse) {
                     assertTrue(responseRef.compareAndSet(null, searchResponse));

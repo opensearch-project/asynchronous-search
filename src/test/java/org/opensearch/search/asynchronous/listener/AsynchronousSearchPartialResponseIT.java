@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.listener;
 
 import org.opensearch.search.asynchronous.utils.AsynchronousSearchAssertions;
@@ -62,14 +65,13 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
     }
 
     protected void createIdx(String keyFieldMapping) {
-        assertAcked(prepareCreate("idx")
-                .setMapping("key", keyFieldMapping));
+        assertAcked(prepareCreate("idx").setMapping("key", keyFieldMapping));
     }
 
     protected void indexData() throws Exception {
         List<IndexRequestBuilder> docs = new ArrayList<>();
 
-        for(int i = 0; i < shardCount; i++) {
+        for (int i = 0; i < shardCount; i++) {
             docs.addAll(indexDoc(routingKeyForShard("idx", i), "1", 3));
             docs.addAll(indexDoc(routingKeyForShard("idx", i), "2", 1));
             docs.addAll(indexDoc(routingKeyForShard("idx", i), "3", 5));
@@ -80,8 +82,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
         indexRandom(true, docs);
 
         String shardRouting = routingKeyForShard("idx", randomIntBetween(0, shardCount - 1));
-        SearchResponse resp = client().prepareSearch("idx").setRouting(shardRouting)
-                .setQuery(matchAllQuery()).get();
+        SearchResponse resp = client().prepareSearch("idx").setRouting(shardRouting).setQuery(matchAllQuery()).get();
         assertSearchResponse(resp);
         long totalHits = resp.getHits().getTotalHits().value;
         assertThat(totalHits, is(20L));
@@ -90,11 +91,9 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
     protected List<IndexRequestBuilder> indexDoc(String shard, String key, int times) throws Exception {
         IndexRequestBuilder[] builders = new IndexRequestBuilder[times];
         for (int i = 0; i < times; i++) {
-            builders[i] = client().prepareIndex("idx").setRouting(shard).setSource(jsonBuilder()
-                    .startObject()
-                    .field("key", key)
-                    .field("value", 1)
-                    .endObject());
+            builders[i] = client().prepareIndex("idx")
+                .setRouting(shard)
+                .setSource(jsonBuilder().startObject().field("key", key).field("value", 1).endObject());
         }
         return Arrays.asList(builders);
     }
@@ -103,10 +102,14 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
         createIdx("type=keyword");
         indexData();
         SearchRequest request = client().prepareSearch("idx")
-                .setQuery(matchAllQuery())
-                .addAggregation(terms("keys").field("key").size(aggregationSize)
-                        .collectMode(randomFrom(Aggregator.SubAggCollectionMode.values())).order(BucketOrder.count(false)))
-                .request();
+            .setQuery(matchAllQuery())
+            .addAggregation(
+                terms("keys").field("key")
+                    .size(aggregationSize)
+                    .collectMode(randomFrom(Aggregator.SubAggCollectionMode.values()))
+                    .order(BucketOrder.count(false))
+            )
+            .request();
         request.setBatchedReduceSize(2);
         testCase(client(), request);
     }
@@ -122,13 +125,16 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
             InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
             AtomicReference<Exception> exceptionRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            Function<SearchResponse, AsynchronousSearchResponse> responseFunction =
-                    (r) -> null;
-            Function<Exception, AsynchronousSearchResponse> failureFunction =
-                    (e) -> null;
-            listener = new AsynchronousSearchProgressListener(threadPool.relativeTimeInMillis(), responseFunction,
-                    failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis,
-                    () -> reduceContextBuilder) {
+            Function<SearchResponse, AsynchronousSearchResponse> responseFunction = (r) -> null;
+            Function<Exception, AsynchronousSearchResponse> failureFunction = (e) -> null;
+            listener = new AsynchronousSearchProgressListener(
+                threadPool.relativeTimeInMillis(),
+                responseFunction,
+                failureFunction,
+                threadPool.generic(),
+                threadPool::relativeTimeInMillis,
+                () -> reduceContextBuilder
+            ) {
                 @Override
                 public void onResponse(SearchResponse searchResponse) {
                     assertTrue(responseRef.compareAndSet(null, searchResponse));
@@ -137,8 +143,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
                 }
 
                 @Override
-                protected void onPartialReduce(List<SearchShard> shards, TotalHits totalHits,
-                                               InternalAggregations aggs, int reducePhase) {
+                protected void onPartialReduce(List<SearchShard> shards, TotalHits totalHits, InternalAggregations aggs, int reducePhase) {
                     super.onPartialReduce(shards, totalHits, aggs, reducePhase);
                     Terms terms = this.partialResponse().getAggregations().get("keys");
                     List<? extends Terms.Bucket> buckets = terms.getBuckets();

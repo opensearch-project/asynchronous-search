@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.response;
 
 import org.opensearch.core.action.ActionResponse;
@@ -78,11 +81,18 @@ public class AcknowledgedResponse extends ActionResponse implements StatusToXCon
      * A generic parser that simply parses the acknowledged flag
      */
     private static final ConstructingObjectParser<Boolean, Void> ACKNOWLEDGED_FLAG_PARSER = new ConstructingObjectParser<>(
-            "acknowledged_flag", true, args -> (Boolean) args[0]);
+        "acknowledged_flag",
+        true,
+        args -> (Boolean) args[0]
+    );
 
     static {
-        ACKNOWLEDGED_FLAG_PARSER.declareField(constructorArg(), (parser, context) -> parser.booleanValue(), ACKNOWLEDGED,
-                ObjectParser.ValueType.BOOLEAN);
+        ACKNOWLEDGED_FLAG_PARSER.declareField(
+            constructorArg(),
+            (parser, context) -> parser.booleanValue(),
+            ACKNOWLEDGED,
+            ObjectParser.ValueType.BOOLEAN
+        );
     }
 
     @Override

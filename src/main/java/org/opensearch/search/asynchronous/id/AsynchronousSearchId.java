@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.id;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
@@ -47,7 +50,6 @@ public final class AsynchronousSearchId {
         return "[" + node + "][" + taskId + "][" + asynchronousSearchContextId + "]";
     }
 
-
     @Override
     public int hashCode() {
         return Objects.hash(this.asynchronousSearchContextId, this.node, this.taskId);
@@ -55,13 +57,11 @@ public final class AsynchronousSearchId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         AsynchronousSearchId asynchronousSearchId = (AsynchronousSearchId) o;
         return asynchronousSearchId.asynchronousSearchContextId.equals(this.asynchronousSearchContextId)
-                && asynchronousSearchId.node.equals(this.node)
-                && asynchronousSearchId.taskId == this.taskId;
+            && asynchronousSearchId.node.equals(this.node)
+            && asynchronousSearchId.taskId == this.taskId;
     }
 }

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.permits;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
@@ -48,15 +51,18 @@ public class AsynchronousSearchContextPermits implements Closeable {
         this.semaphore = new Semaphore(TOTAL_PERMITS, true);
     }
 
-    public AsynchronousSearchContextPermits(AsynchronousSearchContextId asynchronousSearchContextId, ThreadPool threadPool,
-                                            Semaphore semaphore) {
+    public AsynchronousSearchContextPermits(
+        AsynchronousSearchContextId asynchronousSearchContextId,
+        ThreadPool threadPool,
+        Semaphore semaphore
+    ) {
         this.asynchronousSearchContextId = asynchronousSearchContextId;
         this.threadPool = threadPool;
         this.semaphore = semaphore;
     }
 
     private Releasable acquirePermits(int permits, TimeValue timeout, final String details) throws AsynchronousSearchContextClosedException,
-            TimeoutException {
+        TimeoutException {
         RunOnce release = new RunOnce(() -> {});
         if (closed) {
             logger.debug("Trying to acquire permit for closed context [{}]", asynchronousSearchContextId);
@@ -67,18 +73,28 @@ public class AsynchronousSearchContextPermits implements Closeable {
                 this.lockDetails = details;
                 release = new RunOnce(() -> {
                     logger.debug("Releasing permit(s) [{}] with reason [{}]", permits, lockDetails);
-                    semaphore.release(permits);});
+                    semaphore.release(permits);
+                });
                 if (closed) {
                     release.run();
                     logger.debug("Trying to acquire permit for closed context [{}]", asynchronousSearchContextId);
-                    throw new AsynchronousSearchContextClosedException( asynchronousSearchContextId);
+                    throw new AsynchronousSearchContextClosedException(asynchronousSearchContextId);
                 }
                 return release::run;
             } else {
-                throw new TimeoutException("obtaining context lock" + asynchronousSearchContextId + "timed out after " +
-                        timeout.getMillis() + "ms, previous lock details: [" + lockDetails + "] trying to lock for [" + details + "]");
+                throw new TimeoutException(
+                    "obtaining context lock"
+                        + asynchronousSearchContextId
+                        + "timed out after "
+                        + timeout.getMillis()
+                        + "ms, previous lock details: ["
+                        + lockDetails
+                        + "] trying to lock for ["
+                        + details
+                        + "]"
+                );
             }
-        } catch (InterruptedException e ) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             release.run();
             throw new RuntimeException("thread interrupted while trying to obtain context lock", e);
@@ -89,8 +105,7 @@ public class AsynchronousSearchContextPermits implements Closeable {
         threadPool.executor(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME).execute(new AbstractRunnable() {
             @Override
             public void onFailure(final Exception e) {
-                logger.debug(() -> new ParameterizedMessage("Failed to acquire permit [{}] for [{}]",
-                        permits, reason), e);
+                logger.debug(() -> new ParameterizedMessage("Failed to acquire permit [{}] for [{}]", permits, reason), e);
                 onAcquired.onFailure(e);
             }
 

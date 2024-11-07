@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.listener;
 
 import org.opensearch.search.asynchronous.plugin.AsynchronousSearchPlugin;
@@ -37,20 +40,24 @@ public class AsynchronousSearchTimeoutWrapperTests extends OpenSearchTestCase {
         AtomicReference<Exception> exception = new AtomicReference<>();
         PrioritizedActionListener<Void> listener = mockListener(onResponseInvoked, exception);
         PrioritizedActionListener<Void> prioritizedActionListener = AsynchronousSearchTimeoutWrapper.wrapScheduledTimeout(
-                deterministicTaskQueue.getThreadPool(), timeout, AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
-                listener, (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true)));
-        //simulate timeout by advancing time
+            deterministicTaskQueue.getThreadPool(),
+            timeout,
+            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+            listener,
+            (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true))
+        );
+        // simulate timeout by advancing time
         assertTrue(deterministicTaskQueue.hasDeferredTasks());
         deterministicTaskQueue.advanceTime();
         deterministicTaskQueue.runAllRunnableTasks();
 
-        //Fire onResponse/onFailure from search action listener
+        // Fire onResponse/onFailure from search action listener
         if (randomBoolean()) {
             prioritizedActionListener.onResponse(null);
         } else {
             prioritizedActionListener.onFailure(new RuntimeException("random exception"));
         }
-        //assert only the timeout consumer gets executed
+        // assert only the timeout consumer gets executed
         assertTrue(onTimeoutInvoked.get());
         assertFalse(onResponseInvoked.get());
         assertNull(exception.get());
@@ -63,13 +70,17 @@ public class AsynchronousSearchTimeoutWrapperTests extends OpenSearchTestCase {
         AtomicReference<Exception> exception = new AtomicReference<>();
         ActionListener<Void> listener = mockListener(onResponseInvoked, exception);
         PrioritizedActionListener<Void> prioritizedActionListener = AsynchronousSearchTimeoutWrapper.wrapScheduledTimeout(
-                deterministicTaskQueue.getThreadPool(), timeout, AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
-                listener, (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true)));
+            deterministicTaskQueue.getThreadPool(),
+            timeout,
+            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+            listener,
+            (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true))
+        );
 
-        //Fire on Response of the action listener
+        // Fire on Response of the action listener
         prioritizedActionListener.onResponse(null);
 
-        //simulate timeout by advancing time
+        // simulate timeout by advancing time
         assertTrue(deterministicTaskQueue.hasDeferredTasks());
         deterministicTaskQueue.advanceTime();
         deterministicTaskQueue.runAllRunnableTasks();
@@ -86,12 +97,16 @@ public class AsynchronousSearchTimeoutWrapperTests extends OpenSearchTestCase {
         AtomicReference<Exception> exception = new AtomicReference<>();
         ActionListener<Void> listener = mockListener(onResponseInvoked, exception);
         PrioritizedActionListener<Void> prioritizedActionListener = AsynchronousSearchTimeoutWrapper.wrapScheduledTimeout(
-                deterministicTaskQueue.getThreadPool(), timeout, AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
-                listener, (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true)));
+            deterministicTaskQueue.getThreadPool(),
+            timeout,
+            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+            listener,
+            (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true))
+        );
 
         prioritizedActionListener.onFailure(new RuntimeException("random exception"));
 
-        //simulate timeout by advancing time
+        // simulate timeout by advancing time
         assertTrue(deterministicTaskQueue.hasDeferredTasks());
         deterministicTaskQueue.advanceTime();
         deterministicTaskQueue.runAllRunnableTasks();
@@ -108,17 +123,21 @@ public class AsynchronousSearchTimeoutWrapperTests extends OpenSearchTestCase {
         AtomicReference<Exception> exception = new AtomicReference<>();
         ActionListener<Void> listener = mockListener(onResponseInvoked, exception);
         PrioritizedActionListener<Void> prioritizedActionListener = AsynchronousSearchTimeoutWrapper.wrapScheduledTimeout(
-                deterministicTaskQueue.getThreadPool(), timeout, AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
-                listener, (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true)));
+            deterministicTaskQueue.getThreadPool(),
+            timeout,
+            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+            listener,
+            (r) -> assertTrue(onTimeoutInvoked.compareAndSet(false, true))
+        );
 
-        //execute the listener immediately
+        // execute the listener immediately
         prioritizedActionListener.executeImmediately();
 
         assertTrue(onTimeoutInvoked.get());
         assertFalse(onResponseInvoked.get());
         assertNull(exception.get());
 
-        //simulate timeout by advancing time
+        // simulate timeout by advancing time
         assertTrue(deterministicTaskQueue.hasDeferredTasks());
         deterministicTaskQueue.advanceTime();
         deterministicTaskQueue.runAllRunnableTasks();

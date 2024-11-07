@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.rest;
 
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
@@ -54,8 +57,8 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
     @Override
     public List<ReplacedRoute> replacedRoutes() {
         return Arrays.asList(
-                new ReplacedRoute(POST, "/{index}" + BASE_URI, POST, "/{index}" + LEGACY_OPENDISTRO_BASE_URI),
-                new ReplacedRoute(POST, BASE_URI, POST, LEGACY_OPENDISTRO_BASE_URI)
+            new ReplacedRoute(POST, "/{index}" + BASE_URI, POST, "/{index}" + LEGACY_OPENDISTRO_BASE_URI),
+            new ReplacedRoute(POST, BASE_URI, POST, LEGACY_OPENDISTRO_BASE_URI)
         );
     }
 
@@ -64,27 +67,34 @@ public class RestSubmitAsynchronousSearchAction extends BaseRestHandler {
         SearchRequest searchRequest = new SearchRequest();
 
         IntConsumer setSize = size -> searchRequest.source().size(size);
-        request.withContentOrSourceParamParserOrNull(parser ->
-                RestSearchAction.parseSearchRequest(searchRequest, request, parser, client.getNamedWriteableRegistry(), setSize));
+        request.withContentOrSourceParamParserOrNull(
+            parser -> RestSearchAction.parseSearchRequest(searchRequest, request, parser, client.getNamedWriteableRegistry(), setSize)
+        );
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
 
-        submitAsynchronousSearchRequest.waitForCompletionTimeout(request.paramAsTime("wait_for_completion_timeout",
-                SubmitAsynchronousSearchRequest.DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT));
+        submitAsynchronousSearchRequest.waitForCompletionTimeout(
+            request.paramAsTime("wait_for_completion_timeout", SubmitAsynchronousSearchRequest.DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT)
+        );
 
         submitAsynchronousSearchRequest.keepAlive(request.paramAsTime("keep_alive", SubmitAsynchronousSearchRequest.DEFAULT_KEEP_ALIVE));
 
-        submitAsynchronousSearchRequest.keepOnCompletion(request.paramAsBoolean("keep_on_completion",
-                SubmitAsynchronousSearchRequest.DEFAULT_KEEP_ON_COMPLETION));
+        submitAsynchronousSearchRequest.keepOnCompletion(
+            request.paramAsBoolean("keep_on_completion", SubmitAsynchronousSearchRequest.DEFAULT_KEEP_ON_COMPLETION)
+        );
 
         searchRequest.requestCache(request.paramAsBoolean("request_cache", SubmitAsynchronousSearchRequest.DEFAULT_REQUEST_CACHE));
 
-        searchRequest.setBatchedReduceSize(request.paramAsInt("batched_reduce_size",
-                SubmitAsynchronousSearchRequest.DEFAULT_BATCHED_REDUCE_SIZE));
+        searchRequest.setBatchedReduceSize(
+            request.paramAsInt("batched_reduce_size", SubmitAsynchronousSearchRequest.DEFAULT_BATCHED_REDUCE_SIZE)
+        );
 
         return channel -> {
             RestCancellableNodeClient cancellableClient = new RestCancellableNodeClient(client, request.getHttpChannel());
-            cancellableClient.execute(SubmitAsynchronousSearchAction.INSTANCE, submitAsynchronousSearchRequest,
-                    new RestStatusToXContentListener<>(channel));
+            cancellableClient.execute(
+                SubmitAsynchronousSearchAction.INSTANCE,
+                submitAsynchronousSearchRequest,
+                new RestStatusToXContentListener<>(channel)
+            );
         };
     }
 

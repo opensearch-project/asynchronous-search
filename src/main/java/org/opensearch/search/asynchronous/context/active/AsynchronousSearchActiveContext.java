@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.active;
 
 import org.opensearch.commons.authuser.User;
@@ -56,11 +59,17 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
     @Nullable
     private final User user;
 
-    public AsynchronousSearchActiveContext(AsynchronousSearchContextId asynchronousSearchContextId, String nodeId,
-                                           TimeValue keepAlive, boolean keepOnCompletion, ThreadPool threadPool,
-                                           LongSupplier currentTimeSupplier,
-                                           AsynchronousSearchProgressListener asynchronousSearchProgressListener, @Nullable User user,
-                                           Supplier<Boolean> persistSearchFailureSupplier) {
+    public AsynchronousSearchActiveContext(
+        AsynchronousSearchContextId asynchronousSearchContextId,
+        String nodeId,
+        TimeValue keepAlive,
+        boolean keepOnCompletion,
+        ThreadPool threadPool,
+        LongSupplier currentTimeSupplier,
+        AsynchronousSearchProgressListener asynchronousSearchProgressListener,
+        @Nullable User user,
+        Supplier<Boolean> persistSearchFailureSupplier
+    ) {
         super(asynchronousSearchContextId, currentTimeSupplier);
         this.keepOnCompletion = keepOnCompletion;
         this.error = new SetOnce<>();
@@ -73,8 +82,9 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
         this.asynchronousSearchId = new SetOnce<>();
         this.completed = new AtomicBoolean(false);
         this.closed = new AtomicBoolean(false);
-        this.asynchronousSearchContextPermits = keepOnCompletion ? new AsynchronousSearchContextPermits(asynchronousSearchContextId,
-                threadPool) : new NoopAsynchronousSearchContextPermits(asynchronousSearchContextId);
+        this.asynchronousSearchContextPermits = keepOnCompletion
+            ? new AsynchronousSearchContextPermits(asynchronousSearchContextId, threadPool)
+            : new NoopAsynchronousSearchContextPermits(asynchronousSearchContextId);
         this.user = user;
         this.persistSearchFailureSupplier = persistSearchFailureSupplier;
     }
@@ -87,8 +97,9 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
         this.searchTask.set(searchTask);
         this.startTimeMillis = searchTask.getStartTime();
         this.expirationTimeMillis = startTimeMillis + keepAlive.getMillis();
-        this.asynchronousSearchId.set(AsynchronousSearchIdConverter.buildAsyncId(new AsynchronousSearchId(nodeId, searchTask.getId(),
-                getContextId())));
+        this.asynchronousSearchId.set(
+            AsynchronousSearchIdConverter.buildAsyncId(new AsynchronousSearchId(nodeId, searchTask.getId(), getContextId()))
+        );
     }
 
     public void processSearchFailure(Exception e) {

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.restIT;
 
 import org.opensearch.search.asynchronous.context.active.AsynchronousSearchActiveStore;
@@ -34,10 +37,11 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
         updateClusterSettings(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(6));
         SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.keepAlive(TimeValue.timeValueHours(7));
-        ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(
-                invalidRequest));
-        assertThat(responseException.getMessage(), containsString("Keep alive for asynchronous search (" +
-                invalidRequest.getKeepAlive().getMillis() + ") is too large"));
+        ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(invalidRequest));
+        assertThat(
+            responseException.getMessage(),
+            containsString("Keep alive for asynchronous search (" + invalidRequest.getKeepAlive().getMillis() + ") is too large")
+        );
         updateClusterSettings(AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(), TimeValue.timeValueHours(24));
     }
 
@@ -46,16 +50,19 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
         validRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
         AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest);
         assertNotNull(asResponse.getSearchResponse());
-        updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
-                TimeValue.timeValueSeconds(2));
+        updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(), TimeValue.timeValueSeconds(2));
         SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
-        ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(
-                invalidRequest));
-        assertThat(responseException.getMessage(), containsString("Wait for completion timeout for asynchronous search (" +
-                validRequest.getWaitForCompletionTimeout().getMillis() + ") is too large"));
-        updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
-                TimeValue.timeValueSeconds(60));
+        ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(invalidRequest));
+        assertThat(
+            responseException.getMessage(),
+            containsString(
+                "Wait for completion timeout for asynchronous search ("
+                    + validRequest.getWaitForCompletionTimeout().getMillis()
+                    + ") is too large"
+            )
+        );
+        updateClusterSettings(AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(), TimeValue.timeValueSeconds(60));
     }
 
     public void testMaxRunningAsynchronousSearchContexts() throws Exception {
@@ -78,8 +85,7 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
                         fail();
                     }
                 }
-            }
-            ));
+            }));
         }
         threadsList.forEach(Thread::start);
         barrier.await();
@@ -108,8 +114,7 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
                         fail();
                     }
                 }
-            }
-            ));
+            }));
         }
         threadsList.forEach(Thread::start);
         barrier.await();
@@ -117,8 +122,10 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
             thread.join();
         }
         assertEquals(numFailures.get(), 50);
-        updateClusterSettings(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
-                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
+        updateClusterSettings(
+            AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+            AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES
+        );
     }
 
     public void testStoreAsyncSearchWithFailures() throws Exception {
@@ -135,20 +142,20 @@ public class AsynchronousSearchSettingsIT extends AsynchronousSearchRestTestCase
                 return e.getMessage().contains("resource_not_found");
             }
         });
-        updateClusterSettings(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
-                true);
+        updateClusterSettings(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true);
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(request);
         waitUntil(() -> {
             try {
                 return executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId())).getState()
-                        .equals(AsynchronousSearchState.STORE_RESIDENT);
+                    .equals(AsynchronousSearchState.STORE_RESIDENT);
             } catch (IOException e) {
                 return false;
             }
         });
-        assertEquals(executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId())).getState(),
-                AsynchronousSearchState.STORE_RESIDENT);
-        updateClusterSettings(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
-                false);
+        assertEquals(
+            executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId())).getState(),
+            AsynchronousSearchState.STORE_RESIDENT
+        );
+        updateClusterSettings(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), false);
     }
 }

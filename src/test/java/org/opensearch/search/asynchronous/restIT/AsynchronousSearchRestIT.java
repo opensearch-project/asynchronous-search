@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.restIT;
 
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
@@ -38,7 +41,10 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         List<AsynchronousSearchState> legalStates = Arrays.asList(
-                AsynchronousSearchState.RUNNING, AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.CLOSED);
+            AsynchronousSearchState.RUNNING,
+            AsynchronousSearchState.SUCCEEDED,
+            AsynchronousSearchState.CLOSED
+        );
         assertTrue(legalStates.contains(submitResponse.getState()));
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
         AsynchronousSearchResponse getResponse;
@@ -47,7 +53,7 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
             try {
                 getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest);
                 if (AsynchronousSearchState.SUCCEEDED.equals(getResponse.getState())
-                        || AsynchronousSearchState.CLOSED.equals(getResponse.getState())) {
+                    || AsynchronousSearchState.CLOSED.equals(getResponse.getState())) {
                     assertNotNull(getResponse.getSearchResponse());
                     assertHitCount(getResponse.getSearchResponse(), 5L);
                 }
@@ -65,9 +71,13 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         List<AsynchronousSearchState> legalStates = Arrays.asList(
-                AsynchronousSearchState.RUNNING, AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.PERSIST_SUCCEEDED,
-                AsynchronousSearchState.PERSISTING,
-                AsynchronousSearchState.CLOSED, AsynchronousSearchState.STORE_RESIDENT);
+            AsynchronousSearchState.RUNNING,
+            AsynchronousSearchState.SUCCEEDED,
+            AsynchronousSearchState.PERSIST_SUCCEEDED,
+            AsynchronousSearchState.PERSISTING,
+            AsynchronousSearchState.CLOSED,
+            AsynchronousSearchState.STORE_RESIDENT
+        );
         assertNotNull(submitResponse.getId());
         assertTrue(submitResponse.getState().name(), legalStates.contains(submitResponse.getState()));
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
@@ -96,9 +106,13 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         submitAsynchronousSearchRequest.keepAlive(TimeValue.timeValueHours(5));
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMinutes(1));
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
-        List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.SUCCEEDED,
-                AsynchronousSearchState.PERSIST_SUCCEEDED,
-                AsynchronousSearchState.PERSISTING, AsynchronousSearchState.CLOSED, AsynchronousSearchState.STORE_RESIDENT);
+        List<AsynchronousSearchState> legalStates = Arrays.asList(
+            AsynchronousSearchState.SUCCEEDED,
+            AsynchronousSearchState.PERSIST_SUCCEEDED,
+            AsynchronousSearchState.PERSISTING,
+            AsynchronousSearchState.CLOSED,
+            AsynchronousSearchState.STORE_RESIDENT
+        );
         assertTrue(submitResponse.getState().name(), legalStates.contains(submitResponse.getState()));
         assertHitCount(submitResponse.getSearchResponse(), 5L);
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
@@ -116,8 +130,10 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         AsynchronousSearchResponse getResponse = executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()));
         assertEquals(getResponse.getExpirationTimeMillis(), submitResponse.getExpirationTimeMillis());
         executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()));
-        ResponseException responseException = expectThrows(ResponseException.class, () -> executeGetAsynchronousSearch(
-                new GetAsynchronousSearchRequest(submitResponse.getId())));
+        ResponseException responseException = expectThrows(
+            ResponseException.class,
+            () -> executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()))
+        );
         assertRnf(responseException);
     }
 
@@ -135,29 +151,37 @@ public class AsynchronousSearchRestIT extends AsynchronousSearchRestTestCase {
         AsynchronousSearchResponse getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest);
         assertThat(getResponse.getExpirationTimeMillis(), greaterThan(submitResponse.getExpirationTimeMillis()));
         executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()));
-        ResponseException responseException = expectThrows(ResponseException.class, () -> executeGetAsynchronousSearch(
-                new GetAsynchronousSearchRequest(submitResponse.getId())));
+        ResponseException responseException = expectThrows(
+            ResponseException.class,
+            () -> executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()))
+        );
         assertRnf(responseException);
     }
 
     public void testBackwardCompatibilityWithOpenDistro() throws IOException {
-        //submit async search
-        Request request = new Request(HttpPost.METHOD_NAME, AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI +
-                "?keep_on_completion=true");
+        // submit async search
+        Request request = new Request(
+            HttpPost.METHOD_NAME,
+            AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "?keep_on_completion=true"
+        );
         Response resp = client().performRequest(request);
         assertEquals(resp.getStatusLine().getStatusCode(), 200);
         AsynchronousSearchResponse asynchronousSearchResponse = parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
-        //get async search
-        request = new Request(HttpGet.METHOD_NAME,
-                AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + asynchronousSearchResponse.getId());
+        // get async search
+        request = new Request(
+            HttpGet.METHOD_NAME,
+            AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + asynchronousSearchResponse.getId()
+        );
         resp = client().performRequest(request);
         assertEquals(resp.getStatusLine().getStatusCode(), 200);
-        //delete async search
-        request = new Request(HttpDelete.METHOD_NAME,
-                AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + asynchronousSearchResponse.getId());
+        // delete async search
+        request = new Request(
+            HttpDelete.METHOD_NAME,
+            AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + asynchronousSearchResponse.getId()
+        );
         resp = client().performRequest(request);
         assertEquals(resp.getStatusLine().getStatusCode(), 200);
-        //async search stats
+        // async search stats
         request = new Request(HttpGet.METHOD_NAME, AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/stats");
         resp = client().performRequest(request);
         assertEquals(resp.getStatusLine().getStatusCode(), 200);

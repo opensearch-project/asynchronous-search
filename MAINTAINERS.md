@@ -23,4 +23,3 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | Maintainer  | GitHub ID                                  | Affiliation |
 |-------------| ------------------------------------------ | ----------- |
 | Anshul Agarwal | [anshul291995](https://github.com/anshul291995)     | Amazon      |
-

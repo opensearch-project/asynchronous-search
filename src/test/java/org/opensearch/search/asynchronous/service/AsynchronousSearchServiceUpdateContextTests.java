@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.service;
 
 import org.opensearch.commons.authuser.User;
@@ -111,21 +114,30 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     @Before
     public void createObjects() {
         Settings settings = Settings.builder()
-                .put("node.name", "test")
-                .put("cluster.name", "ClusterServiceTests")
-                .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 10)
-                .build();
-        final Set<Setting<?>> settingsSet =
-                Stream.concat(ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(), Stream.of(
-                        AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
-                        AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
-                        AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
-                        AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
-                        AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING)).collect(Collectors.toSet());
+            .put("node.name", "test")
+            .put("cluster.name", "ClusterServiceTests")
+            .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), 10)
+            .build();
+        final Set<Setting<?>> settingsSet = Stream.concat(
+            ClusterSettings.BUILT_IN_CLUSTER_SETTINGS.stream(),
+            Stream.of(
+                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
+                AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
+                AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
+                AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
+                AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING
+            )
+        ).collect(Collectors.toSet());
         final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
-        executorBuilders.add(new ScalingExecutorBuilder(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30)));
+        executorBuilders.add(
+            new ScalingExecutorBuilder(
+                OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                1,
+                Math.min(2 * availableProcessors, Math.max(128, 512)),
+                TimeValue.timeValueMinutes(30)
+            )
+        );
         executorBuilder = executorBuilders.get(0);
         clusterSettings = new ClusterSettings(settings, settingsSet);
         simulateUncheckedException = false;
@@ -134,18 +146,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateContextWhenContextCloseAndKeepOnCompletionTrue() throws InterruptedException, IOException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore mockStore = mock(AsynchronousSearchActiveStore.class);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, mockStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                mockStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = true;
@@ -155,35 +182,49 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(testThreadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
-            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(asContextId,
-                    discoveryNode.getId(), keepAlive,
-                    true, testThreadPool, testThreadPool::absoluteTimeInMillis, asProgressListener, user1);
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
+            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(
+                asContextId,
+                discoveryNode.getId(),
+                keepAlive,
+                true,
+                testThreadPool,
+                testThreadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user1
+            );
 
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), asActiveContext, null, (c) -> {
-            });
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                asActiveContext,
+                null,
+                (c) -> {}
+            );
             asActiveContext.setTask(task);
             long oldExpirationTimeMillis = asActiveContext.getExpirationTimeMillis();
             simulateIsAlive = false;
             simulateTimedOut = false;
             CountDownLatch updateLatch = new CountDownLatch(1);
             when(mockStore.getContext(asContextId)).thenReturn(Optional.of(asActiveContext));
-            asService.updateKeepAliveAndGetContext(asActiveContext.getAsynchronousSearchId(), keepAlive,
-                    asActiveContext.getContextId(),
-                    user1,
-                    new LatchedActionListener<>(wrap(
-                            r -> {
-                                assertTrue(r instanceof AsynchronousSearchPersistenceContext);
-                                //assert active context expiration time is not updated
-                                assertEquals(asActiveContext.getExpirationTimeMillis(), oldExpirationTimeMillis);
-                            },
-                            e -> {
-                                fail("expected successful update got " + e.getMessage());
-                            }
-                    ), updateLatch));
+            asService.updateKeepAliveAndGetContext(
+                asActiveContext.getAsynchronousSearchId(),
+                keepAlive,
+                asActiveContext.getContextId(),
+                user1,
+                new LatchedActionListener<>(wrap(r -> {
+                    assertTrue(r instanceof AsynchronousSearchPersistenceContext);
+                    // assert active context expiration time is not updated
+                    assertEquals(asActiveContext.getExpirationTimeMillis(), oldExpirationTimeMillis);
+                }, e -> { fail("expected successful update got " + e.getMessage()); }), updateLatch)
+            );
             updateLatch.await();
             mockClusterService.stop();
         } finally {
@@ -193,18 +234,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateContextTimedOut() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore mockStore = mock(AsynchronousSearchActiveStore.class);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, mockStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                mockStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = true;
@@ -214,24 +270,47 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(testThreadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
-            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(asContextId,
-                    discoveryNode.getId(), keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis,
-                    asProgressListener, user1);
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
+            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(
+                asContextId,
+                discoveryNode.getId(),
+                keepAlive,
+                true,
+                testThreadPool,
+                testThreadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user1
+            );
 
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), asActiveContext, null, (c) -> {});
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                asActiveContext,
+                null,
+                (c) -> {}
+            );
             asActiveContext.setTask(task);
             simulateIsAlive = true;
             simulateTimedOut = true;
             when(mockStore.getContext(asContextId)).thenReturn(Optional.of(asActiveContext));
             CountDownLatch latch = new CountDownLatch(1);
-            asService.updateKeepAliveAndGetContext(asActiveContext.getAsynchronousSearchId(), timeValueHours(9),
-                    asActiveContext.getContextId(), randomUser(), new LatchedActionListener<>(
-                            wrap(r -> fail("expected timedout exception"),
-                                    e -> assertTrue(e instanceof OpenSearchTimeoutException)), latch));
+            asService.updateKeepAliveAndGetContext(
+                asActiveContext.getAsynchronousSearchId(),
+                timeValueHours(9),
+                asActiveContext.getContextId(),
+                randomUser(),
+                new LatchedActionListener<>(
+                    wrap(r -> fail("expected timedout exception"), e -> assertTrue(e instanceof OpenSearchTimeoutException)),
+                    latch
+                )
+            );
             latch.await();
             mockClusterService.stop();
         } finally {
@@ -240,18 +319,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateContextPermitAcquisitionFailure() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore mockStore = mock(AsynchronousSearchActiveStore.class);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, mockStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                mockStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = true;
@@ -261,27 +355,55 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(testThreadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
-            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(asContextId,
-                    discoveryNode.getId(), keepAlive, true, testThreadPool, testThreadPool::absoluteTimeInMillis,
-                    asProgressListener, user1);
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
+            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(
+                asContextId,
+                discoveryNode.getId(),
+                keepAlive,
+                true,
+                testThreadPool,
+                testThreadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user1
+            );
 
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), asActiveContext, null, (c) -> {
-            });
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                asActiveContext,
+                null,
+                (c) -> {}
+            );
             asActiveContext.setTask(task);
             simulateIsAlive = true;
             simulateUncheckedException = true;
             long oldExpiration = asActiveContext.getExpirationTimeMillis();
             when(mockStore.getContext(asContextId)).thenReturn(Optional.of(asActiveContext));
             CountDownLatch latch = new CountDownLatch(1);
-            asService.updateKeepAliveAndGetContext(asActiveContext.getAsynchronousSearchId(), timeValueHours(9),
-                    asActiveContext.getContextId(), randomUser(), new LatchedActionListener<>(
-                            wrap(r -> assertEquals("active context should not have been updated on permit acquisition failure",
-                                    asActiveContext.getExpirationTimeMillis(), oldExpiration),
-                                    e -> fail("expected update to succeed but got " + e.getMessage())), latch));
+            asService.updateKeepAliveAndGetContext(
+                asActiveContext.getAsynchronousSearchId(),
+                timeValueHours(9),
+                asActiveContext.getContextId(),
+                randomUser(),
+                new LatchedActionListener<>(
+                    wrap(
+                        r -> assertEquals(
+                            "active context should not have been updated on permit acquisition failure",
+                            asActiveContext.getExpirationTimeMillis(),
+                            oldExpiration
+                        ),
+                        e -> fail("expected update to succeed but got " + e.getMessage())
+                    ),
+                    latch
+                )
+            );
             latch.await();
             assertEquals("update should have been attempted on index", mockClient.updateCount.intValue(), 1);
             mockClusterService.stop();
@@ -291,18 +413,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateContextPermitAcquisitionFailureKeepOnCompletionFalse() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore mockStore = mock(AsynchronousSearchActiveStore.class);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, mockStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                mockStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = false;
@@ -312,26 +449,48 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(testThreadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
-            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(asContextId,
-                    discoveryNode.getId(), keepAlive, false, testThreadPool, testThreadPool::absoluteTimeInMillis,
-                    asProgressListener, user1);
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
+            MockAsynchronousSearchActiveContext asActiveContext = new MockAsynchronousSearchActiveContext(
+                asContextId,
+                discoveryNode.getId(),
+                keepAlive,
+                false,
+                testThreadPool,
+                testThreadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user1
+            );
 
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), asActiveContext, null, (c) -> {
-            });
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                asActiveContext,
+                null,
+                (c) -> {}
+            );
             asActiveContext.setTask(task);
             simulateIsAlive = true;
             simulateUncheckedException = true;
             long oldExpiration = asActiveContext.getExpirationTimeMillis();
             when(mockStore.getContext(asContextId)).thenReturn(Optional.of(asActiveContext));
             CountDownLatch latch = new CountDownLatch(1);
-            asService.updateKeepAliveAndGetContext(asActiveContext.getAsynchronousSearchId(), timeValueHours(9),
-                    asActiveContext.getContextId(), randomUser(), new LatchedActionListener<>(
-                            wrap(r -> fail("expected update to fail but"),
-                                    e -> assertTrue(e instanceof ResourceNotFoundException)), latch));
+            asService.updateKeepAliveAndGetContext(
+                asActiveContext.getAsynchronousSearchId(),
+                timeValueHours(9),
+                asActiveContext.getContextId(),
+                randomUser(),
+                new LatchedActionListener<>(
+                    wrap(r -> fail("expected update to fail but"), e -> assertTrue(e instanceof ResourceNotFoundException)),
+                    latch
+                )
+            );
             latch.await();
             assertEquals("update should not have been attempted on index", mockClient.updateCount.intValue(), 0);
             mockClusterService.stop();
@@ -341,18 +500,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateRunningContextValidUser() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                asActiveStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = true;
@@ -361,18 +535,29 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
-            AsynchronousSearchContext context = asService.createAndStoreContext(submitAsynchronousSearchRequest, System.currentTimeMillis(),
-                    () -> null, user1);
+            AsynchronousSearchContext context = asService.createAndStoreContext(
+                submitAsynchronousSearchRequest,
+                System.currentTimeMillis(),
+                () -> null,
+                user1
+            );
             assertTrue(context instanceof AsynchronousSearchActiveContext);
             AsynchronousSearchActiveContext activeContext = (AsynchronousSearchActiveContext) context;
             assertNull(activeContext.getTask());
             assertNull(activeContext.getAsynchronousSearchId());
             assertEquals(activeContext.getAsynchronousSearchState(), INIT);
             assertEquals(activeContext.getUser(), user1);
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {
-            });
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                (AsynchronousSearchActiveContext) context,
+                null,
+                (c) -> {}
+            );
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(activeContext.getTask(), task);
             assertEquals(activeContext.getStartTimeMillis(), task.getStartTime());
@@ -380,11 +565,15 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             assertEquals(activeContext.getAsynchronousSearchState(), RUNNING);
             CountDownLatch latch = new CountDownLatch(1);
             Long oldExpiration = context.getExpirationTimeMillis();
-            asService.updateKeepAliveAndGetContext(context.getAsynchronousSearchId(), timeValueHours(10), context.getContextId(),
-                    user1, new LatchedActionListener<>(wrap(r -> assertThat(context.getExpirationTimeMillis(), greaterThan(oldExpiration)),
-                            e -> {
-                                fail("Expected successful update but got failure " + e.getMessage());
-                            }), latch));
+            asService.updateKeepAliveAndGetContext(
+                context.getAsynchronousSearchId(),
+                timeValueHours(10),
+                context.getContextId(),
+                user1,
+                new LatchedActionListener<>(wrap(r -> assertThat(context.getExpirationTimeMillis(), greaterThan(oldExpiration)), e -> {
+                    fail("Expected successful update but got failure " + e.getMessage());
+                }), latch)
+            );
             latch.await();
             mockClusterService.stop();
         } finally {
@@ -393,18 +582,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateContextNoActiveContextFound() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                asActiveStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = true;
@@ -415,18 +619,40 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
             String node = UUID.randomUUID().toString();
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(testThreadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
             User user = randomUser();
-            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
-                    keepAlive, keepOnCompletion, testThreadPool,
-                    testThreadPool::absoluteTimeInMillis, asProgressListener, user, () -> true);
+            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(
+                asContextId,
+                node,
+                keepAlive,
+                keepOnCompletion,
+                testThreadPool,
+                testThreadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user,
+                () -> true
+            );
             CountDownLatch latch = new CountDownLatch(1);
             docNotFound = true;
-            asService.updateKeepAliveAndGetContext(context.getAsynchronousSearchId(), keepAlive, context.getContextId(),
-                    user1, new LatchedActionListener<>(wrap(r -> fail("Expected resource_not_found_exception"),
-                            e -> assertTrue("Expected resource_not_found_exception but got " + e.getMessage(),
-                                    e instanceof ResourceNotFoundException)), latch));
+            asService.updateKeepAliveAndGetContext(
+                context.getAsynchronousSearchId(),
+                keepAlive,
+                context.getContextId(),
+                user1,
+                new LatchedActionListener<>(
+                    wrap(
+                        r -> fail("Expected resource_not_found_exception"),
+                        e -> assertTrue(
+                            "Expected resource_not_found_exception but got " + e.getMessage(),
+                            e instanceof ResourceNotFoundException
+                        )
+                    ),
+                    latch
+                )
+            );
             latch.await();
             assertEquals(mockClient.updateCount.intValue(), 1);
             mockClusterService.stop();
@@ -436,18 +662,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateActiveContextInvalidUser() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                asActiveStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = true;
@@ -456,18 +697,29 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
-            AsynchronousSearchContext context = asService.createAndStoreContext(submitAsynchronousSearchRequest, System.currentTimeMillis(),
-                    () -> null, user1);
+            AsynchronousSearchContext context = asService.createAndStoreContext(
+                submitAsynchronousSearchRequest,
+                System.currentTimeMillis(),
+                () -> null,
+                user1
+            );
             assertTrue(context instanceof AsynchronousSearchActiveContext);
             AsynchronousSearchActiveContext activeContext = (AsynchronousSearchActiveContext) context;
             assertNull(activeContext.getTask());
             assertNull(activeContext.getAsynchronousSearchId());
             assertEquals(activeContext.getAsynchronousSearchState(), INIT);
             assertEquals(activeContext.getUser(), user1);
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {
-            });
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                (AsynchronousSearchActiveContext) context,
+                null,
+                (c) -> {}
+            );
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(activeContext.getTask(), task);
             assertEquals(activeContext.getStartTimeMillis(), task.getStartTime());
@@ -475,12 +727,27 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             assertEquals(activeContext.getAsynchronousSearchState(), RUNNING);
             CountDownLatch latch = new CountDownLatch(1);
             User differenteUser = randomUser();
-            asService.updateKeepAliveAndGetContext(context.getAsynchronousSearchId(), timeValueHours(9), context.getContextId(),
-                    differenteUser, new LatchedActionListener<>(wrap(r -> fail("expected security exception Users must be different, " +
-                                    "actual user " + user1 + " random user " + differenteUser),
-                            e -> {
-                                assertTrue(e instanceof ResourceNotFoundException);
-                            }), latch));
+            asService.updateKeepAliveAndGetContext(
+                context.getAsynchronousSearchId(),
+                timeValueHours(9),
+                context.getContextId(),
+                differenteUser,
+                new LatchedActionListener<>(
+                    wrap(
+                        r -> fail(
+                            "expected security exception Users must be different, "
+                                + "actual user "
+                                + user1
+                                + " random user "
+                                + differenteUser
+                        ),
+                        e -> {
+                            assertTrue(e instanceof ResourceNotFoundException);
+                        }
+                    ),
+                    latch
+                )
+            );
             latch.await();
             mockClusterService.stop();
         } finally {
@@ -489,18 +756,33 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     public void testUpdateClosedContext() throws InterruptedException {
-        DiscoveryNode discoveryNode = new DiscoveryNode("node", OpenSearchTestCase.buildNewFakeTransportAddress(), emptyMap(),
-                DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
+        DiscoveryNode discoveryNode = new DiscoveryNode(
+            "node",
+            OpenSearchTestCase.buildNewFakeTransportAddress(),
+            emptyMap(),
+            DiscoveryNodeRole.BUILT_IN_ROLES,
+            Version.CURRENT
+        );
         ThreadPool testThreadPool = null;
         try {
             testThreadPool = new TestThreadPool(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, executorBuilder);
             ClusterService mockClusterService = getClusterService(discoveryNode, testThreadPool);
             MockClient mockClient = new MockClient(testThreadPool);
             AsynchronousSearchActiveStore asActiveStore = new AsynchronousSearchActiveStore(mockClusterService);
-            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(mockClient,
-                    mockClusterService, testThreadPool);
-            AsynchronousSearchService asService = new AsynchronousSearchService(persistenceService, asActiveStore, mockClient,
-                    mockClusterService, testThreadPool, new InternalAsynchronousSearchStats(), new NamedWriteableRegistry(emptyList()));
+            AsynchronousSearchPersistenceService persistenceService = new AsynchronousSearchPersistenceService(
+                mockClient,
+                mockClusterService,
+                testThreadPool
+            );
+            AsynchronousSearchService asService = new AsynchronousSearchService(
+                persistenceService,
+                asActiveStore,
+                mockClient,
+                mockClusterService,
+                testThreadPool,
+                new InternalAsynchronousSearchStats(),
+                new NamedWriteableRegistry(emptyList())
+            );
 
             TimeValue keepAlive = timeValueHours(9);
             boolean keepOnCompletion = randomBoolean();
@@ -509,18 +791,29 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
             submitAsynchronousSearchRequest.keepAlive(keepAlive);
-            AsynchronousSearchContext context = asService.createAndStoreContext(submitAsynchronousSearchRequest, System.currentTimeMillis(),
-                    () -> null, user1);
+            AsynchronousSearchContext context = asService.createAndStoreContext(
+                submitAsynchronousSearchRequest,
+                System.currentTimeMillis(),
+                () -> null,
+                user1
+            );
             assertTrue(context instanceof AsynchronousSearchActiveContext);
             AsynchronousSearchActiveContext activeContext = (AsynchronousSearchActiveContext) context;
             assertNull(activeContext.getTask());
             assertNull(activeContext.getAsynchronousSearchId());
             assertEquals(activeContext.getAsynchronousSearchState(), INIT);
             assertEquals(activeContext.getUser(), user1);
-            //bootstrap search
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport", SearchAction.NAME,
-                    TaskId.EMPTY_TASK_ID, emptyMap(), (AsynchronousSearchActiveContext) context, null, (c) -> {
-            });
+            // bootstrap search
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                (AsynchronousSearchActiveContext) context,
+                null,
+                (c) -> {}
+            );
             asService.bootstrapSearch(task, context.getContextId());
             assertEquals(activeContext.getTask(), task);
             assertEquals(activeContext.getStartTimeMillis(), task.getStartTime());
@@ -530,21 +823,25 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
             ((AsynchronousSearchActiveContext) context).close();
             CountDownLatch latch = new CountDownLatch(1);
 
-            asService.updateKeepAliveAndGetContext(context.getAsynchronousSearchId(), timeValueHours(9), context.getContextId(),
-                    user1, new LatchedActionListener<>(wrap(r -> {
-                                if (keepOnCompletion) {
-                                    assertTrue(r instanceof AsynchronousSearchPersistenceContext);
-                                } else {
-                                    fail("expected resource not found exception, got result.");
-                                }
-                            },
-                            e -> {
-                                if (keepOnCompletion) {
-                                    fail("expected resource not found exception, got result");
-                                } else {
-                                    assertTrue(e instanceof ResourceNotFoundException);
-                                }
-                            }), latch));
+            asService.updateKeepAliveAndGetContext(
+                context.getAsynchronousSearchId(),
+                timeValueHours(9),
+                context.getContextId(),
+                user1,
+                new LatchedActionListener<>(wrap(r -> {
+                    if (keepOnCompletion) {
+                        assertTrue(r instanceof AsynchronousSearchPersistenceContext);
+                    } else {
+                        fail("expected resource not found exception, got result.");
+                    }
+                }, e -> {
+                    if (keepOnCompletion) {
+                        fail("expected resource not found exception, got result");
+                    } else {
+                        assertTrue(e instanceof ResourceNotFoundException);
+                    }
+                }), latch)
+            );
             latch.await();
             mockClusterService.stop();
         } finally {
@@ -565,23 +862,22 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
 
         @Override
         @SuppressWarnings("unchecked")
-        protected <Request extends ActionRequest, Response extends ActionResponse> void doExecute(ActionType<Response> action,
-                                                                                                  Request request,
-                                                                                                  ActionListener<Response> listener) {
+        protected <Request extends ActionRequest, Response extends ActionResponse> void doExecute(
+            ActionType<Response> action,
+            Request request,
+            ActionListener<Response> listener
+        ) {
             if (action instanceof IndexAction) {
                 persistenceCount++;
                 listener.onResponse(null);
             } else if (action instanceof UpdateAction) {
                 updateCount++;
-                ShardId shardId = new ShardId(new Index(ASYNC_SEARCH_RESPONSE_INDEX,
-                        UUID.randomUUID().toString()), 1);
+                ShardId shardId = new ShardId(new Index(ASYNC_SEARCH_RESPONSE_INDEX, UUID.randomUUID().toString()), 1);
                 if (docNotFound) {
-                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L,
-                            DocWriteResponse.Result.NOT_FOUND);
+                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L, DocWriteResponse.Result.NOT_FOUND);
                     listener.onResponse((Response) updateResponse);
                 } else {
-                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L,
-                            DocWriteResponse.Result.UPDATED);
+                    UpdateResponse updateResponse = new UpdateResponse(shardId, "testId", 1L, 1L, 1L, DocWriteResponse.Result.UPDATED);
                     try {
                         Map<String, Object> sourceMap = new HashMap<>();
                         sourceMap.put(EXPIRATION_TIME_MILLIS, randomNonNegativeLong());
@@ -589,9 +885,9 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
                         XContentBuilder builder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
                         builder.map(sourceMap);
                         BytesReference source = BytesReference.bytes(builder);
-                        updateResponse.setGetResult(new GetResult(ASYNC_SEARCH_RESPONSE_INDEX,
-                                "testId", 1L, 1L, 1L,
-                                true, source, emptyMap(), null));
+                        updateResponse.setGetResult(
+                            new GetResult(ASYNC_SEARCH_RESPONSE_INDEX, "testId", 1L, 1L, 1L, true, source, emptyMap(), null)
+                        );
                         listener.onResponse((Response) updateResponse);
                     } catch (IOException e) {
                         fail("Fake client failed to build mock update response");
@@ -605,11 +901,27 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     }
 
     static class MockAsynchronousSearchActiveContext extends AsynchronousSearchActiveContext {
-        MockAsynchronousSearchActiveContext(AsynchronousSearchContextId asContextId, String nodeId, TimeValue keepAlive,
-                                            boolean keepOnCompletion, ThreadPool threadPool, LongSupplier currentTimeSupplier,
-                                            AsynchronousSearchProgressListener searchProgressActionListener, User user) {
-            super(asContextId, nodeId, keepAlive, keepOnCompletion, threadPool, currentTimeSupplier, searchProgressActionListener,
-                    user, () -> true);
+        MockAsynchronousSearchActiveContext(
+            AsynchronousSearchContextId asContextId,
+            String nodeId,
+            TimeValue keepAlive,
+            boolean keepOnCompletion,
+            ThreadPool threadPool,
+            LongSupplier currentTimeSupplier,
+            AsynchronousSearchProgressListener searchProgressActionListener,
+            User user
+        ) {
+            super(
+                asContextId,
+                nodeId,
+                keepAlive,
+                keepOnCompletion,
+                threadPool,
+                currentTimeSupplier,
+                searchProgressActionListener,
+                user,
+                () -> true
+            );
         }
 
         @Override
@@ -635,20 +947,32 @@ public class AsynchronousSearchServiceUpdateContextTests extends OpenSearchTestC
     public static SearchResponse getMockSearchResponse() {
         int totalShards = randomInt(100);
         int successfulShards = totalShards - randomInt(100);
-        return new SearchResponse(new InternalSearchResponse(
+        return new SearchResponse(
+            new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
                 InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
-                new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
-                "", totalShards, successfulShards, 0, randomNonNegativeLong(),
-                ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);
+                new SearchProfileShardResults(Collections.emptyMap()),
+                false,
+                false,
+                randomInt(5)
+            ),
+            "",
+            totalShards,
+            successfulShards,
+            0,
+            randomNonNegativeLong(),
+            ShardSearchFailure.EMPTY_ARRAY,
+            SearchResponse.Clusters.EMPTY
+        );
     }
 
     private ClusterService getClusterService(DiscoveryNode discoveryNode, ThreadPool testThreadPool) {
         ClusterService clusterService = ClusterServiceUtils.createClusterService(testThreadPool, discoveryNode, clusterSettings);
-        ClusterServiceUtils.setState(clusterService,
-                ClusterStateCreationUtils.stateWithActivePrimary(ASYNC_SEARCH_RESPONSE_INDEX,
-                        true, randomInt(5)));
+        ClusterServiceUtils.setState(
+            clusterService,
+            ClusterStateCreationUtils.stateWithActivePrimary(ASYNC_SEARCH_RESPONSE_INDEX, true, randomInt(5))
+        );
         return clusterService;
     }
 

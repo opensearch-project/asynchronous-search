@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.response;
 
 import org.opensearch.core.ParseField;
@@ -42,7 +45,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     private static final ParseField RESPONSE = new ParseField("response");
     private static final ParseField ERROR = new ParseField("error");
     @Nullable
-    //when the search is cancelled we don't have the id
+    // when the search is cancelled we don't have the id
     private final String id;
     private final AsynchronousSearchState state;
     private final long startTimeMillis;
@@ -52,8 +55,14 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     @Nullable
     private OpenSearchException error;
 
-    public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, Exception error) {
+    public AsynchronousSearchResponse(
+        String id,
+        AsynchronousSearchState state,
+        long startTimeMillis,
+        long expirationTimeMillis,
+        SearchResponse searchResponse,
+        Exception error
+    ) {
         this.id = id;
         this.state = state;
         this.startTimeMillis = startTimeMillis;
@@ -62,8 +71,14 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         this.error = error == null ? null : ExceptionsHelper.convertToOpenSearchException(error);
     }
 
-    public AsynchronousSearchResponse(String id, AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, OpenSearchException error) {
+    public AsynchronousSearchResponse(
+        String id,
+        AsynchronousSearchState state,
+        long startTimeMillis,
+        long expirationTimeMillis,
+        SearchResponse searchResponse,
+        OpenSearchException error
+    ) {
         this.id = id;
         this.state = state;
         this.startTimeMillis = startTimeMillis;
@@ -72,8 +87,13 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         this.error = error;
     }
 
-    public AsynchronousSearchResponse(AsynchronousSearchState state, long startTimeMillis, long expirationTimeMillis,
-                               SearchResponse searchResponse, OpenSearchException error) {
+    public AsynchronousSearchResponse(
+        AsynchronousSearchState state,
+        long startTimeMillis,
+        long expirationTimeMillis,
+        SearchResponse searchResponse,
+        OpenSearchException error
+    ) {
         this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
@@ -163,7 +183,6 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         return Strings.toString(XContentType.JSON, this);
     }
 
-
     /**
      * {@linkplain SearchResponse} and {@linkplain OpenSearchException} don't override hashcode, hence cannot be included in
      * the hashcode calculation for {@linkplain AsynchronousSearchResponse}. Given that we are using these methods only in tests; on the
@@ -189,12 +208,12 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         }
         AsynchronousSearchResponse other = (AsynchronousSearchResponse) o;
         try {
-            return ((id == null && other.id == null) || (id != null && id.equals(other.id))) &&
-                    state.equals(other.state) &&
-                    startTimeMillis == other.startTimeMillis &&
-                    expirationTimeMillis == other.expirationTimeMillis
-                    && Objects.equals(getErrorAsMap(error), getErrorAsMap(other.error))
-                    && Objects.equals(getResponseAsMap(searchResponse), getResponseAsMap(other.searchResponse));
+            return ((id == null && other.id == null) || (id != null && id.equals(other.id)))
+                && state.equals(other.state)
+                && startTimeMillis == other.startTimeMillis
+                && expirationTimeMillis == other.expirationTimeMillis
+                && Objects.equals(getErrorAsMap(error), getErrorAsMap(other.error))
+                && Objects.equals(getResponseAsMap(searchResponse), getResponseAsMap(other.searchResponse));
         } catch (IOException e) {
             return false;
         }
@@ -218,7 +237,10 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     private Map<String, Object> getResponseAsMap(SearchResponse searchResponse) throws IOException {
         if (searchResponse != null) {
             BytesReference response = org.opensearch.core.xcontent.XContentHelper.toXContent(
-                    searchResponse, Requests.INDEX_CONTENT_TYPE, true);
+                searchResponse,
+                Requests.INDEX_CONTENT_TYPE,
+                true
+            );
             if (response == null) {
                 return emptyMap();
             }
@@ -271,7 +293,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         return new AsynchronousSearchResponse(id, status, startTimeMillis, expirationTimeMillis, searchResponse, error);
     }
 
-    //visible for testing
+    // visible for testing
     public static AsynchronousSearchResponse empty(String id, SearchResponse searchResponse, Exception exception) {
         return new AsynchronousSearchResponse(id, null, -1, -1, searchResponse, exception);
     }

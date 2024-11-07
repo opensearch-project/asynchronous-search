@@ -1,10 +1,12 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
-
 
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase;
 import org.opensearch.search.asynchronous.request.DeleteAsynchronousSearchRequest;
@@ -48,16 +50,19 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentGetOrUpdates(submitResponse,
-                (numGetSuccess, numGetFailures, numVersionConflictFailure, numResourceNotFoundFailures) -> {
-                    assertEquals(concurrentRuns, numGetSuccess.get() + numResourceNotFoundFailures.get()
-                            + numVersionConflictFailure.get());
-                    assertEquals(0, numGetFailures.get());
-                }, false, concurrentRuns, false);
+        assertConcurrentGetOrUpdates(
+            submitResponse,
+            (numGetSuccess, numGetFailures, numVersionConflictFailure, numResourceNotFoundFailures) -> {
+                assertEquals(concurrentRuns, numGetSuccess.get() + numResourceNotFoundFailures.get() + numVersionConflictFailure.get());
+                assertEquals(0, numGetFailures.get());
+            },
+            false,
+            concurrentRuns,
+            false
+        );
     }
 
     public void testUpdateAsynchronousSearchForNoRetainedResponse() throws InterruptedException {
@@ -67,16 +72,19 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentGetOrUpdates(submitResponse,
-                (numGetSuccess, numGetFailures, numVersionConflictFailures, numResourceNotFoundFailures) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get()
-                            + numResourceNotFoundFailures.get());
-                }, true, concurrentRuns, false);
+        assertConcurrentGetOrUpdates(
+            submitResponse,
+            (numGetSuccess, numGetFailures, numVersionConflictFailures, numResourceNotFoundFailures) -> {
+                assertEquals(0, numGetFailures.get());
+                assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get() + numResourceNotFoundFailures.get());
+            },
+            true,
+            concurrentRuns,
+            false
+        );
     }
 
     public void testUpdateAsynchronousSearchForRetainedResponse() throws InterruptedException {
@@ -86,16 +94,13 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentGetOrUpdates(submitResponse,
-                (numGetSuccess, numGetFailures, numVersionConflictFailures, numTimeouts) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get()
-                            + numTimeouts.get());
-                }, true, concurrentRuns, true);
+        assertConcurrentGetOrUpdates(submitResponse, (numGetSuccess, numGetFailures, numVersionConflictFailures, numTimeouts) -> {
+            assertEquals(0, numGetFailures.get());
+            assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get() + numTimeouts.get());
+        }, true, concurrentRuns, true);
     }
 
     public void testGetAsynchronousSearchForRetainedResponse() throws InterruptedException {
@@ -105,16 +110,19 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentGetOrUpdates(submitResponse,
-                (numGetSuccess, numGetFailures, numVersionConflictFailures, numResourceNotFoundFailures) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get() + numResourceNotFoundFailures.get()
-                            + numVersionConflictFailures.get());
-                }, false, concurrentRuns, true);
+        assertConcurrentGetOrUpdates(
+            submitResponse,
+            (numGetSuccess, numGetFailures, numVersionConflictFailures, numResourceNotFoundFailures) -> {
+                assertEquals(0, numGetFailures.get());
+                assertEquals(concurrentRuns, numGetSuccess.get() + numResourceNotFoundFailures.get() + numVersionConflictFailures.get());
+            },
+            false,
+            concurrentRuns,
+            true
+        );
     }
 
     public void testGetAsynchronousSearchInBlockedStateForNoRetainedResponse() throws Exception {
@@ -125,16 +133,14 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
-        assertConcurrentGetForBlockedSearch(submitResponse,
-                (numGetSuccess, numGetFailures, numResourceNotFound) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get());
-                    assertEquals(0, numResourceNotFound.get());
-                }, false, concurrentRuns, false, plugins);
+        assertConcurrentGetForBlockedSearch(submitResponse, (numGetSuccess, numGetFailures, numResourceNotFound) -> {
+            assertEquals(0, numGetFailures.get());
+            assertEquals(concurrentRuns, numGetSuccess.get());
+            assertEquals(0, numResourceNotFound.get());
+        }, false, concurrentRuns, false, plugins);
     }
 
     public void testGetAsynchronousSearchInBlockedStateForRetainedResponse() throws Exception {
@@ -145,16 +151,14 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
-        assertConcurrentGetForBlockedSearch(submitResponse,
-                (numGetSuccess, numGetFailures, numResourceNotFound) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get());
-                    assertEquals(0, numResourceNotFound.get());
-                }, false, concurrentRuns, false, plugins);
+        assertConcurrentGetForBlockedSearch(submitResponse, (numGetSuccess, numGetFailures, numResourceNotFound) -> {
+            assertEquals(0, numGetFailures.get());
+            assertEquals(concurrentRuns, numGetSuccess.get());
+            assertEquals(0, numResourceNotFound.get());
+        }, false, concurrentRuns, false, plugins);
     }
 
     public void testUpdateAsynchronousSearchInBlockedStateForRetainedResponse() throws Exception {
@@ -165,15 +169,13 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
-        assertConcurrentGetForBlockedSearch(submitResponse,
-                (numGetSuccess, numGetFailures, numVersionConflictFailures) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get());
-                }, true, concurrentRuns, false, plugins);
+        assertConcurrentGetForBlockedSearch(submitResponse, (numGetSuccess, numGetFailures, numVersionConflictFailures) -> {
+            assertEquals(0, numGetFailures.get());
+            assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get());
+        }, true, concurrentRuns, false, plugins);
     }
 
     public void testUpdateAsynchronousSearchInBlockedStateForNoRetainedResponse() throws Exception {
@@ -184,21 +186,23 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
-        assertConcurrentGetForBlockedSearch(submitResponse,
-                (numGetSuccess, numGetFailures, numVersionConflictFailures) -> {
-                    assertEquals(0, numGetFailures.get());
-                    assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get());
-                }, true, concurrentRuns, false, plugins);
+        assertConcurrentGetForBlockedSearch(submitResponse, (numGetSuccess, numGetFailures, numVersionConflictFailures) -> {
+            assertEquals(0, numGetFailures.get());
+            assertEquals(concurrentRuns, numGetSuccess.get() + numVersionConflictFailures.get());
+        }, true, concurrentRuns, false, plugins);
     }
 
-    private void assertConcurrentGetForBlockedSearch(AsynchronousSearchResponse submitResponse,
-                                                     TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
-                                                     boolean update, int concurrentRuns, boolean retainResponse,
-                                                     List<SearchDelayPlugin> plugins) throws Exception {
+    private void assertConcurrentGetForBlockedSearch(
+        AsynchronousSearchResponse submitResponse,
+        TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        boolean update,
+        int concurrentRuns,
+        boolean retainResponse,
+        List<SearchDelayPlugin> plugins
+    ) throws Exception {
 
         AtomicInteger numGetSuccess = new AtomicInteger();
         AtomicInteger numGetFailures = new AtomicInteger();
@@ -207,7 +211,7 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         try {
             testThreadPool = new TestThreadPool(GetAsynchronousSearchSingleNodeIT.class.getName());
             int numThreads = concurrentRuns;
-            long lowerKeepAliveMillis = 5 * 1000 * 60 * 60 ;
+            long lowerKeepAliveMillis = 5 * 1000 * 60 * 60;
             long higherKeepAliveMillis = 10 * 1000 * 60 * 60;
             List<Runnable> operationThreads = new ArrayList<>();
             CountDownLatch countDownLatch = new CountDownLatch(numThreads);
@@ -216,15 +220,14 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
                     GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
                     if (update) {
                         logger.info("Triggering asynchronous search gets with keep alives --->");
-                        getAsynchronousSearchRequest.setKeepAlive(TimeValue.timeValueMillis(randomLongBetween(lowerKeepAliveMillis,
-                                higherKeepAliveMillis)));
+                        getAsynchronousSearchRequest.setKeepAlive(
+                            TimeValue.timeValueMillis(randomLongBetween(lowerKeepAliveMillis, higherKeepAliveMillis))
+                        );
                     }
-                    //if waitForCompletionTimeout is null we return response immediately
-                    TimeValue waitForCompletionTimeout = randomBoolean() ? null :
-                            TimeValue.timeValueMillis(randomLongBetween(1, 5000));
+                    // if waitForCompletionTimeout is null we return response immediately
+                    TimeValue waitForCompletionTimeout = randomBoolean() ? null : TimeValue.timeValueMillis(randomLongBetween(1, 5000));
                     getAsynchronousSearchRequest.setWaitForCompletionTimeout(waitForCompletionTimeout);
-                    executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest,
-                    new ActionListener<AsynchronousSearchResponse>() {
+                    executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest, new ActionListener<AsynchronousSearchResponse>() {
                         @Override
                         public void onResponse(AsynchronousSearchResponse acknowledgedResponse) {
                             numGetSuccess.incrementAndGet();
@@ -249,8 +252,7 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
             countDownLatch.await();
             DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(submitResponse.getId());
             CountDownLatch deleteLatch = new CountDownLatch(1);
-            executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest,
-            ActionListener.wrap(() -> deleteLatch.countDown()));
+            executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest, ActionListener.wrap(() -> deleteLatch.countDown()));
             deleteLatch.await();
             disableBlocks(plugins);
             assertionConsumer.apply(numGetSuccess, numGetFailures, numVersionConflictFailures);
@@ -259,10 +261,13 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         }
     }
 
-    private void assertConcurrentGetOrUpdates(AsynchronousSearchResponse submitResponse,
-                                              QuadConsumer<AtomicInteger, AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
-                                              boolean update, int concurrentRuns, boolean retainResponse)
-            throws InterruptedException {
+    private void assertConcurrentGetOrUpdates(
+        AsynchronousSearchResponse submitResponse,
+        QuadConsumer<AtomicInteger, AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        boolean update,
+        int concurrentRuns,
+        boolean retainResponse
+    ) throws InterruptedException {
         AtomicInteger numGetSuccess = new AtomicInteger();
         AtomicInteger numGetFailures = new AtomicInteger();
         AtomicInteger numVersionConflictFailures = new AtomicInteger();
@@ -272,7 +277,7 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         try {
             testThreadPool = new TestThreadPool(GetAsynchronousSearchSingleNodeIT.class.getName());
             int numThreads = concurrentRuns;
-            long lowerKeepAliveMillis = 5 * 1000 * 60 * 60 ; // 5 hours in millis
+            long lowerKeepAliveMillis = 5 * 1000 * 60 * 60; // 5 hours in millis
             long higherKeepAliveMillis = 10 * 1000 * 60 * 60; // 10 hours in millis
             List<Runnable> operationThreads = new ArrayList<>();
             CountDownLatch countDownLatch = new CountDownLatch(numThreads);
@@ -286,35 +291,43 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
                         getAsynchronousSearchRequest.setKeepAlive(TimeValue.timeValueMillis(keepAlive));
                     }
                     getAsynchronousSearchRequest.setWaitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-                    executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest, new LatchedActionListener<>(
-                            new ActionListener<AsynchronousSearchResponse>() {
-                        @Override
-                        public void onResponse(AsynchronousSearchResponse asResponse) {
-                            if (update) {
-                                // while updates we can run into version conflicts and hence the comparison is on the successful
-                                // response. Since the final keep alive is calculated based on the current time of the server
-                                // active contexts's expiration in memory are superseded by later writer so we are keeping a loose
-                                // check
-                                assertThat(asResponse.getExpirationTimeMillis(), greaterThanOrEqualTo(
-                                        System.currentTimeMillis() + lowerKeepAliveMillis));
-                                assertThat(asResponse.getExpirationTimeMillis(), lessThanOrEqualTo(
-                                        System.currentTimeMillis() + higherKeepAliveMillis));
+                    executeGetAsynchronousSearch(
+                        client(),
+                        getAsynchronousSearchRequest,
+                        new LatchedActionListener<>(new ActionListener<AsynchronousSearchResponse>() {
+                            @Override
+                            public void onResponse(AsynchronousSearchResponse asResponse) {
+                                if (update) {
+                                    // while updates we can run into version conflicts and hence the comparison is on the successful
+                                    // response. Since the final keep alive is calculated based on the current time of the server
+                                    // active contexts's expiration in memory are superseded by later writer so we are keeping a loose
+                                    // check
+                                    assertThat(
+                                        asResponse.getExpirationTimeMillis(),
+                                        greaterThanOrEqualTo(System.currentTimeMillis() + lowerKeepAliveMillis)
+                                    );
+                                    assertThat(
+                                        asResponse.getExpirationTimeMillis(),
+                                        lessThanOrEqualTo(System.currentTimeMillis() + higherKeepAliveMillis)
+                                    );
+                                }
+                                numGetSuccess.incrementAndGet();
                             }
-                            numGetSuccess.incrementAndGet();
-                        }
-                        @Override
-                        public void onFailure(Exception e) {
-                            if (e instanceof VersionConflictEngineException) {
-                                numVersionConflictFailures.incrementAndGet();
-                            } else if (e instanceof ResourceNotFoundException) {
-                                numResourceNotFoundFailures.incrementAndGet();
-                            } else if (e instanceof OpenSearchTimeoutException) {
-                                numTimeouts.incrementAndGet();
-                            } else {
-                                numGetFailures.incrementAndGet();
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                if (e instanceof VersionConflictEngineException) {
+                                    numVersionConflictFailures.incrementAndGet();
+                                } else if (e instanceof ResourceNotFoundException) {
+                                    numResourceNotFoundFailures.incrementAndGet();
+                                } else if (e instanceof OpenSearchTimeoutException) {
+                                    numTimeouts.incrementAndGet();
+                                } else {
+                                    numGetFailures.incrementAndGet();
+                                }
                             }
-                        }
-                    }, countDownLatch));
+                        }, countDownLatch)
+                    );
                 };
                 operationThreads.add(thread);
             }
@@ -323,7 +336,8 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
             countDownLatch.await();
             if (retainResponse) {
                 DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
-                        submitResponse.getId());
+                    submitResponse.getId()
+                );
                 executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest).actionGet();
             }
             if (retainResponse && update) {
@@ -337,4 +351,3 @@ public class GetAsynchronousSearchSingleNodeIT extends AsynchronousSearchSingleN
         }
     }
 }
-

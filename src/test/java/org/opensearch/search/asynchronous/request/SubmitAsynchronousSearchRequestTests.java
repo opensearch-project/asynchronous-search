@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.request;
 
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
@@ -22,20 +25,25 @@ public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
 
     public void testValidRequest() {
         SearchSourceBuilder source = new SearchSourceBuilder();
-        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        SearchRequest searchRequest = new SearchRequest(new String[] { "test" }, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         ValidationException validationException = request.validate();
         assertNull(validationException);
         assertEquals(request, new SubmitAsynchronousSearchRequest(searchRequest));
-        String description = request.createTask(randomNonNegativeLong(), "taskType", SubmitAsynchronousSearchAction.NAME,
-            new TaskId("test", -1), new HashMap<>()).getDescription();
+        String description = request.createTask(
+            randomNonNegativeLong(),
+            "taskType",
+            SubmitAsynchronousSearchAction.NAME,
+            new TaskId("test", -1),
+            new HashMap<>()
+        ).getDescription();
         assertThat(description, containsString("indices[test]"));
     }
 
     public void testSuggestOnlyQueryFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder().suggest(new SuggestBuilder());
-        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        SearchRequest searchRequest = new SearchRequest(new String[] { "test" }, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         ValidationException validationException = request.validate();
@@ -46,7 +54,7 @@ public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
 
     public void testSearchScrollFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder();
-        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        SearchRequest searchRequest = new SearchRequest(new String[] { "test" }, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
         searchRequest.scroll(randomTimeValue());
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
@@ -58,9 +66,8 @@ public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
 
     public void testCcsMinimizeRoundtripsFlagFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder();
-        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
-        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(
-                searchRequest);
+        SearchRequest searchRequest = new SearchRequest(new String[] { "test" }, source);
+        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         searchRequest.setCcsMinimizeRoundtrips(true);
         ValidationException validationException = request.validate();
         assertNotNull(validationException);
@@ -70,7 +77,7 @@ public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
 
     public void testInvalidKeepAliveFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder();
-        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        SearchRequest searchRequest = new SearchRequest(new String[] { "test" }, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         request.keepAlive(TimeValue.timeValueSeconds(59));
@@ -80,7 +87,7 @@ public class SubmitAsynchronousSearchRequestTests extends OpenSearchTestCase {
 
     public void testInvalidWaitForCompletionFailsValidation() {
         SearchSourceBuilder source = new SearchSourceBuilder();
-        SearchRequest searchRequest = new SearchRequest(new String[]{"test"}, source);
+        SearchRequest searchRequest = new SearchRequest(new String[] { "test" }, source);
         searchRequest.setCcsMinimizeRoundtrips(false);
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         request.waitForCompletionTimeout(TimeValue.timeValueMillis(-1));
