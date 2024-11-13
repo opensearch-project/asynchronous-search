@@ -53,6 +53,10 @@ jobs:
         run: |
           chown -R 1000:1000 `pwd`
           su `id -un 1000` -c "./gradlew integTest -PnumNodes=5"
+      - name: Check Disk Space
+        run: |
+          df -h
+          du -sh /
       - name: Run Backwards Compatibility Tests
         run: |
           echo "Running backwards compatibility tests ..."
