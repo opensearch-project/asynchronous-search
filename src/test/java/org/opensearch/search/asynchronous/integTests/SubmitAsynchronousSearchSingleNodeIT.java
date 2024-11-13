@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
@@ -47,12 +50,12 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
 
     @Override
     protected Settings nodeSettings() {
-        return Settings.builder().put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
-                asynchronousSearchConcurrentLimit).build();
+        return Settings.builder()
+            .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), asynchronousSearchConcurrentLimit)
+            .build();
     }
 
-    public void
-    testSubmitAsynchronousSearchWithoutRetainedResponse() throws InterruptedException {
+    public void testSubmitAsynchronousSearchWithoutRetainedResponse() throws InterruptedException {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices("index");
         searchRequest.source(new SearchSourceBuilder().query(new MatchQueryBuilder("field", "value0")));
@@ -61,13 +64,16 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentSubmits(submitAsynchronousSearchRequest, searchResponse, (numStartedAsynchronousSearch,
-                                                                                  numFailedAsynchronousSearch,
-                                                                                  numErrorResponseAsynchronousSearch) -> {
-            assertEquals(concurrentRuns, numStartedAsynchronousSearch.get());
-            assertEquals(0, numFailedAsynchronousSearch.get());
-            assertEquals(0, numErrorResponseAsynchronousSearch.get());
-        }, concurrentRuns);
+        assertConcurrentSubmits(
+            submitAsynchronousSearchRequest,
+            searchResponse,
+            (numStartedAsynchronousSearch, numFailedAsynchronousSearch, numErrorResponseAsynchronousSearch) -> {
+                assertEquals(concurrentRuns, numStartedAsynchronousSearch.get());
+                assertEquals(0, numFailedAsynchronousSearch.get());
+                assertEquals(0, numErrorResponseAsynchronousSearch.get());
+            },
+            concurrentRuns
+        );
         AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
         waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty, 30, TimeUnit.SECONDS);
     }
@@ -81,31 +87,38 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentSubmits(submitAsynchronousSearchRequest, searchResponse, (numStartedAsynchronousSearch,
-                                                                                  numFailedAsynchronousSearch,
-                                                                                  numErrorResponseAsynchronousSearch) -> {
-            assertEquals(concurrentRuns, numStartedAsynchronousSearch.get());
-            assertEquals(0, numFailedAsynchronousSearch.get());
-            assertEquals(0, numErrorResponseAsynchronousSearch.get());
-        }, concurrentRuns);
+        assertConcurrentSubmits(
+            submitAsynchronousSearchRequest,
+            searchResponse,
+            (numStartedAsynchronousSearch, numFailedAsynchronousSearch, numErrorResponseAsynchronousSearch) -> {
+                assertEquals(concurrentRuns, numStartedAsynchronousSearch.get());
+                assertEquals(0, numFailedAsynchronousSearch.get());
+                assertEquals(0, numErrorResponseAsynchronousSearch.get());
+            },
+            concurrentRuns
+        );
         AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
         waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty, 30, TimeUnit.SECONDS);
     }
 
     public void testSubmitAsynchronousSearchWithNoRetainedResponseBlocking() throws Exception {
         int concurrentRuns = randomIntBetween(asynchronousSearchConcurrentLimit + 10, asynchronousSearchConcurrentLimit + 20);
-        assertConcurrentSubmitsForBlockedSearch((numStartedAsynchronousSearch, numFailedAsynchronousSearch,
-                                                 numRejectedAsynchronousSearch) -> {
-            assertEquals(asynchronousSearchConcurrentLimit, numStartedAsynchronousSearch.get());
-            assertEquals(concurrentRuns - asynchronousSearchConcurrentLimit, numFailedAsynchronousSearch.get());
-            assertEquals(concurrentRuns - asynchronousSearchConcurrentLimit, numRejectedAsynchronousSearch.get());
-        }, concurrentRuns);
+        assertConcurrentSubmitsForBlockedSearch(
+            (numStartedAsynchronousSearch, numFailedAsynchronousSearch, numRejectedAsynchronousSearch) -> {
+                assertEquals(asynchronousSearchConcurrentLimit, numStartedAsynchronousSearch.get());
+                assertEquals(concurrentRuns - asynchronousSearchConcurrentLimit, numFailedAsynchronousSearch.get());
+                assertEquals(concurrentRuns - asynchronousSearchConcurrentLimit, numRejectedAsynchronousSearch.get());
+            },
+            concurrentRuns
+        );
         AsynchronousSearchService asynchronousSearchService = getInstanceFromNode(AsynchronousSearchService.class);
         waitUntil(asynchronousSearchService.getAllActiveContexts()::isEmpty, 30, TimeUnit.SECONDS);
     }
 
-    private void assertConcurrentSubmitsForBlockedSearch(TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
-                                                         int concurrentRuns) throws Exception {
+    private void assertConcurrentSubmitsForBlockedSearch(
+        TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        int concurrentRuns
+    ) throws Exception {
         AtomicInteger numStartedAsynchronousSearch = new AtomicInteger();
         AtomicInteger numFailedAsynchronousSearch = new AtomicInteger();
         AtomicInteger numRejectedAsynchronousSearch = new AtomicInteger();
@@ -121,30 +134,35 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
                     logger.info("Triggering asynchronous search submit --->");
                     SearchRequest searchRequest = new SearchRequest("index");
                     searchRequest.source(new SearchSourceBuilder());
-                    searchRequest.source().query(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SearchDelayPlugin.SCRIPT_NAME,
-                            Collections.emptyMap())));
+                    searchRequest.source()
+                        .query(
+                            scriptQuery(new Script(ScriptType.INLINE, "mockscript", SearchDelayPlugin.SCRIPT_NAME, Collections.emptyMap()))
+                        );
                     SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
                     submitAsynchronousSearchRequest.keepOnCompletion(false);
                     submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(100));
-                    executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest,
-                            new ActionListener<AsynchronousSearchResponse>() {
-                                @Override
-                                public void onResponse(AsynchronousSearchResponse asResponse) {
-                                    if (asResponse.getId() != null) {
-                                        numStartedAsynchronousSearch.incrementAndGet();
-                                    }
-                                    countDownLatch.countDown();
+                    executeSubmitAsynchronousSearch(
+                        client(),
+                        submitAsynchronousSearchRequest,
+                        new ActionListener<AsynchronousSearchResponse>() {
+                            @Override
+                            public void onResponse(AsynchronousSearchResponse asResponse) {
+                                if (asResponse.getId() != null) {
+                                    numStartedAsynchronousSearch.incrementAndGet();
                                 }
+                                countDownLatch.countDown();
+                            }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    if (e instanceof OpenSearchRejectedExecutionException) {
-                                        numRejectedAsynchronousSearch.incrementAndGet();
-                                    }
-                                    numFailedAsynchronousSearch.incrementAndGet();
-                                    countDownLatch.countDown();
+                            @Override
+                            public void onFailure(Exception e) {
+                                if (e instanceof OpenSearchRejectedExecutionException) {
+                                    numRejectedAsynchronousSearch.incrementAndGet();
                                 }
-                            });
+                                numFailedAsynchronousSearch.incrementAndGet();
+                                countDownLatch.countDown();
+                            }
+                        }
+                    );
                 };
                 operationThreads.add(thread);
             }
@@ -158,9 +176,12 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         }
     }
 
-    private void assertConcurrentSubmits(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, SearchResponse searchResponse,
-                                         TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer, int concurrentRuns)
-            throws InterruptedException {
+    private void assertConcurrentSubmits(
+        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest,
+        SearchResponse searchResponse,
+        TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        int concurrentRuns
+    ) throws InterruptedException {
         AtomicInteger numStartedAsynchronousSearch = new AtomicInteger();
         AtomicInteger numFailedAsynchronousSearch = new AtomicInteger();
         AtomicInteger numErrorResponseAsynchronousSearch = new AtomicInteger();
@@ -173,7 +194,7 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
             int numThreads = concurrentRuns;
             List<Runnable> operationThreads = new ArrayList<>();
             if (submitAsynchronousSearchRequest.getKeepOnCompletion()) {
-                //we also need to delete asynchronous search response to ensure test completes gracefully with no background tasks
+                // we also need to delete asynchronous search response to ensure test completes gracefully with no background tasks
                 // running
                 countDownLatch = new CountDownLatch(2 * numThreads);
             } else {
@@ -184,46 +205,53 @@ public class SubmitAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
                 CountDownLatch finalCountDownLatch = countDownLatch;
                 Runnable thread = () -> {
                     logger.info("Triggering asynchronous search submit --->");
-                    executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest,
-                            new ActionListener<AsynchronousSearchResponse>() {
-                                @Override
-                                public void onResponse(AsynchronousSearchResponse asResponse) {
-                                    if (asResponse.getId() != null) {
-                                        AsynchronousSearchId asId = AsynchronousSearchIdConverter.parseAsyncId(asResponse.getId());
-                                        assertEquals(state.nodes().getLocalNodeId(), asId.getNode());
-                                        AsynchronousSearchAssertions.assertSearchResponses(searchResponse, asResponse.getSearchResponse());
-                                        numStartedAsynchronousSearch.incrementAndGet();
-                                    }
-                                    if (asResponse.getError() != null) {
-                                        numErrorResponseAsynchronousSearch.incrementAndGet();
-                                    }
-                                    finalCountDownLatch.countDown();
-
-                                    if (submitAsynchronousSearchRequest.getKeepOnCompletion()) {
-                                        DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest
-                                                = new DeleteAsynchronousSearchRequest(asResponse.getId());
-                                        executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest,
-                                                new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
-                                                    @Override
-                                                    public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                                                        assertTrue(acknowledgedResponse.isAcknowledged());
-                                                    }
-
-                                                    @Override
-                                                    public void onFailure(Exception e) {
-                                                        fail("Search deletion failed for asynchronous search id " + e.getMessage());
-                                                    }
-                                                }, finalCountDownLatch));
-                                    }
-                                    ;
+                    executeSubmitAsynchronousSearch(
+                        client(),
+                        submitAsynchronousSearchRequest,
+                        new ActionListener<AsynchronousSearchResponse>() {
+                            @Override
+                            public void onResponse(AsynchronousSearchResponse asResponse) {
+                                if (asResponse.getId() != null) {
+                                    AsynchronousSearchId asId = AsynchronousSearchIdConverter.parseAsyncId(asResponse.getId());
+                                    assertEquals(state.nodes().getLocalNodeId(), asId.getNode());
+                                    AsynchronousSearchAssertions.assertSearchResponses(searchResponse, asResponse.getSearchResponse());
+                                    numStartedAsynchronousSearch.incrementAndGet();
                                 }
-
-                                @Override
-                                public void onFailure(Exception e) {
-                                    numFailedAsynchronousSearch.incrementAndGet();
-                                    finalCountDownLatch.countDown();
+                                if (asResponse.getError() != null) {
+                                    numErrorResponseAsynchronousSearch.incrementAndGet();
                                 }
-                            });
+                                finalCountDownLatch.countDown();
+
+                                if (submitAsynchronousSearchRequest.getKeepOnCompletion()) {
+                                    DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
+                                        asResponse.getId()
+                                    );
+                                    executeDeleteAsynchronousSearch(
+                                        client(),
+                                        deleteAsynchronousSearchRequest,
+                                        new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
+                                            @Override
+                                            public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                                                assertTrue(acknowledgedResponse.isAcknowledged());
+                                            }
+
+                                            @Override
+                                            public void onFailure(Exception e) {
+                                                fail("Search deletion failed for asynchronous search id " + e.getMessage());
+                                            }
+                                        }, finalCountDownLatch)
+                                    );
+                                }
+                                ;
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                numFailedAsynchronousSearch.incrementAndGet();
+                                finalCountDownLatch.countDown();
+                            }
+                        }
+                    );
                 };
                 operationThreads.add(thread);
             }

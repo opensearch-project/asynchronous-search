@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.persistence;
 
 import org.opensearch.commons.authuser.User;
@@ -34,8 +37,13 @@ public class AsynchronousSearchPersistenceModel {
         this.user = user;
     }
 
-    public AsynchronousSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis, SearchResponse response,
-                                       Exception error, User user) throws IOException {
+    public AsynchronousSearchPersistenceModel(
+        long startTimeMillis,
+        long expirationTimeMillis,
+        SearchResponse response,
+        Exception error,
+        User user
+    ) throws IOException {
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.response = serializeResponse(response);
@@ -109,14 +117,12 @@ public class AsynchronousSearchPersistenceModel {
             return false;
         }
         AsynchronousSearchPersistenceModel other = (AsynchronousSearchPersistenceModel) o;
-        return
-                startTimeMillis == other.startTimeMillis && expirationTimeMillis == other.expirationTimeMillis
-                        && ((response == null && other.response == null) ||
-                        (response != null && other.response != null && response.equals(other.response)))
-                        && ((error == null && other.error == null) ||
-                        (error != null && other.error != null && error.equals(other.error)))
-                        && ((user == null && other.user == null) ||
-                        (user != null && other.user != null && user.equals(other.user)));
+        return startTimeMillis == other.startTimeMillis
+            && expirationTimeMillis == other.expirationTimeMillis
+            && ((response == null && other.response == null)
+                || (response != null && other.response != null && response.equals(other.response)))
+            && ((error == null && other.error == null) || (error != null && other.error != null && error.equals(other.error)))
+            && ((user == null && other.user == null) || (user != null && other.user != null && user.equals(other.user)));
 
     }
 }

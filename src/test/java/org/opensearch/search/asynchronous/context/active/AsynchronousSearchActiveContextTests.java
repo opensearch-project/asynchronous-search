@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.active;
 
 import org.opensearch.commons.authuser.User;
@@ -49,25 +52,43 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             int writeThreadPoolSize = randomIntBetween(1, 2);
             int writeThreadPoolQueueSize = randomIntBetween(1, 2);
             Settings settings = Settings.builder()
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".size", writeThreadPoolSize)
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".queue_size", writeThreadPoolQueueSize)
-                    .build();
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".size",
+                    writeThreadPoolSize
+                )
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".queue_size",
+                    writeThreadPoolQueueSize
+                )
+                .build();
             final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
-            ScalingExecutorBuilder scalingExecutorBuilder =
-                    new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                            Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
+            ScalingExecutorBuilder scalingExecutorBuilder = new ScalingExecutorBuilder(
+                AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                1,
+                Math.min(2 * availableProcessors, Math.max(128, 512)),
+                TimeValue.timeValueMinutes(30)
+            );
             threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(threadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
             boolean keepOnCompletion = randomBoolean();
             User user = TestClientUtils.randomUser();
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
-            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
-                    keepAlive, keepOnCompletion, threadPool, threadPool::absoluteTimeInMillis, asProgressListener, user, () -> true);
+            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(
+                asContextId,
+                node,
+                keepAlive,
+                keepOnCompletion,
+                threadPool,
+                threadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user,
+                () -> true
+            );
             assertEquals(AsynchronousSearchState.INIT, context.getAsynchronousSearchState());
             assertNull(context.getTask());
             assertNull(context.getAsynchronousSearchId());
@@ -83,31 +104,56 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             int writeThreadPoolSize = randomIntBetween(1, 2);
             int writeThreadPoolQueueSize = randomIntBetween(1, 2);
             Settings settings = Settings.builder()
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".size", writeThreadPoolSize)
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".queue_size", writeThreadPoolQueueSize)
-                    .build();
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".size",
+                    writeThreadPoolSize
+                )
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".queue_size",
+                    writeThreadPoolQueueSize
+                )
+                .build();
             final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
-            ScalingExecutorBuilder scalingExecutorBuilder =
-                    new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                            Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
+            ScalingExecutorBuilder scalingExecutorBuilder = new ScalingExecutorBuilder(
+                AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                1,
+                Math.min(2 * availableProcessors, Math.max(128, 512)),
+                TimeValue.timeValueMinutes(30)
+            );
             threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(threadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
             boolean keepOnCompletion = randomBoolean();
             User user = TestClientUtils.randomUser();
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
-            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
-                    keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, user, () -> true);
+            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(
+                asContextId,
+                node,
+                keepAlive,
+                keepOnCompletion,
+                threadPool,
+                threadPool::absoluteTimeInMillis,
+                asProgressListener,
+                user,
+                () -> true
+            );
             SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest("test"));
             request.keepAlive(keepAlive);
             request.keepOnCompletion(keepOnCompletion);
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport",
-                    SearchAction.NAME, TaskId.EMPTY_TASK_ID, emptyMap(), context, request, (c) -> {});
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                context,
+                request,
+                (c) -> {}
+            );
             context.setTask(task);
             assertEquals(task, context.getTask());
             assertEquals(task.getStartTime(), context.getStartTimeMillis());
@@ -137,31 +183,48 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
             int writeThreadPoolSize = randomIntBetween(1, 2);
             int writeThreadPoolQueueSize = randomIntBetween(1, 2);
             Settings settings = Settings.builder()
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".size", writeThreadPoolSize)
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".queue_size", writeThreadPoolQueueSize)
-                    .build();
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".size",
+                    writeThreadPoolSize
+                )
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".queue_size",
+                    writeThreadPoolQueueSize
+                )
+                .build();
             final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
-            ScalingExecutorBuilder scalingExecutorBuilder =
-                    new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                            Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
+            ScalingExecutorBuilder scalingExecutorBuilder = new ScalingExecutorBuilder(
+                AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                1,
+                Math.min(2 * availableProcessors, Math.max(128, 512)),
+                TimeValue.timeValueMinutes(30)
+            );
             threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(threadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
             boolean keepOnCompletion = true;
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
-            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
-                    keepAlive, keepOnCompletion, threadPool,
-            threadPool::absoluteTimeInMillis, asProgressListener, null, () -> true);
+            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(
+                asContextId,
+                node,
+                keepAlive,
+                keepOnCompletion,
+                threadPool,
+                threadPool::absoluteTimeInMillis,
+                asProgressListener,
+                null,
+                () -> true
+            );
             if (randomBoolean()) {
                 SearchResponse mockSearchResponse = getMockSearchResponse();
                 try {
                     context.processSearchResponse(mockSearchResponse);
                 } catch (Exception ex) {
-                    fail("Unexpected exception "+ ex);
+                    fail("Unexpected exception " + ex);
                 }
                 if (mockSearchResponse.equals(context.getSearchResponse())) {
                     assertNull(context.getSearchError());
@@ -171,7 +234,7 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
                 try {
                     context.processSearchFailure(e);
                 } catch (Exception ex) {
-                    fail("Unexpected exception "+ ex);
+                    fail("Unexpected exception " + ex);
                 }
                 if (e.equals(context.getSearchError())) {
                     assertNull(context.getSearchResponse());
@@ -183,35 +246,58 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
         }
     }
 
-
     public void testClosedContext() throws InterruptedException {
         TestThreadPool threadPool = null;
         try {
             int writeThreadPoolSize = randomIntBetween(1, 2);
             int writeThreadPoolQueueSize = randomIntBetween(1, 2);
             Settings settings = Settings.builder()
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".size", writeThreadPoolSize)
-                    .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                            + ".queue_size", writeThreadPoolQueueSize)
-                    .build();
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".size",
+                    writeThreadPoolSize
+                )
+                .put(
+                    "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".queue_size",
+                    writeThreadPoolQueueSize
+                )
+                .build();
             final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
-            ScalingExecutorBuilder scalingExecutorBuilder =
-                    new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                            Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
+            ScalingExecutorBuilder scalingExecutorBuilder = new ScalingExecutorBuilder(
+                AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                1,
+                Math.min(2 * availableProcessors, Math.max(128, 512)),
+                TimeValue.timeValueMinutes(30)
+            );
             threadPool = new TestThreadPool("Tests", settings, scalingExecutorBuilder);
             String node = UUID.randomUUID().toString();
             AsynchronousSearchProgressListener asProgressListener = mockAsynchronousSearchProgressListener(threadPool);
-            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                    randomNonNegativeLong());
+            AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(
+                UUID.randomUUID().toString(),
+                randomNonNegativeLong()
+            );
             boolean keepOnCompletion = randomBoolean();
             TimeValue keepAlive = TimeValue.timeValueDays(randomInt(100));
-            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(asContextId, node,
-                    keepAlive, keepOnCompletion, threadPool,
-                    threadPool::absoluteTimeInMillis, asProgressListener, null, () -> true);
-            AsynchronousSearchTask task = new AsynchronousSearchTask(randomNonNegativeLong(), "transport",
-                    SearchAction.NAME, TaskId.EMPTY_TASK_ID, emptyMap(), context, null, (c) -> {
-            });
+            AsynchronousSearchActiveContext context = new AsynchronousSearchActiveContext(
+                asContextId,
+                node,
+                keepAlive,
+                keepOnCompletion,
+                threadPool,
+                threadPool::absoluteTimeInMillis,
+                asProgressListener,
+                null,
+                () -> true
+            );
+            AsynchronousSearchTask task = new AsynchronousSearchTask(
+                randomNonNegativeLong(),
+                "transport",
+                SearchAction.NAME,
+                TaskId.EMPTY_TASK_ID,
+                emptyMap(),
+                context,
+                null,
+                (c) -> {}
+            );
             context.setTask(task);
             assertEquals(task, context.getTask());
             assertEquals(task.getStartTime(), context.getStartTimeMillis());
@@ -230,13 +316,23 @@ public class AsynchronousSearchActiveContextTests extends AsynchronousSearchTest
     }
 
     protected SearchResponse getMockSearchResponse() {
-        return new SearchResponse(new InternalSearchResponse(
+        return new SearchResponse(
+            new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
                 InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
-                new SearchProfileShardResults(Collections.emptyMap()), false, false, 1),
-                "", 1, 1, 0, 0,
-                ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);
+                new SearchProfileShardResults(Collections.emptyMap()),
+                false,
+                false,
+                1
+            ),
+            "",
+            1,
+            1,
+            0,
+            0,
+            ShardSearchFailure.EMPTY_ARRAY,
+            SearchResponse.Clusters.EMPTY
+        );
     }
 }
-

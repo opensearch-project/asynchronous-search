@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.stats;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
@@ -39,7 +42,6 @@ public class InternalAsynchronousSearchStats implements AsynchronousSearchContex
     public void onContextRejected(AsynchronousSearchContextId contextId) {
         countStatsHolder.rejectedAsynchronousSearchCount.inc();
     }
-
 
     @Override
     public void onNewContext(AsynchronousSearchContextId contextId) {
@@ -82,13 +84,18 @@ public class InternalAsynchronousSearchStats implements AsynchronousSearchContex
         final CounterMetric cancelledAsynchronousSearchCount = new CounterMetric();
         final CounterMetric initializedAsynchronousSearchCount = new CounterMetric();
 
-
         public AsynchronousSearchCountStats countStats() {
-            return new AsynchronousSearchCountStats(runningAsynchronousSearchCount.count(), persistedAsynchronousSearchCount.count(),
-                    completedAsynchronousSearchCount.count(), failedAsynchronousSearchCount.count(),
-                    rejectedAsynchronousSearchCount.count(), persistFailedAsynchronousSearchCount.count(),
-                    initializedAsynchronousSearchCount.count(), submittedAsynchronousSearchCount.count(),
-                    cancelledAsynchronousSearchCount.count());
+            return new AsynchronousSearchCountStats(
+                runningAsynchronousSearchCount.count(),
+                persistedAsynchronousSearchCount.count(),
+                completedAsynchronousSearchCount.count(),
+                failedAsynchronousSearchCount.count(),
+                rejectedAsynchronousSearchCount.count(),
+                persistFailedAsynchronousSearchCount.count(),
+                initializedAsynchronousSearchCount.count(),
+                submittedAsynchronousSearchCount.count(),
+                cancelledAsynchronousSearchCount.count()
+            );
         }
     }
 }

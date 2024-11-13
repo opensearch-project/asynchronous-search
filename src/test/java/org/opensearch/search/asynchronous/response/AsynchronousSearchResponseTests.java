@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.response;
 
 import org.opensearch.core.xcontent.MediaType;
@@ -30,7 +33,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 
-
 public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase<AsynchronousSearchResponse> {
 
     @Override
@@ -45,21 +47,27 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
 
     @Override
     protected AsynchronousSearchResponse createTestInstance() {
-        return new AsynchronousSearchResponse(UUID.randomUUID().toString(),
-                getRandomAsynchronousSearchState(),
-                randomNonNegativeLong(),
-                randomNonNegativeLong(), getMockSearchResponse(), null);
+        return new AsynchronousSearchResponse(
+            UUID.randomUUID().toString(),
+            getRandomAsynchronousSearchState(),
+            randomNonNegativeLong(),
+            randomNonNegativeLong(),
+            getMockSearchResponse(),
+            null
+        );
 
     }
 
     @Override
     protected AsynchronousSearchResponse mutateInstance(AsynchronousSearchResponse instance) {
-        return new AsynchronousSearchResponse(randomBoolean() ? instance.getId() : UUID.randomUUID().toString(),
-                getRandomAsynchronousSearchState(),
-                randomBoolean() ? instance.getStartTimeMillis() : randomNonNegativeLong(),
-                randomBoolean() ? instance.getExpirationTimeMillis() : randomNonNegativeLong(),
-                getMockSearchResponse(),
-                instance.getError());
+        return new AsynchronousSearchResponse(
+            randomBoolean() ? instance.getId() : UUID.randomUUID().toString(),
+            getRandomAsynchronousSearchState(),
+            randomBoolean() ? instance.getStartTimeMillis() : randomNonNegativeLong(),
+            randomBoolean() ? instance.getExpirationTimeMillis() : randomNonNegativeLong(),
+            getMockSearchResponse(),
+            instance.getError()
+        );
     }
 
     private AsynchronousSearchState getRandomAsynchronousSearchState() {
@@ -69,13 +77,24 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
     private SearchResponse getMockSearchResponse() {
         int totalShards = randomInt(100);
         int successfulShards = totalShards - randomInt(100);
-        return new SearchResponse(new InternalSearchResponse(
+        return new SearchResponse(
+            new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
                 InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
-                new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
-                "", totalShards, successfulShards, 0, randomNonNegativeLong(),
-                ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);
+                new SearchProfileShardResults(Collections.emptyMap()),
+                false,
+                false,
+                randomInt(5)
+            ),
+            "",
+            totalShards,
+            successfulShards,
+            0,
+            randomNonNegativeLong(),
+            ShardSearchFailure.EMPTY_ARRAY,
+            SearchResponse.Clusters.EMPTY
+        );
     }
 
     /*
@@ -84,20 +103,29 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
      * message appears somewhere in the rendered xContent.
      */
     public void testXContentRoundTripForAsynchronousSearchResponseContainingError() throws IOException {
-        AsynchronousSearchResponse asResponse = new AsynchronousSearchResponse(UUID.randomUUID().toString(),
-                getRandomAsynchronousSearchState(),
-                randomNonNegativeLong(), randomNonNegativeLong(), null, new RuntimeException("test"));
+        AsynchronousSearchResponse asResponse = new AsynchronousSearchResponse(
+            UUID.randomUUID().toString(),
+            getRandomAsynchronousSearchState(),
+            randomNonNegativeLong(),
+            randomNonNegativeLong(),
+            null,
+            new RuntimeException("test")
+        );
 
         BytesReference serializedResponse;
         MediaType xContentType = Requests.INDEX_CONTENT_TYPE;
         serializedResponse = org.opensearch.core.xcontent.XContentHelper.toXContent(asResponse, xContentType, true);
-        try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                LoggingDeprecationHandler.INSTANCE, serializedResponse, xContentType)) {
+        try (
+            XContentParser parser = XContentHelper.createParser(
+                NamedXContentRegistry.EMPTY,
+                LoggingDeprecationHandler.INSTANCE,
+                serializedResponse,
+                xContentType
+            )
+        ) {
             AsynchronousSearchResponse asResponse1 = AsynchronousSearchResponse.fromXContent(parser);
             String originalMsg = asResponse1.getError().getCause().getMessage();
-            assertEquals(originalMsg,
-                    "OpenSearch exception [type=runtime_exception, reason=test]");
+            assertEquals(originalMsg, "OpenSearch exception [type=runtime_exception, reason=test]");
         }
     }
 }
-

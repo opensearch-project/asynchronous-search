@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.commons;
 
 import org.opensearch.search.asynchronous.action.GetAsynchronousSearchAction;
@@ -51,10 +54,7 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Arrays.asList(
-                ScriptedBlockPlugin.class,
-                AsynchronousSearchPlugin.class,
-                ReindexModulePlugin.class);
+        return Arrays.asList(ScriptedBlockPlugin.class, AsynchronousSearchPlugin.class, ReindexModulePlugin.class);
     }
 
     @Override
@@ -113,8 +113,8 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
     protected boolean verifyAsynchronousSearchDoesNotExists(String id) {
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(id);
         try {
-            AsynchronousSearchResponse response = client().execute(GetAsynchronousSearchAction.INSTANCE,
-                    getAsynchronousSearchRequest).actionGet();
+            AsynchronousSearchResponse response = client().execute(GetAsynchronousSearchAction.INSTANCE, getAsynchronousSearchRequest)
+                .actionGet();
             return response == null;
         } catch (Exception e) {
             if (e instanceof ResourceNotFoundException) {
@@ -128,9 +128,9 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
 
     protected boolean verifyResponsePersisted(String id) {
         try {
-            boolean isExists = client().get(new GetRequest(AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX)
-                    .refresh(true).id(id))
-                    .actionGet().isExists();
+            boolean isExists = client().get(
+                new GetRequest(AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX).refresh(true).id(id)
+            ).actionGet().isExists();
             return isExists;
         } catch (ResourceNotFoundException | NoShardAvailableActionException e) {
             return false;
@@ -177,8 +177,7 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
         public Map<String, Function<Map<String, Object>, Object>> pluginScripts() {
             return Collections.singletonMap(SCRIPT_NAME, params -> {
                 LeafFieldsLookup fieldsLookup = (LeafFieldsLookup) params.get("_fields");
-                LogManager.getLogger(AsynchronousSearchIntegTestCase.class).info("Blocking on the document {}",
-                        fieldsLookup.get("_id"));
+                LogManager.getLogger(AsynchronousSearchIntegTestCase.class).info("Blocking on the document {}", fieldsLookup.get("_id"));
                 hits.incrementAndGet();
                 try {
                     assertBusy(() -> assertFalse(shouldBlock.get()), 60, TimeUnit.SECONDS);
@@ -191,11 +190,11 @@ public abstract class AsynchronousSearchIntegTestCase extends OpenSearchIntegTes
     }
 
     public static AsynchronousSearchResponse executeSubmitAsynchronousSearch(Client client, SubmitAsynchronousSearchRequest request)
-            throws ExecutionException, InterruptedException {
+        throws ExecutionException, InterruptedException {
         return client.execute(SubmitAsynchronousSearchAction.INSTANCE, request).get();
     }
 
-    //We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
+    // We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
     @Override
     protected boolean ignoreExternalCluster() {
         return true;

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.request;
 
 import org.opensearch.search.asynchronous.task.SubmitAsynchronousSearchTask;
@@ -34,7 +37,6 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
     public static final Boolean DEFAULT_CCS_MINIMIZE_ROUNDTRIPS = Boolean.FALSE;
     public static final Boolean DEFAULT_REQUEST_CACHE = Boolean.TRUE;
 
-
     /**
      * The minimum time that the request should wait before returning a partial result (defaults to 1 second).
      */
@@ -57,7 +59,6 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
      * The underlying search request to execute
      */
     private final SearchRequest searchRequest;
-
 
     /**
      * Creates a new request from a {@linkplain SearchRequest}
@@ -117,7 +118,6 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
         out.writeBoolean(keepOnCompletion);
     }
 
-
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
@@ -129,19 +129,24 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
         }
         if (searchRequest.isCcsMinimizeRoundtrips()) {
             validationException = addValidationError(
-                    "[ccs_minimize_roundtrips] must be false, got: " + searchRequest.isCcsMinimizeRoundtrips(), validationException);
+                "[ccs_minimize_roundtrips] must be false, got: " + searchRequest.isCcsMinimizeRoundtrips(),
+                validationException
+            );
         }
         if (keepAlive != null && keepAlive.getMillis() < MIN_KEEP_ALIVE) {
             validationException = addValidationError(
-                    "[keep_alive] must be greater than 1 minute, got: " + keepAlive.toString(), validationException);
+                "[keep_alive] must be greater than 1 minute, got: " + keepAlive.toString(),
+                validationException
+            );
         }
         if (waitForCompletionTimeout != null && waitForCompletionTimeout.getMillis() < MIN_WAIT_FOR_COMPLETION_TIMEOUT) {
-            validationException = addValidationError("[wait_for_completion_timeout] must be greater than 0 milliseconds, got: "
-                    + waitForCompletionTimeout.toString(), validationException);
+            validationException = addValidationError(
+                "[wait_for_completion_timeout] must be greater than 0 milliseconds, got: " + waitForCompletionTimeout.toString(),
+                validationException
+            );
         }
         return validationException != null ? validationException : searchRequest.validate();
     }
-
 
     @Override
     public boolean equals(Object o) {
@@ -153,9 +158,9 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
         }
         SubmitAsynchronousSearchRequest request = (SubmitAsynchronousSearchRequest) o;
         return Objects.equals(searchRequest, request.searchRequest)
-                && Objects.equals(keepAlive, request.getKeepAlive())
-                && Objects.equals(waitForCompletionTimeout, request.getWaitForCompletionTimeout())
-                && Objects.equals(keepOnCompletion, request.getKeepOnCompletion());
+            && Objects.equals(keepAlive, request.getKeepAlive())
+            && Objects.equals(waitForCompletionTimeout, request.getWaitForCompletionTimeout())
+            && Objects.equals(keepOnCompletion, request.getKeepOnCompletion());
     }
 
     @Override
@@ -166,8 +171,14 @@ public class SubmitAsynchronousSearchRequest extends ActionRequest {
     @Override
     public SubmitAsynchronousSearchTask createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
         // generating description in a lazy way since source can be quite big
-        SubmitAsynchronousSearchTask submitAsynchronousSearchTask = new SubmitAsynchronousSearchTask(id, type, action, null,
-                parentTaskId, headers) {
+        SubmitAsynchronousSearchTask submitAsynchronousSearchTask = new SubmitAsynchronousSearchTask(
+            id,
+            type,
+            action,
+            null,
+            parentTaskId,
+            headers
+        ) {
             @Override
             public String getDescription() {
                 StringBuilder sb = new StringBuilder();

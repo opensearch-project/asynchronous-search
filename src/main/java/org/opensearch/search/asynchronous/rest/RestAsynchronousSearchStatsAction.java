@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.rest;
 
 import org.opensearch.core.common.Strings;
@@ -29,14 +32,12 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
 
     private static final String NAME = "asynchronous_search_stats_action";
 
-    public RestAsynchronousSearchStatsAction() {
-    }
+    public RestAsynchronousSearchStatsAction() {}
 
     @Override
     public String getName() {
         return NAME;
     }
-
 
     @Override
     public List<Route> routes() {
@@ -47,15 +48,18 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         AsynchronousSearchStatsRequest asynchronousSearchStatsRequest = getRequest(request);
 
-        return channel -> client.execute(AsynchronousSearchStatsAction.INSTANCE, asynchronousSearchStatsRequest,
-                new RestActions.NodesResponseRestListener<>(channel));
+        return channel -> client.execute(
+            AsynchronousSearchStatsAction.INSTANCE,
+            asynchronousSearchStatsRequest,
+            new RestActions.NodesResponseRestListener<>(channel)
+        );
     }
 
     @Override
     public List<ReplacedRoute> replacedRoutes() {
-        return Arrays.asList(new ReplacedRoute(GET, BASE_URI + "/_nodes/{nodeId}/stats",
-                        GET, LEGACY_OPENDISTRO_BASE_URI + "/_nodes/{nodeId}/stats"),
-                new ReplacedRoute(GET, BASE_URI + "/stats", GET, LEGACY_OPENDISTRO_BASE_URI + "/stats")
+        return Arrays.asList(
+            new ReplacedRoute(GET, BASE_URI + "/_nodes/{nodeId}/stats", GET, LEGACY_OPENDISTRO_BASE_URI + "/_nodes/{nodeId}/stats"),
+            new ReplacedRoute(GET, BASE_URI + "/stats", GET, LEGACY_OPENDISTRO_BASE_URI + "/stats")
         );
     }
 
@@ -68,4 +72,3 @@ public class RestAsynchronousSearchStatsAction extends BaseRestHandler {
         return asynchronousSearchStatsRequest;
     }
 }
-

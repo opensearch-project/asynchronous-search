@@ -1,14 +1,11 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
  *
  * The OpenSearch Contributors require contributions made to
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.apache.lucene.tests.analysis.MockTokenizer;
@@ -102,9 +99,12 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
     public void testEmptyQueryString() throws ExecutionException, InterruptedException, IOException {
         String index = UUID.randomUUID().toString();
         createIndex(index);
-        indexRandom(true, client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
+        indexRandom(
+            true,
+            client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(index).setId("3").setSource("field1", "quick")
+        );
         SearchRequest searchRequest = new SearchRequest(index);
         searchRequest.source(new SearchSourceBuilder());
         searchRequest.source().query(queryStringQuery("quick"));
@@ -118,48 +118,56 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
     public void testAggregationQuery() throws InterruptedException, ExecutionException {
         // Tests that we can refer to nested elements under a sample in a path
         // statement
-        assertAcked(prepareCreate("test")
-                .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .setMapping(
-                        "author", "type=keyword", "name", "type=text", "genre", "type=keyword", "price", "type=float"));
+        assertAcked(
+            prepareCreate("test").setSettings(
+                Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0)
+            ).setMapping("author", "type=keyword", "name", "type=text", "genre", "type=keyword", "price", "type=float")
+        );
         createIndex("idx_unmapped");
         // idx_unmapped_author is same as main index but missing author field
-        assertAcked(prepareCreate("idx_unmapped_author")
-                .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0))
-                .setMapping("name", "type=text", "genre", "type=keyword", "price", "type=float"));
+        assertAcked(
+            prepareCreate("idx_unmapped_author").setSettings(
+                Settings.builder().put(SETTING_NUMBER_OF_SHARDS, NUM_SHARDS).put(SETTING_NUMBER_OF_REPLICAS, 0)
+            ).setMapping("name", "type=text", "genre", "type=keyword", "price", "type=float")
+        );
 
         ensureGreen();
         String data[] = {
-                // "id,cat,name,price,inStock,author_t,series_t,sequence_i,genre_s",
-                "0553573403,book,A Game of Thrones,7.99,true,George R.R. Martin,A Song of Ice and Fire,1,fantasy",
-                "0553579908,book,A Clash of Kings,7.99,true,George R.R. Martin,A Song of Ice and Fire,2,fantasy",
-                "055357342X,book,A Storm of Swords,7.99,true,George R.R. Martin,A Song of Ice and Fire,3,fantasy",
-                "0553293354,book,Foundation,17.99,true,Isaac Asimov,Foundation Novels,1,scifi",
-                "0812521390,book,The Black Company,6.99,false,Glen Cook,The Chronicles of The Black Company,1,fantasy",
-                "0812550706,book,Ender's Game,6.99,true,Orson Scott Card,Ender,1,scifi",
-                "0441385532,book,Jhereg,7.95,false,Steven Brust,Vlad Taltos,1,fantasy",
-                "0380014300,book,Nine Princes In Amber,6.99,true,Roger Zelazny,the Chronicles of Amber,1,fantasy",
-                "0805080481,book,The Book of Three,5.99,true,Lloyd Alexander,The Chronicles of Prydain,1,fantasy",
-                "080508049X,book,The Black Cauldron,5.99,true,Lloyd Alexander,The Chronicles of Prydain,2,fantasy"
+            // "id,cat,name,price,inStock,author_t,series_t,sequence_i,genre_s",
+            "0553573403,book,A Game of Thrones,7.99,true,George R.R. Martin,A Song of Ice and Fire,1,fantasy",
+            "0553579908,book,A Clash of Kings,7.99,true,George R.R. Martin,A Song of Ice and Fire,2,fantasy",
+            "055357342X,book,A Storm of Swords,7.99,true,George R.R. Martin,A Song of Ice and Fire,3,fantasy",
+            "0553293354,book,Foundation,17.99,true,Isaac Asimov,Foundation Novels,1,scifi",
+            "0812521390,book,The Black Company,6.99,false,Glen Cook,The Chronicles of The Black Company,1,fantasy",
+            "0812550706,book,Ender's Game,6.99,true,Orson Scott Card,Ender,1,scifi",
+            "0441385532,book,Jhereg,7.95,false,Steven Brust,Vlad Taltos,1,fantasy",
+            "0380014300,book,Nine Princes In Amber,6.99,true,Roger Zelazny,the Chronicles of Amber,1,fantasy",
+            "0805080481,book,The Book of Three,5.99,true,Lloyd Alexander,The Chronicles of Prydain,1,fantasy",
+            "080508049X,book,The Black Cauldron,5.99,true,Lloyd Alexander,The Chronicles of Prydain,2,fantasy"
 
         };
 
         for (int i = 0; i < data.length; i++) {
             String[] parts = data[i].split(",");
-            client().prepareIndex("test").setId("" + i)
-                    .setSource("author", parts[5], "name", parts[2], "genre", parts[8], "price", Float.parseFloat(parts[3])).get();
-            client().prepareIndex("idx_unmapped_author").setId("" + i)
-                    .setSource("name", parts[2], "genre", parts[8], "price", Float.parseFloat(parts[3])).get();
+            client().prepareIndex("test")
+                .setId("" + i)
+                .setSource("author", parts[5], "name", parts[2], "genre", parts[8], "price", Float.parseFloat(parts[3]))
+                .get();
+            client().prepareIndex("idx_unmapped_author")
+                .setId("" + i)
+                .setSource("name", parts[2], "genre", parts[8], "price", Float.parseFloat(parts[3]))
+                .get();
         }
         client().admin().indices().refresh(new RefreshRequest("test")).get();
         boolean asc = randomBoolean();
         SearchRequest searchRequest = new SearchRequest("test");
         searchRequest.source(new SearchSourceBuilder());
-        searchRequest.source().aggregation(terms("genres")
-                .field("genre")
-                .order(BucketOrder.aggregation("sample>max_price.value", asc))
-                .subAggregation(sampler("sample").shardSize(100)
-                        .subAggregation(max("max_price").field("price"))));
+        searchRequest.source()
+            .aggregation(
+                terms("genres").field("genre")
+                    .order(BucketOrder.aggregation("sample>max_price.value", asc))
+                    .subAggregation(sampler("sample").shardSize(100).subAggregation(max("max_price").field("price")))
+            );
         SearchResponse response = getPersistedAsynchronousSearchResponse(searchRequest).getSearchResponse();
         assertSearchResponse(response);
         Terms genres = response.getAggregations().get("genres");
@@ -182,32 +190,31 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
     }
 
     public void testIpRangeQuery() throws InterruptedException {
-        assertAcked(prepareCreate("idx")
-                .setMapping("ip", "type=ip", "ips", "type=ip"));
+        assertAcked(prepareCreate("idx").setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
 
-        indexRandom(true,
-                client().prepareIndex("idx").setId("1").setSource(
-                        "ip", "192.168.1.7",
-                        "ips", Arrays.asList("192.168.0.13", "192.168.1.2")),
-                client().prepareIndex("idx").setId("2").setSource(
-                        "ip", "192.168.1.10",
-                        "ips", Arrays.asList("192.168.1.25", "192.168.1.28")),
-                client().prepareIndex("idx").setId("3").setSource(
-                        "ip", "2001:db8::ff00:42:8329",
-                        "ips", Arrays.asList("2001:db8::ff00:42:8329", "2001:db8::ff00:42:8380")));
+        indexRandom(
+            true,
+            client().prepareIndex("idx").setId("1").setSource("ip", "192.168.1.7", "ips", Arrays.asList("192.168.0.13", "192.168.1.2")),
+            client().prepareIndex("idx").setId("2").setSource("ip", "192.168.1.10", "ips", Arrays.asList("192.168.1.25", "192.168.1.28")),
+            client().prepareIndex("idx")
+                .setId("3")
+                .setSource("ip", "2001:db8::ff00:42:8329", "ips", Arrays.asList("2001:db8::ff00:42:8329", "2001:db8::ff00:42:8380"))
+        );
 
         assertAcked(prepareCreate("idx_unmapped"));
         waitForRelocation(ClusterHealthStatus.GREEN);
         refresh();
         SearchRequest searchRequest = new SearchRequest("idx");
         searchRequest.source(new SearchSourceBuilder());
-        searchRequest.source().aggregation(
+        searchRequest.source()
+            .aggregation(
                 AggregationBuilders.ipRange("my_range")
-                        .field("ip")
-                        .addUnboundedTo("192.168.1.0")
-                        .addRange("192.168.1.0", "192.168.1.10")
-                        .addUnboundedFrom("192.168.1.10"));
+                    .field("ip")
+                    .addUnboundedTo("192.168.1.0")
+                    .addRange("192.168.1.0", "192.168.1.10")
+                    .addUnboundedFrom("192.168.1.10")
+            );
         SearchResponse rsp = getPersistedAsynchronousSearchResponse(searchRequest).getSearchResponse();
         assertSearchResponse(rsp);
         Range range = rsp.getAggregations().get("my_range");
@@ -235,22 +242,21 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
     public void testHighlighterQuery() throws IOException, InterruptedException {
         XContentBuilder mappings = jsonBuilder();
         mappings.startObject()
-                .startObject("properties")
-                .startObject("text")
-                .field("type", "keyword")
-                .field("store", true)
-                .endObject()
-                .endObject().endObject();
-        assertAcked(prepareCreate("test1")
-                .setMapping(mappings));
-        client().prepareIndex("test1").setId("1")
-                .setSource(jsonBuilder().startObject().field("text", "foo").endObject())
-                .get();
+            .startObject("properties")
+            .startObject("text")
+            .field("type", "keyword")
+            .field("store", true)
+            .endObject()
+            .endObject()
+            .endObject();
+        assertAcked(prepareCreate("test1").setMapping(mappings));
+        client().prepareIndex("test1").setId("1").setSource(jsonBuilder().startObject().field("text", "foo").endObject()).get();
         refresh();
         SearchRequest searchRequest = new SearchRequest("test1");
         searchRequest.source(new SearchSourceBuilder());
-        searchRequest.source().query(matchQuery("text", "foo"))
-                .highlighter(new HighlightBuilder().field(new HighlightBuilder.Field("text")));
+        searchRequest.source()
+            .query(matchQuery("text", "foo"))
+            .highlighter(new HighlightBuilder().field(new HighlightBuilder.Field("text")));
         SearchResponse searchResponse = getPersistedAsynchronousSearchResponse(searchRequest).getSearchResponse();
         assertHighlight(searchResponse, 0, "text", 0, equalTo("<em>foo</em>"));
     }
@@ -259,11 +265,9 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(searchRequest);
         request.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
         request.keepOnCompletion(true);
-        AsynchronousSearchResponse asResponse = TestClientUtils.blockingSubmitAsynchronousSearch(client(),
-                request);
+        AsynchronousSearchResponse asResponse = TestClientUtils.blockingSubmitAsynchronousSearch(client(), request);
         TestClientUtils.assertResponsePersistence(client(), asResponse.getId());
-        asResponse = TestClientUtils.blockingGetAsynchronousSearchResponse(client(),
-                new GetAsynchronousSearchRequest(asResponse.getId()));
+        asResponse = TestClientUtils.blockingGetAsynchronousSearchResponse(client(), new GetAsynchronousSearchRequest(asResponse.getId()));
         return asResponse;
     }
 
@@ -291,8 +295,13 @@ public class AsynchronousSearchQueryIT extends OpenSearchIntegTestCase {
 
         @Override
         public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
-            return singletonMap("keyword", (indexSettings, environment, name, settings) -> TokenizerFactory.newFactory(name,
-                    () -> new MockTokenizer(MockTokenizer.KEYWORD, false)));
+            return singletonMap(
+                "keyword",
+                (indexSettings, environment, name, settings) -> TokenizerFactory.newFactory(
+                    name,
+                    () -> new MockTokenizer(MockTokenizer.KEYWORD, false)
+                )
+            );
         }
     }
 }

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.management;
 
 import org.opensearch.common.xcontent.XContentType;
@@ -55,13 +58,10 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Arrays.asList(
-                ScriptedBlockPlugin.class,
-                AsynchronousSearchPlugin.class,
-                ReindexModulePlugin.class);
+        return Arrays.asList(ScriptedBlockPlugin.class, AsynchronousSearchPlugin.class, ReindexModulePlugin.class);
     }
 
-    //We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
+    // We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
     @Override
     protected boolean ignoreExternalCluster() {
         return true;
@@ -72,13 +72,12 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         boolean lowLevelCancellation = randomBoolean();
         logger.info("Using lowLevelCancellation: {}", lowLevelCancellation);
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put("node.attr.asynchronous_search_enabled", true)
-                .put(AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.getKey(),  TimeValue.timeValueSeconds(5))
-                .put(AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.getKey(),
-                        TimeValue.timeValueSeconds(5))
-                .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), lowLevelCancellation)
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put("node.attr.asynchronous_search_enabled", true)
+            .put(AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.getKey(), TimeValue.timeValueSeconds(5))
+            .put(AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.getKey(), TimeValue.timeValueSeconds(5))
+            .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), lowLevelCancellation)
+            .build();
     }
 
     private void indexTestData() {
@@ -86,8 +85,7 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
             // Make sure we have a few segments
             BulkRequestBuilder bulkRequestBuilder = client().prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             for (int j = 0; j < 20; j++) {
-                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j))
-                        .setSource("field", "value"));
+                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j)).setSource("field", "value"));
             }
             assertNoFailures(bulkRequestBuilder.get());
         }
@@ -97,26 +95,23 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         indexTestData();
 
-        SearchRequest searchRequest = client().prepareSearch("test").setQuery(
-                scriptQuery(new Script(
-                        ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
-                .request();
-        //We need a NodeClient to make sure the listener gets injected in the search request execution.
-        //Randomized client randomly return NodeClient/TransportClient
+        SearchRequest searchRequest = client().prepareSearch("test")
+            .setQuery(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
+            .request();
+        // We need a NodeClient to make sure the listener gets injected in the search request execution.
+        // Randomized client randomly return NodeClient/TransportClient
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
         testCase(internalCluster().smartClient(), submitAsynchronousSearchRequest, plugins);
     }
 
-
     public void testCleansUpExpiredAsynchronousSearchDuringFetchPhase() throws Exception {
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         indexTestData();
         SearchRequest searchRequest = client().prepareSearch("test")
-                .addScriptField("test_field",
-                        new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())
-                ).request();
+            .addScriptField("test_field", new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap()))
+            .request();
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
@@ -125,19 +120,16 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
 
     public void testDeletesExpiredAsynchronousSearchResponseFromPersistedStore() throws Exception {
         String idx = "idx";
-        assertAcked(prepareCreate(idx)
-                .setMapping("ip", "type=ip", "ips", "type=ip"));
+        assertAcked(prepareCreate(idx).setMapping("ip", "type=ip", "ips", "type=ip"));
         waitForRelocation(ClusterHealthStatus.GREEN);
-        indexRandom(true,
-                client().prepareIndex(idx).setId("1").setSource(
-                        "ip", "192.168.1.7",
-                        "ips", Arrays.asList("192.168.0.13", "192.168.1.2")),
-                client().prepareIndex(idx).setId("2").setSource(
-                        "ip", "192.168.1.10",
-                        "ips", Arrays.asList("192.168.1.25", "192.168.1.28")),
-                client().prepareIndex(idx).setId("3").setSource(
-                        "ip", "2001:db8::ff00:42:8329",
-                        "ips", Arrays.asList("2001:db8::ff00:42:8329", "2001:db8::ff00:42:8380")));
+        indexRandom(
+            true,
+            client().prepareIndex(idx).setId("1").setSource("ip", "192.168.1.7", "ips", Arrays.asList("192.168.0.13", "192.168.1.2")),
+            client().prepareIndex(idx).setId("2").setSource("ip", "192.168.1.10", "ips", Arrays.asList("192.168.1.25", "192.168.1.28")),
+            client().prepareIndex(idx)
+                .setId("3")
+                .setSource("ip", "2001:db8::ff00:42:8329", "ips", Arrays.asList("2001:db8::ff00:42:8329", "2001:db8::ff00:42:8380"))
+        );
 
         assertAcked(prepareCreate("idx_unmapped"));
         waitForRelocation(ClusterHealthStatus.GREEN);
@@ -151,36 +143,42 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
         CountDownLatch latch = new CountDownLatch(2);
-        client().execute(SubmitAsynchronousSearchAction.INSTANCE, submitAsynchronousSearchRequest,
-                new ActionListener<AsynchronousSearchResponse>() {
-            @Override
-            public void onResponse(AsynchronousSearchResponse asResponse) {
-                asResponseRef.set(asResponse);
-                exceptionRef.set(asResponse.getError());
-                latch.countDown();
-            }
+        client().execute(
+            SubmitAsynchronousSearchAction.INSTANCE,
+            submitAsynchronousSearchRequest,
+            new ActionListener<AsynchronousSearchResponse>() {
+                @Override
+                public void onResponse(AsynchronousSearchResponse asResponse) {
+                    asResponseRef.set(asResponse);
+                    exceptionRef.set(asResponse.getError());
+                    latch.countDown();
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                exceptionRef.set(e);
-                latch.countDown();
+                @Override
+                public void onFailure(Exception e) {
+                    exceptionRef.set(e);
+                    latch.countDown();
+                }
             }
-        });
+        );
 
-        //submit another request to verify that the second request is not cancelled
-        client().execute(SubmitAsynchronousSearchAction.INSTANCE, submitAsynchronousSearchRequest,
-                new ActionListener<AsynchronousSearchResponse>() {
-            @Override
-            public void onResponse(AsynchronousSearchResponse asResponse) {
-                nonExpiredAsynchronousSearchResponseRef.set(asResponse);
-                latch.countDown();
-            }
+        // submit another request to verify that the second request is not cancelled
+        client().execute(
+            SubmitAsynchronousSearchAction.INSTANCE,
+            submitAsynchronousSearchRequest,
+            new ActionListener<AsynchronousSearchResponse>() {
+                @Override
+                public void onResponse(AsynchronousSearchResponse asResponse) {
+                    nonExpiredAsynchronousSearchResponseRef.set(asResponse);
+                    latch.countDown();
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                latch.countDown();
+                @Override
+                public void onFailure(Exception e) {
+                    latch.countDown();
+                }
             }
-        });
+        );
 
         latch.await();
         waitUntil(() -> verifyResponsePersisted(asResponseRef.get().getId()));
@@ -188,42 +186,49 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         CountDownLatch updateLatch = new CountDownLatch(1);
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(asResponseRef.get().getId());
         getAsynchronousSearchRequest.setKeepAlive(TimeValue.timeValueMillis(1));
-        client().execute(GetAsynchronousSearchAction.INSTANCE, getAsynchronousSearchRequest,
-                new ActionListener<AsynchronousSearchResponse>() {
-            @Override
-            public void onResponse(AsynchronousSearchResponse asResponse) {
-                asResponseRef.set(asResponse);
-                exceptionRef.set(asResponse.getError());
-                updateLatch.countDown();
-            }
+        client().execute(
+            GetAsynchronousSearchAction.INSTANCE,
+            getAsynchronousSearchRequest,
+            new ActionListener<AsynchronousSearchResponse>() {
+                @Override
+                public void onResponse(AsynchronousSearchResponse asResponse) {
+                    asResponseRef.set(asResponse);
+                    exceptionRef.set(asResponse.getError());
+                    updateLatch.countDown();
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                exceptionRef.set(e);
-                updateLatch.countDown();
+                @Override
+                public void onFailure(Exception e) {
+                    exceptionRef.set(e);
+                    updateLatch.countDown();
+                }
             }
-        });
+        );
         updateLatch.await();
         waitUntil(() -> verifyResponseRemoved(asResponseRef.get().getId()));
         assertBusy(() -> assertTrue(verifyResponsePersisted(nonExpiredAsynchronousSearchResponseRef.get().getId())));
         // delete the non expired response explicitly
         CountDownLatch deleteLatch = new CountDownLatch(1);
         DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
-                nonExpiredAsynchronousSearchResponseRef.get().getId());
-        client().execute(DeleteAsynchronousSearchAction.INSTANCE, deleteAsynchronousSearchRequest,
-                new ActionListener<AcknowledgedResponse>() {
-            @Override
-            public void onResponse(AcknowledgedResponse response) {
-                assertTrue(response.isAcknowledged());
-                deleteLatch.countDown();
-            }
+            nonExpiredAsynchronousSearchResponseRef.get().getId()
+        );
+        client().execute(
+            DeleteAsynchronousSearchAction.INSTANCE,
+            deleteAsynchronousSearchRequest,
+            new ActionListener<AcknowledgedResponse>() {
+                @Override
+                public void onResponse(AcknowledgedResponse response) {
+                    assertTrue(response.isAcknowledged());
+                    deleteLatch.countDown();
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                deleteLatch.countDown();
-                fail("Cleanup failed");
+                @Override
+                public void onFailure(Exception e) {
+                    deleteLatch.countDown();
+                    fail("Cleanup failed");
+                }
             }
-        });
+        );
         deleteLatch.await();
     }
 
@@ -247,7 +252,7 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
             }
         });
 
-        //submit another request to verify that the second request is not cancelled
+        // submit another request to verify that the second request is not cancelled
         client.execute(SubmitAsynchronousSearchAction.INSTANCE, request, new ActionListener<AsynchronousSearchResponse>() {
             @Override
             public void onResponse(AsynchronousSearchResponse asResponse) {
@@ -266,51 +271,57 @@ public class AsynchronousSearchManagementServiceIT extends AsynchronousSearchInt
         CountDownLatch updateLatch = new CountDownLatch(1);
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(asResponseRef.get().getId());
         getAsynchronousSearchRequest.setKeepAlive(TimeValue.timeValueMillis(1));
-        client.execute(GetAsynchronousSearchAction.INSTANCE, getAsynchronousSearchRequest,
-                new ActionListener<AsynchronousSearchResponse>() {
-            @Override
-            public void onResponse(AsynchronousSearchResponse asResponse) {
-                asResponseRef.set(asResponse);
-                exceptionRef.set(asResponse.getError());
-                updateLatch.countDown();
-            }
+        client.execute(
+            GetAsynchronousSearchAction.INSTANCE,
+            getAsynchronousSearchRequest,
+            new ActionListener<AsynchronousSearchResponse>() {
+                @Override
+                public void onResponse(AsynchronousSearchResponse asResponse) {
+                    asResponseRef.set(asResponse);
+                    exceptionRef.set(asResponse.getError());
+                    updateLatch.countDown();
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                exceptionRef.set(e);
-                updateLatch.countDown();
+                @Override
+                public void onFailure(Exception e) {
+                    exceptionRef.set(e);
+                    updateLatch.countDown();
+                }
             }
-        });
+        );
         updateLatch.await();
-        assertThat(asResponseRef.get().getExpirationTimeMillis(),
-                lessThan((System.currentTimeMillis()) + randomLongBetween(100, 200)));
+        assertThat(asResponseRef.get().getExpirationTimeMillis(), lessThan((System.currentTimeMillis()) + randomLongBetween(100, 200)));
         boolean cleanedUp = waitUntil(() -> verifyAsynchronousSearchDoesNotExists(asResponseRef.get().getId()));
         assertTrue(cleanedUp);
         disableBlocks(plugins);
         AsynchronousSearchId asId = AsynchronousSearchIdConverter.parseAsyncId(asResponseRef.get().getId());
         TaskId taskId = new TaskId(asId.getNode(), asId.getTaskId());
         waitUntil(() -> verifyTaskCancelled(AsynchronousSearchTask.NAME, taskId));
-        //ensure the second asynchronous search is not cleaned up
+        // ensure the second asynchronous search is not cleaned up
         assertBusy(() -> assertFalse(verifyAsynchronousSearchDoesNotExists(nonExpiredAsynchronousSearchResponseRef.get().getId())));
         logger.info("Segments {}", Strings.toString(XContentType.JSON, client().admin().indices().prepareSegments("test").get()));
         CountDownLatch deleteLatch = new CountDownLatch(1);
-        //explicitly clean up the second request
+        // explicitly clean up the second request
         DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
-                nonExpiredAsynchronousSearchResponseRef.get().getId());
-        client.execute(DeleteAsynchronousSearchAction.INSTANCE, deleteAsynchronousSearchRequest,
-                new ActionListener<AcknowledgedResponse>() {
-            @Override
-            public void onResponse(AcknowledgedResponse response) {
-                assertTrue(response.isAcknowledged());
-                deleteLatch.countDown();
-            }
+            nonExpiredAsynchronousSearchResponseRef.get().getId()
+        );
+        client.execute(
+            DeleteAsynchronousSearchAction.INSTANCE,
+            deleteAsynchronousSearchRequest,
+            new ActionListener<AcknowledgedResponse>() {
+                @Override
+                public void onResponse(AcknowledgedResponse response) {
+                    assertTrue(response.isAcknowledged());
+                    deleteLatch.countDown();
+                }
 
-            @Override
-            public void onFailure(Exception e) {
-                deleteLatch.countDown();
-                fail("Cleanup failed");
+                @Override
+                public void onFailure(Exception e) {
+                    deleteLatch.countDown();
+                    fail("Cleanup failed");
+                }
             }
-        });
+        );
         deleteLatch.await();
     }
 }

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.transport;
 
 import org.opensearch.search.asynchronous.action.AsynchronousSearchStatsAction;
@@ -24,26 +27,44 @@ import org.opensearch.transport.TransportService;
 import java.io.IOException;
 import java.util.List;
 
-public class TransportAsynchronousSearchStatsAction
-        extends TransportNodesAction<AsynchronousSearchStatsRequest, AsynchronousSearchStatsResponse,
-        TransportAsynchronousSearchStatsAction.AsynchronousSearchStatsNodeRequest, AsynchronousSearchStats> {
+public class TransportAsynchronousSearchStatsAction extends TransportNodesAction<
+    AsynchronousSearchStatsRequest,
+    AsynchronousSearchStatsResponse,
+    TransportAsynchronousSearchStatsAction.AsynchronousSearchStatsNodeRequest,
+    AsynchronousSearchStats> {
 
     private final AsynchronousSearchService asynchronousSearchService;
 
     @Inject
-    public TransportAsynchronousSearchStatsAction(ThreadPool threadPool, ClusterService clusterService, TransportService transportService,
-                                           ActionFilters actionFilters, AsynchronousSearchService asynchronousSearchService) {
+    public TransportAsynchronousSearchStatsAction(
+        ThreadPool threadPool,
+        ClusterService clusterService,
+        TransportService transportService,
+        ActionFilters actionFilters,
+        AsynchronousSearchService asynchronousSearchService
+    ) {
 
-        super(AsynchronousSearchStatsAction.NAME, threadPool, clusterService, transportService, actionFilters,
-                AsynchronousSearchStatsRequest::new, AsynchronousSearchStatsNodeRequest::new, ThreadPool.Names.MANAGEMENT,
-                AsynchronousSearchStats.class);
+        super(
+            AsynchronousSearchStatsAction.NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            actionFilters,
+            AsynchronousSearchStatsRequest::new,
+            AsynchronousSearchStatsNodeRequest::new,
+            ThreadPool.Names.MANAGEMENT,
+            AsynchronousSearchStats.class
+        );
         this.asynchronousSearchService = asynchronousSearchService;
 
     }
 
     @Override
-    protected AsynchronousSearchStatsResponse newResponse(AsynchronousSearchStatsRequest request, List<AsynchronousSearchStats> responses,
-                                                   List<FailedNodeException> failures) {
+    protected AsynchronousSearchStatsResponse newResponse(
+        AsynchronousSearchStatsRequest request,
+        List<AsynchronousSearchStats> responses,
+        List<FailedNodeException> failures
+    ) {
         return new AsynchronousSearchStatsResponse(clusterService.getClusterName(), responses, failures);
     }
 

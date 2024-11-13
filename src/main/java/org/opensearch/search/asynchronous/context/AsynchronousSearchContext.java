@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context;
 
 import org.opensearch.commons.authuser.User;
@@ -14,7 +17,6 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.common.Nullable;
 
 import java.util.function.LongSupplier;
-
 
 /**
  * Wrapper around information that needs to stay around when an asynchronous search has been submitted.
@@ -35,8 +37,7 @@ public abstract class AsynchronousSearchContext {
         this.currentTimeSupplier = currentTimeSupplier;
     }
 
-    public @Nullable
-    AsynchronousSearchProgressListener getAsynchronousSearchProgressListener() {
+    public @Nullable AsynchronousSearchProgressListener getAsynchronousSearchProgressListener() {
         return asynchronousSearchProgressListener;
     }
 
@@ -58,22 +59,25 @@ public abstract class AsynchronousSearchContext {
 
     public abstract long getStartTimeMillis();
 
-    public abstract @Nullable
-    SearchResponse getSearchResponse();
+    public abstract @Nullable SearchResponse getSearchResponse();
 
-    public abstract @Nullable
-    Exception getSearchError();
+    public abstract @Nullable Exception getSearchError();
 
-    public abstract @Nullable
-    User getUser();
+    public abstract @Nullable User getUser();
 
     public boolean isExpired() {
         return getExpirationTimeMillis() < currentTimeSupplier.getAsLong();
     }
 
     public AsynchronousSearchResponse getAsynchronousSearchResponse() {
-        return new AsynchronousSearchResponse(getAsynchronousSearchId(), getAsynchronousSearchState(), getStartTimeMillis(),
-                getExpirationTimeMillis(), getSearchResponse(), getSearchError());
+        return new AsynchronousSearchResponse(
+            getAsynchronousSearchId(),
+            getAsynchronousSearchState(),
+            getStartTimeMillis(),
+            getExpirationTimeMillis(),
+            getSearchResponse(),
+            getSearchError()
+        );
     }
 
     public void setState(AsynchronousSearchState targetState) {

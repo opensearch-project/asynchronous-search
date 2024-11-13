@@ -1,14 +1,11 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
  *
  * The OpenSearch Contributors require contributions made to
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
  */
-
 package org.opensearch.search.asynchronous.bwc;
 
 import org.junit.Assert;
@@ -42,18 +39,15 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.containsString;
 
 public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestTestCase {
-    private static final ClusterType CLUSTER_TYPE =
-            ClusterType.parse(System.getProperty("tests.rest.bwcsuite_cluster"));
+    private static final ClusterType CLUSTER_TYPE = ClusterType.parse(System.getProperty("tests.rest.bwcsuite_cluster"));
     private static final String CLUSTER_NAME = System.getProperty("tests.clustername");
 
     public void testBackwardsCompatibility() throws Exception {
         String uri = getUri();
-        Map<String, Map<String, Object>> responseMap =
-                (Map<String, Map<String, Object>>) getAsMap(uri).get("nodes");
+        Map<String, Map<String, Object>> responseMap = (Map<String, Map<String, Object>>) getAsMap(uri).get("nodes");
         for (Map<String, Object> response : responseMap.values()) {
             List<Map<String, Object>> plugins = (List<Map<String, Object>>) response.get("plugins");
-            Set<Object> pluginNames =
-                    plugins.stream().map(map -> map.get("name")).collect(Collectors.toSet());
+            Set<Object> pluginNames = plugins.stream().map(map -> map.get("name")).collect(Collectors.toSet());
             switch (CLUSTER_TYPE) {
                 case OLD:
                 case MIXED:
@@ -100,117 +94,104 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
     public void testSubmitWithRetainedResponse(boolean shouldUseLegacyApi) throws IOException {
         SearchRequest searchRequest = new SearchRequest("test");
         searchRequest.source(new SearchSourceBuilder());
-        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest =
-                new SubmitAsynchronousSearchRequest(searchRequest);
+        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
-        submitAsynchronousSearchRequest.waitForCompletionTimeout(
-                TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse =
-                executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, shouldUseLegacyApi);
-        List<AsynchronousSearchState> legalStates =
-                Arrays.asList(
-                        AsynchronousSearchState.RUNNING,
-                        AsynchronousSearchState.SUCCEEDED,
-                        AsynchronousSearchState.PERSIST_SUCCEEDED,
-                        AsynchronousSearchState.PERSISTING,
-                        AsynchronousSearchState.CLOSED,
-                        AsynchronousSearchState.STORE_RESIDENT);
+        submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, shouldUseLegacyApi);
+        List<AsynchronousSearchState> legalStates = Arrays.asList(
+            AsynchronousSearchState.RUNNING,
+            AsynchronousSearchState.SUCCEEDED,
+            AsynchronousSearchState.PERSIST_SUCCEEDED,
+            AsynchronousSearchState.PERSISTING,
+            AsynchronousSearchState.CLOSED,
+            AsynchronousSearchState.STORE_RESIDENT
+        );
         assertNotNull(submitResponse.getId());
         assertTrue(submitResponse.getState().name(), legalStates.contains(submitResponse.getState()));
-        GetAsynchronousSearchRequest getAsynchronousSearchRequest =
-                new GetAsynchronousSearchRequest(submitResponse.getId());
+        GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
         AsynchronousSearchResponse getResponse;
         do {
-            getResponse =
-                    getAssertedAsynchronousSearchResponse(
-                            submitResponse, getAsynchronousSearchRequest, shouldUseLegacyApi);
-            if (getResponse.getState() == AsynchronousSearchState.RUNNING
-                    && getResponse.getSearchResponse() != null) {
+            getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, shouldUseLegacyApi);
+            if (getResponse.getState() == AsynchronousSearchState.RUNNING && getResponse.getSearchResponse() != null) {
                 assertEquals(getResponse.getSearchResponse().getHits().getHits().length, 0);
             } else {
                 assertNotNull(getResponse.getSearchResponse());
                 assertNotEquals(getResponse.getSearchResponse().getTook(), -1L);
             }
         } while (AsynchronousSearchState.STORE_RESIDENT.equals(getResponse.getState()) == false);
-        getResponse =
-                getAssertedAsynchronousSearchResponse(
-                        submitResponse, getAsynchronousSearchRequest, shouldUseLegacyApi);
+        getResponse = getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, shouldUseLegacyApi);
         assertNotNull(getResponse.getSearchResponse());
         assertEquals(AsynchronousSearchState.STORE_RESIDENT, getResponse.getState());
         assertHitCount(getResponse.getSearchResponse(), 5);
-        executeDeleteAsynchronousSearch(
-                new DeleteAsynchronousSearchRequest(submitResponse.getId()), shouldUseLegacyApi);
+        executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()), shouldUseLegacyApi);
     }
 
-    Response executeDeleteAsynchronousSearch(
-            DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean shouldUseLegacyApi)
-            throws IOException {
+    Response executeDeleteAsynchronousSearch(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+        throws IOException {
         Request request = RestTestUtils.buildHttpRequest(deleteAsynchronousSearchRequest, shouldUseLegacyApi);
         return client().performRequest(request);
     }
 
     public void testMaxKeepAliveSetting(boolean shouldUseLegacyApi) throws Exception {
-        SubmitAsynchronousSearchRequest validRequest =
-                new SubmitAsynchronousSearchRequest(new SearchRequest());
+        SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         validRequest.keepAlive(TimeValue.timeValueHours(7));
         AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest, shouldUseLegacyApi);
         assertNotNull(asResponse.getSearchResponse());
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.getKey()
-                        : AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(),
-                TimeValue.timeValueHours(6));
-        SubmitAsynchronousSearchRequest invalidRequest =
-                new SubmitAsynchronousSearchRequest(new SearchRequest());
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.getKey()
+                : AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(),
+            TimeValue.timeValueHours(6)
+        );
+        SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.keepAlive(TimeValue.timeValueHours(7));
-        ResponseException responseException =
-                expectThrows(
-                        ResponseException.class,
-                        () -> executeSubmitAsynchronousSearch(invalidRequest, shouldUseLegacyApi));
+        ResponseException responseException = expectThrows(
+            ResponseException.class,
+            () -> executeSubmitAsynchronousSearch(invalidRequest, shouldUseLegacyApi)
+        );
         assertThat(
-                responseException.getMessage(),
-                containsString(
-                        "Keep alive for asynchronous search ("
-                                + invalidRequest.getKeepAlive().getMillis()
-                                + ") is too large"));
+            responseException.getMessage(),
+            containsString("Keep alive for asynchronous search (" + invalidRequest.getKeepAlive().getMillis() + ") is too large")
+        );
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.getKey()
-                        : AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(),
-                TimeValue.timeValueHours(24));
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING.getKey()
+                : AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING.getKey(),
+            TimeValue.timeValueHours(24)
+        );
     }
 
     public void testSubmitInvalidWaitForCompletion(boolean shouldUseLegacyApi) throws Exception {
-        SubmitAsynchronousSearchRequest validRequest =
-                new SubmitAsynchronousSearchRequest(new SearchRequest());
+        SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         validRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
         AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest, shouldUseLegacyApi);
         assertNotNull(asResponse.getSearchResponse());
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING
-                        .getKey()
-                        : AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
-                TimeValue.timeValueSeconds(2));
-        SubmitAsynchronousSearchRequest invalidRequest =
-                new SubmitAsynchronousSearchRequest(new SearchRequest());
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey()
+                : AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
+            TimeValue.timeValueSeconds(2)
+        );
+        SubmitAsynchronousSearchRequest invalidRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
         invalidRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(50));
-        ResponseException responseException =
-                expectThrows(
-                        ResponseException.class,
-                        () -> executeSubmitAsynchronousSearch(invalidRequest, shouldUseLegacyApi));
+        ResponseException responseException = expectThrows(
+            ResponseException.class,
+            () -> executeSubmitAsynchronousSearch(invalidRequest, shouldUseLegacyApi)
+        );
         assertThat(
-                responseException.getMessage(),
-                containsString(
-                        "Wait for completion timeout for asynchronous search ("
-                                + validRequest.getWaitForCompletionTimeout().getMillis()
-                                + ") is too large"));
+            responseException.getMessage(),
+            containsString(
+                "Wait for completion timeout for asynchronous search ("
+                    + validRequest.getWaitForCompletionTimeout().getMillis()
+                    + ") is too large"
+            )
+        );
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING
-                        .getKey()
-                        : AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
-                TimeValue.timeValueSeconds(60));
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey()
+                : AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey(),
+            TimeValue.timeValueSeconds(60)
+        );
     }
 
     public void testMaxRunningAsynchronousSearchContexts(boolean shouldUseLegacyApi) throws Exception {
@@ -218,26 +199,22 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
         List<Thread> threadsList = new LinkedList<>();
         CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
         for (int i = 0; i < numThreads; i++) {
-            threadsList.add(
-                    new Thread(
-                            () -> {
-                                try {
-                                    SubmitAsynchronousSearchRequest validRequest =
-                                            new SubmitAsynchronousSearchRequest(new SearchRequest());
-                                    validRequest.keepAlive(TimeValue.timeValueHours(1));
-                                    AsynchronousSearchResponse asResponse =
-                                            executeSubmitAsynchronousSearch(validRequest, shouldUseLegacyApi);
-                                    assertNotNull(asResponse.getSearchResponse());
-                                } catch (IOException e) {
-                                    fail("submit request failed");
-                                } finally {
-                                    try {
-                                        barrier.await();
-                                    } catch (Exception e) {
-                                        fail();
-                                    }
-                                }
-                            }));
+            threadsList.add(new Thread(() -> {
+                try {
+                    SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
+                    validRequest.keepAlive(TimeValue.timeValueHours(1));
+                    AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest, shouldUseLegacyApi);
+                    assertNotNull(asResponse.getSearchResponse());
+                } catch (IOException e) {
+                    fail("submit request failed");
+                } finally {
+                    try {
+                        barrier.await();
+                    } catch (Exception e) {
+                        fail();
+                    }
+                }
+            }));
         }
         threadsList.forEach(Thread::start);
         barrier.await();
@@ -246,38 +223,32 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
         }
 
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING
-                        .getKey()
-                        : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
-                0);
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey()
+                : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+            0
+        );
         threadsList.clear();
         AtomicInteger numFailures = new AtomicInteger();
         for (int i = 0; i < numThreads; i++) {
-            threadsList.add(
-                    new Thread(
-                            () -> {
-                                try {
-                                    SubmitAsynchronousSearchRequest validRequest =
-                                            new SubmitAsynchronousSearchRequest(new SearchRequest());
-                                    validRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
-                                    AsynchronousSearchResponse asResponse =
-                                            executeSubmitAsynchronousSearch(validRequest, shouldUseLegacyApi);
-                                } catch (Exception e) {
-                                    assertTrue(e instanceof ResponseException);
-                                    assertThat(
-                                            e.getMessage(),
-                                            containsString("Trying to create too many concurrent searches"));
-                                    numFailures.getAndIncrement();
+            threadsList.add(new Thread(() -> {
+                try {
+                    SubmitAsynchronousSearchRequest validRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
+                    validRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(1));
+                    AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(validRequest, shouldUseLegacyApi);
+                } catch (Exception e) {
+                    assertTrue(e instanceof ResponseException);
+                    assertThat(e.getMessage(), containsString("Trying to create too many concurrent searches"));
+                    numFailures.getAndIncrement();
 
-                                } finally {
-                                    try {
-                                        barrier.await();
-                                    } catch (Exception e) {
-                                        fail();
-                                    }
-                                }
-                            }));
+                } finally {
+                    try {
+                        barrier.await();
+                    } catch (Exception e) {
+                        fail();
+                    }
+                }
+            }));
         }
         threadsList.forEach(Thread::start);
         barrier.await();
@@ -286,59 +257,52 @@ public class AsyncSearchBackwardsCompatibilityIT extends AsynchronousSearchRestT
         }
         assertEquals(numFailures.get(), 50);
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING
-                        .getKey()
-                        : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
-                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES);
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey()
+                : AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(),
+            AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES
+        );
     }
 
     public void testStoreAsyncSearchWithFailures(boolean shouldUseLegacyApi) throws Exception {
-        SubmitAsynchronousSearchRequest request =
-                new SubmitAsynchronousSearchRequest(new SearchRequest("non-existent-index"));
+        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest("non-existent-index"));
         request.keepOnCompletion(true);
         request.waitForCompletionTimeout(TimeValue.timeValueMinutes(1));
         AsynchronousSearchResponse response = executeSubmitAsynchronousSearch(request, shouldUseLegacyApi);
-        assertTrue(
-                Arrays.asList(AsynchronousSearchState.CLOSED, AsynchronousSearchState.FAILED)
-                        .contains(AsynchronousSearchState.FAILED));
-        waitUntil(
-                () -> {
-                    try {
-                        executeGetAsynchronousSearch(
-                                new GetAsynchronousSearchRequest(response.getId()), shouldUseLegacyApi);
-                        return false;
-                    } catch (IOException e) {
-                        return e.getMessage().contains("resource_not_found");
-                    }
-                });
+        assertTrue(Arrays.asList(AsynchronousSearchState.CLOSED, AsynchronousSearchState.FAILED).contains(AsynchronousSearchState.FAILED));
+        waitUntil(() -> {
+            try {
+                executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(response.getId()), shouldUseLegacyApi);
+                return false;
+            } catch (IOException e) {
+                return e.getMessage().contains("resource_not_found");
+            }
+        });
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey()
-                        : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
-                true);
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey()
+                : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
+            true
+        );
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(request, shouldUseLegacyApi);
-        waitUntil(
-                () -> {
-                    try {
-                        return executeGetAsynchronousSearch(
-                                new GetAsynchronousSearchRequest(submitResponse.getId()), shouldUseLegacyApi)
-                                .getState()
-                                .equals(AsynchronousSearchState.STORE_RESIDENT);
-                    } catch (IOException e) {
-                        return false;
-                    }
-                });
+        waitUntil(() -> {
+            try {
+                return executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()), shouldUseLegacyApi).getState()
+                    .equals(AsynchronousSearchState.STORE_RESIDENT);
+            } catch (IOException e) {
+                return false;
+            }
+        });
         assertEquals(
-                executeGetAsynchronousSearch(
-                        new GetAsynchronousSearchRequest(submitResponse.getId()), shouldUseLegacyApi)
-                        .getState(),
-                AsynchronousSearchState.STORE_RESIDENT);
+            executeGetAsynchronousSearch(new GetAsynchronousSearchRequest(submitResponse.getId()), shouldUseLegacyApi).getState(),
+            AsynchronousSearchState.STORE_RESIDENT
+        );
         updateClusterSettings(
-                shouldUseLegacyApi
-                        ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey()
-                        : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
-                false);
+            shouldUseLegacyApi
+                ? LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING.getKey()
+                : AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(),
+            false
+        );
     }
 
     private enum ClusterType {

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.state;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
@@ -33,8 +36,11 @@ public class AsynchronousSearchStateMachine implements StateMachine<Asynchronous
     private final Set<AsynchronousSearchState> states;
     private final AsynchronousSearchContextEventListener asynchronousSearchContextEventListener;
 
-    public AsynchronousSearchStateMachine(final Set<AsynchronousSearchState> states, final AsynchronousSearchState initialState,
-                                   AsynchronousSearchContextEventListener asynchronousSearchContextEventListener) {
+    public AsynchronousSearchStateMachine(
+        final Set<AsynchronousSearchState> states,
+        final AsynchronousSearchState initialState,
+        AsynchronousSearchContextEventListener asynchronousSearchContextEventListener
+    ) {
         super();
         this.transitionsMap = new HashMap<>();
         this.states = states;
@@ -92,31 +98,45 @@ public class AsynchronousSearchStateMachine implements StateMachine<Asynchronous
                 AsynchronousSearchTransition<? extends AsynchronousSearchContextEvent> transition = transitionsMap.get(transitionId);
                 execute(transition.onEvent(), event, currentState);
                 asynchronousSearchContext.setState(transition.targetState());
-                logger.debug("Executed event [{}] for asynchronous search id [{}] ", event.getClass().getName(),
-                        event.asynchronousSearchContext.getAsynchronousSearchId());
+                logger.debug(
+                    "Executed event [{}] for asynchronous search id [{}] ",
+                    event.getClass().getName(),
+                    event.asynchronousSearchContext.getAsynchronousSearchId()
+                );
                 BiConsumer<AsynchronousSearchContextId, AsynchronousSearchContextEventListener> eventListener = transition.eventListener();
                 try {
                     eventListener.accept(event.asynchronousSearchContext().getContextId(), asynchronousSearchContextEventListener);
                 } catch (Exception ex) {
-                    logger.error(() -> new ParameterizedMessage("Failed to execute listener for asynchronous search id : [{}]",
-                            event.asynchronousSearchContext.getAsynchronousSearchId()), ex);
+                    logger.error(
+                        () -> new ParameterizedMessage(
+                            "Failed to execute listener for asynchronous search id : [{}]",
+                            event.asynchronousSearchContext.getAsynchronousSearchId()
+                        ),
+                        ex
+                    );
                 }
                 return asynchronousSearchContext.getAsynchronousSearchState();
             } else {
-                String message = String.format(Locale.ROOT, "Invalid transition for " +
-                                "asynchronous search context [%s] from source state [%s] on event [%s]",
-                        asynchronousSearchContext.getAsynchronousSearchId(), currentState, event.getClass().getName());
+                String message = String.format(
+                    Locale.ROOT,
+                    "Invalid transition for " + "asynchronous search context [%s] from source state [%s] on event [%s]",
+                    asynchronousSearchContext.getAsynchronousSearchId(),
+                    currentState,
+                    event.getClass().getName()
+                );
                 logger.error(message);
                 throw new IllegalStateException(message);
             }
         }
     }
 
-
     @SuppressWarnings("unchecked")
-    //Suppress the warning since we know the type of the event and transition based on the validation
-    private <T> void execute(BiConsumer<AsynchronousSearchState, T> onEvent, AsynchronousSearchContextEvent event,
-                             AsynchronousSearchState state) {
+    // Suppress the warning since we know the type of the event and transition based on the validation
+    private <T> void execute(
+        BiConsumer<AsynchronousSearchState, T> onEvent,
+        AsynchronousSearchContextEvent event,
+        AsynchronousSearchState state
+    ) {
         onEvent.accept(state, (T) event);
     }
 
@@ -139,4 +159,3 @@ public class AsynchronousSearchStateMachine implements StateMachine<Asynchronous
     }
 
 }
-

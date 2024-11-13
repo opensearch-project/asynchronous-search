@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
@@ -58,15 +61,15 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put("thread_pool.search.size", 1)
-                .put("thread_pool.search.queue_size", 1)
-                .put("thread_pool.write.size", 1)
-                .put("thread_pool.write.queue_size", 10)
-                .put("thread_pool.get.size", 1)
-                .put("thread_pool.get.queue_size", 10)
-                .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put("thread_pool.search.size", 1)
+            .put("thread_pool.search.queue_size", 1)
+            .put("thread_pool.write.size", 1)
+            .put("thread_pool.write.queue_size", 10)
+            .put("thread_pool.get.size", 1)
+            .put("thread_pool.get.queue_size", 10)
+            .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
+            .build();
     }
 
     @TestLogging(value = "_root:DEBUG", reason = "flaky")
@@ -83,71 +86,80 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
         final CopyOnWriteArrayList<Object> responses = new CopyOnWriteArrayList<>();
         for (int i = 0; i < numberOfAsyncOps; i++) {
             SearchRequest request = client().prepareSearch("test")
-                    .setSearchType(SearchType.QUERY_THEN_FETCH)
-                    .setQuery(QueryBuilders.matchQuery("field", "1"))
-                    .request();
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setQuery(QueryBuilders.matchQuery("field", "1"))
+                .request();
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(request);
             submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMinutes(1));
             boolean keepOnCompletion = randomBoolean();
             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
-                    client().execute(SubmitAsynchronousSearchAction.INSTANCE, submitAsynchronousSearchRequest,
-                            new LatchedActionListener<>(new ActionListener<AsynchronousSearchResponse>() {
-                                @Override
-                                public void onResponse(AsynchronousSearchResponse asynchronousSearchResponse) {
-                                    if (asynchronousSearchResponse.getSearchResponse() != null) {
-                                        responses.add(asynchronousSearchResponse.getSearchResponse());
-                                    } else if(asynchronousSearchResponse.getError() != null){
-                                        responses.add(asynchronousSearchResponse.getError());
-                                    }
-                                    if (asynchronousSearchResponse.getId() == null) {
-                                        // task cancelled by the time we process final response/error due to during partial merge failure.
-                                        // no  delete required
-                                        latch.countDown();
-                                    } else {
-                                        DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest
-                                                = new DeleteAsynchronousSearchRequest(asynchronousSearchResponse.getId());
-                                        client().execute(DeleteAsynchronousSearchAction.INSTANCE, deleteAsynchronousSearchRequest,
-                                                new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
-                                                    @Override
-                                                    public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                                                        assertTrue(acknowledgedResponse.isAcknowledged());
-                                                    }
-
-                                                    @Override
-                                                    public void onFailure(Exception e) {
-                                                        Throwable cause = ExceptionsHelper.unwrapCause(e);
-                                                        if (cause instanceof OpenSearchRejectedExecutionException) {
-                                                            numRejections.incrementAndGet();
-                                                        } else if (cause instanceof OpenSearchTimeoutException) {
-                                                            numTimeouts.incrementAndGet();
-                                                        } else if(cause instanceof ResourceNotFoundException) {
-                                                            // deletion is in race with task cancellation due to partial merge failure
-                                                            numRnf.getAndIncrement();
-                                                        } else {
-                                                            numFailures.incrementAndGet();
-                                                        }
-                                                    }
-                                                }, latch));
-                                    }
+            client().execute(
+                SubmitAsynchronousSearchAction.INSTANCE,
+                submitAsynchronousSearchRequest,
+                new LatchedActionListener<>(new ActionListener<AsynchronousSearchResponse>() {
+                    @Override
+                    public void onResponse(AsynchronousSearchResponse asynchronousSearchResponse) {
+                        if (asynchronousSearchResponse.getSearchResponse() != null) {
+                            responses.add(asynchronousSearchResponse.getSearchResponse());
+                        } else if (asynchronousSearchResponse.getError() != null) {
+                            responses.add(asynchronousSearchResponse.getError());
                         }
-                        @Override
-                        public void onFailure(Exception e) {
-                            responses.add(e);
-                            assertThat(e.getMessage(), startsWith("Trying to create too many concurrent searches"));
+                        if (asynchronousSearchResponse.getId() == null) {
+                            // task cancelled by the time we process final response/error due to during partial merge failure.
+                            // no delete required
                             latch.countDown();
+                        } else {
+                            DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
+                                asynchronousSearchResponse.getId()
+                            );
+                            client().execute(
+                                DeleteAsynchronousSearchAction.INSTANCE,
+                                deleteAsynchronousSearchRequest,
+                                new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
+                                    @Override
+                                    public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                                        assertTrue(acknowledgedResponse.isAcknowledged());
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Throwable cause = ExceptionsHelper.unwrapCause(e);
+                                        if (cause instanceof OpenSearchRejectedExecutionException) {
+                                            numRejections.incrementAndGet();
+                                        } else if (cause instanceof OpenSearchTimeoutException) {
+                                            numTimeouts.incrementAndGet();
+                                        } else if (cause instanceof ResourceNotFoundException) {
+                                            // deletion is in race with task cancellation due to partial merge failure
+                                            numRnf.getAndIncrement();
+                                        } else {
+                                            numFailures.incrementAndGet();
+                                        }
+                                    }
+                                }, latch)
+                            );
                         }
-                    }, latch));
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        responses.add(e);
+                        assertThat(e.getMessage(), startsWith("Trying to create too many concurrent searches"));
+                        latch.countDown();
+                    }
+                }, latch)
+            );
         }
         latch.await();
-
 
         // validate all responses
         for (Object response : responses) {
             if (response instanceof SearchResponse) {
                 SearchResponse searchResponse = (SearchResponse) response;
                 for (ShardSearchFailure failure : searchResponse.getShardFailures()) {
-                    assertTrue("got unexpected reason..." + failure.reason(),
-                            failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected"));
+                    assertTrue(
+                        "got unexpected reason..." + failure.reason(),
+                        failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected")
+                    );
                 }
             } else {
                 Exception t = (Exception) response;
@@ -155,10 +167,12 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
                 if (unwrap instanceof SearchPhaseExecutionException) {
                     SearchPhaseExecutionException e = (SearchPhaseExecutionException) unwrap;
                     for (ShardSearchFailure failure : e.shardFailures()) {
-                        assertTrue("got unexpected reason..." + failure.reason(),
-                        // task cancellation can occur due to partial merge failures
-                                failure.reason().toLowerCase(Locale.ENGLISH).contains("cancelled") ||
-                                failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected"));
+                        assertTrue(
+                            "got unexpected reason..." + failure.reason(),
+                            // task cancellation can occur due to partial merge failures
+                            failure.reason().toLowerCase(Locale.ENGLISH).contains("cancelled")
+                                || failure.reason().toLowerCase(Locale.ENGLISH).contains("rejected")
+                        );
                     }
                     // we have have null responses if submit completes before search starts
                 } else if (unwrap instanceof OpenSearchRejectedExecutionException == false) {
@@ -182,22 +196,25 @@ public class AsynchronousSearchRejectionIT extends AsynchronousSearchIntegTestCa
             threadPool = new TestThreadPool(AsynchronousSearchProgressListenerIT.class.getName());
             for (int i = 0; i < numberOfAsyncOps; i++) {
                 SearchRequest request = client().prepareSearch("test")
-                        .setSearchType(SearchType.QUERY_THEN_FETCH)
-                        .setQuery(QueryBuilders.matchQuery("field", "1"))
-                        .request();
+                    .setSearchType(SearchType.QUERY_THEN_FETCH)
+                    .setQuery(QueryBuilders.matchQuery("field", "1"))
+                    .request();
                 AtomicReference<SearchResponse> responseRef = new AtomicReference<>();
                 AtomicInteger reduceContextInvocation = new AtomicInteger();
                 AsynchronousSearchProgressListener listener;
                 SearchService service = internalCluster().getInstance(SearchService.class);
                 InternalAggregation.ReduceContextBuilder reduceContextBuilder = service.aggReduceContextBuilder(request.source());
                 AtomicReference<Exception> exceptionRef = new AtomicReference<>();
-                Function<SearchResponse, AsynchronousSearchResponse> responseFunction =
-                        (r) -> null;
-                Function<Exception, AsynchronousSearchResponse> failureFunction =
-                        (e) -> null;
-                listener = new AsynchronousSearchProgressListener(threadPool.relativeTimeInMillis(), responseFunction,
-                        failureFunction, threadPool.generic(), threadPool::relativeTimeInMillis,
-                        () -> reduceContextBuilder) {
+                Function<SearchResponse, AsynchronousSearchResponse> responseFunction = (r) -> null;
+                Function<Exception, AsynchronousSearchResponse> failureFunction = (e) -> null;
+                listener = new AsynchronousSearchProgressListener(
+                    threadPool.relativeTimeInMillis(),
+                    responseFunction,
+                    failureFunction,
+                    threadPool.generic(),
+                    threadPool::relativeTimeInMillis,
+                    () -> reduceContextBuilder
+                ) {
                     @Override
                     public void onResponse(SearchResponse searchResponse) {
                         assertTrue(responseRef.compareAndSet(null, searchResponse));

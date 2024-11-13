@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.task;
 
 import org.opensearch.core.common.Strings;
@@ -31,9 +34,16 @@ public class AsynchronousSearchTask extends SearchTask {
 
     public static final String NAME = "indices:data/read/opendistro/asynchronous_search";
 
-    public AsynchronousSearchTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers,
-                           AsynchronousSearchActiveContext asynchronousSearchContext, SubmitAsynchronousSearchRequest request,
-                           Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer) {
+    public AsynchronousSearchTask(
+        long id,
+        String type,
+        String action,
+        TaskId parentTaskId,
+        Map<String, String> headers,
+        AsynchronousSearchActiveContext asynchronousSearchContext,
+        SubmitAsynchronousSearchRequest request,
+        Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer
+    ) {
         super(id, type, action, () -> description(request), parentTaskId, headers);
         Objects.requireNonNull(asynchronousSearchContext);
         Objects.requireNonNull(freeActiveContextConsumer);
@@ -44,8 +54,11 @@ public class AsynchronousSearchTask extends SearchTask {
 
     @Override
     protected void onCancelled() {
-        logger.debug("On Cancelled event received for asynchronous search context [{}] due to [{}]",
-                asynchronousSearchActiveContext.getAsynchronousSearchId(), getReasonCancelled());
+        logger.debug(
+            "On Cancelled event received for asynchronous search context [{}] due to [{}]",
+            asynchronousSearchActiveContext.getAsynchronousSearchId(),
+            getReasonCancelled()
+        );
         freeActiveContextConsumer.accept(asynchronousSearchActiveContext);
     }
 
@@ -58,8 +71,7 @@ public class AsynchronousSearchTask extends SearchTask {
         sb.append("keep_on_completion[").append(request.getKeepOnCompletion()).append("], ");
         sb.append("keep_alive[").append(request.getKeepAlive()).append("], ");
         if (request.getSearchRequest().source() != null) {
-            sb.append("source[").append(request.getSearchRequest().source()
-                    .toString(SearchRequest.FORMAT_PARAMS)).append("]");
+            sb.append("source[").append(request.getSearchRequest().source().toString(SearchRequest.FORMAT_PARAMS)).append("]");
         } else {
             sb.append("source[]");
         }
