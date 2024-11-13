@@ -43,10 +43,6 @@ jobs:
           echo "build-test-linux=$plugin" >> $GITHUB_OUTPUT
         env:
           _JAVA_OPTIONS: -Xmx4096M
-      - name: Create Artifact Path
-        run: |
-          mkdir -p asynchronous-search-artifacts
-          cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Uploads coverage
         uses: codecov/codecov-action@v1.2.1
