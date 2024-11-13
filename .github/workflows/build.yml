@@ -34,7 +34,15 @@ jobs:
       - name: Checkout Branch
         uses: actions/checkout@v3
       - name: Build with Gradle
-        run: ./gradlew build -x integTest -x jacocoTestReport
+        id: step-build-test-linux
+        run: |
+          ./gradlew build -x integTest -x jacocoTestReport
+          plugin=`basename $(ls build/distributions/*.zip)`
+          echo plugin $plugin
+          mv -v build/distributions/$plugin ./
+          echo "build-test-linux=$plugin" >> $GITHUB_OUTPUT
+        env:
+          _JAVA_OPTIONS: -Xmx4096M
       - name: Create Artifact Path
         run: |
           mkdir -p asynchronous-search-artifacts
