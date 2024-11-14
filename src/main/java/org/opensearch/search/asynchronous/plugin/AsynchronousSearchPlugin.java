@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.plugin;
 
 import org.opensearch.search.asynchronous.action.AsynchronousSearchStatsAction;
@@ -61,7 +64,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-
 public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, SystemIndexPlugin {
 
     public static final String OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME = "opensearch_asynchronous_search_generic";
@@ -74,8 +76,12 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
-        return Collections.singletonList(new SystemIndexDescriptor(AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX,
-                "Stores the response for asynchronous search"));
+        return Collections.singletonList(
+            new SystemIndexDescriptor(
+                AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX,
+                "Stores the response for asynchronous search"
+            )
+        );
     }
 
     @Override
@@ -83,70 +89,95 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
         return Collections.singletonList(AsynchronousSearchManagementService.class);
     }
 
-
-    //TODO Revisit these once we performance test the feature
+    // TODO Revisit these once we performance test the feature
     @Override
     public List<ExecutorBuilder<?>> getExecutorBuilders(Settings settings) {
         final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
-        executorBuilders.add(new ScalingExecutorBuilder(OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30)));
+        executorBuilders.add(
+            new ScalingExecutorBuilder(
+                OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                1,
+                Math.min(2 * availableProcessors, Math.max(128, 512)),
+                TimeValue.timeValueMinutes(30)
+            )
+        );
         return executorBuilders;
     }
 
     @Override
-    public Collection<Object> createComponents(Client client, ClusterService clusterService, ThreadPool threadPool,
-                                               ResourceWatcherService resourceWatcherService, ScriptService scriptService,
-                                               NamedXContentRegistry xContentRegistry, Environment environment,
-                                               NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
-                                               IndexNameExpressionResolver indexNameExpressionResolver,
-                                               Supplier<RepositoriesService> repositoriesServiceSupplier) {
+    public Collection<Object> createComponents(
+        Client client,
+        ClusterService clusterService,
+        ThreadPool threadPool,
+        ResourceWatcherService resourceWatcherService,
+        ScriptService scriptService,
+        NamedXContentRegistry xContentRegistry,
+        Environment environment,
+        NodeEnvironment nodeEnvironment,
+        NamedWriteableRegistry namedWriteableRegistry,
+        IndexNameExpressionResolver indexNameExpressionResolver,
+        Supplier<RepositoriesService> repositoriesServiceSupplier
+    ) {
         this.persistenceService = new AsynchronousSearchPersistenceService(client, clusterService, threadPool);
         this.asynchronousSearchActiveStore = new AsynchronousSearchActiveStore(clusterService);
-        this.asynchronousSearchService = new AsynchronousSearchService(persistenceService, asynchronousSearchActiveStore, client,
-                clusterService,
-                threadPool, new InternalAsynchronousSearchStats(), namedWriteableRegistry);
+        this.asynchronousSearchService = new AsynchronousSearchService(
+            persistenceService,
+            asynchronousSearchActiveStore,
+            client,
+            clusterService,
+            threadPool,
+            new InternalAsynchronousSearchStats(),
+            namedWriteableRegistry
+        );
         return Arrays.asList(persistenceService, asynchronousSearchService);
     }
 
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return Arrays.asList(
-                new ActionHandler<>(SubmitAsynchronousSearchAction.INSTANCE, TransportSubmitAsynchronousSearchAction.class),
-                new ActionHandler<>(AsynchronousSearchStatsAction.INSTANCE, TransportAsynchronousSearchStatsAction.class),
-                new ActionHandler<>(GetAsynchronousSearchAction.INSTANCE, TransportGetAsynchronousSearchAction.class),
-                new ActionHandler<>(DeleteAsynchronousSearchAction.INSTANCE, TransportDeleteAsynchronousSearchAction.class));
+            new ActionHandler<>(SubmitAsynchronousSearchAction.INSTANCE, TransportSubmitAsynchronousSearchAction.class),
+            new ActionHandler<>(AsynchronousSearchStatsAction.INSTANCE, TransportAsynchronousSearchStatsAction.class),
+            new ActionHandler<>(GetAsynchronousSearchAction.INSTANCE, TransportGetAsynchronousSearchAction.class),
+            new ActionHandler<>(DeleteAsynchronousSearchAction.INSTANCE, TransportDeleteAsynchronousSearchAction.class)
+        );
     }
 
     @Override
     public List<Setting<?>> getSettings() {
         return Arrays.asList(
-                AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
-                AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
-                AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
-                AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
-                AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
-                AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
-                AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
-                LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING
+            AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
+            AsynchronousSearchService.MAX_KEEP_ALIVE_SETTING,
+            AsynchronousSearchService.MAX_SEARCH_RUNNING_TIME_SETTING,
+            AsynchronousSearchService.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
+            AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
+            AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
+            AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
+            LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING
         );
     }
 
     @Override
-    public List<RestHandler> getRestHandlers(Settings settings, RestController restController, ClusterSettings clusterSettings,
-                                             IndexScopedSettings indexScopedSettings, SettingsFilter settingsFilter,
-                                             IndexNameExpressionResolver indexNameExpressionResolver,
-                                             Supplier<DiscoveryNodes> nodesInCluster) {
+    public List<RestHandler> getRestHandlers(
+        Settings settings,
+        RestController restController,
+        ClusterSettings clusterSettings,
+        IndexScopedSettings indexScopedSettings,
+        SettingsFilter settingsFilter,
+        IndexNameExpressionResolver indexNameExpressionResolver,
+        Supplier<DiscoveryNodes> nodesInCluster
+    ) {
         return Arrays.asList(
-                new RestSubmitAsynchronousSearchAction(),
-                new RestGetAsynchronousSearchAction(),
-                new RestDeleteAsynchronousSearchAction(),
-                new RestAsynchronousSearchStatsAction());
+            new RestSubmitAsynchronousSearchAction(),
+            new RestGetAsynchronousSearchAction(),
+            new RestDeleteAsynchronousSearchAction(),
+            new RestAsynchronousSearchStatsAction()
+        );
     }
 }

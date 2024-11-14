@@ -45,6 +45,7 @@ plugins {
     id "de.undercouch.download" version "5.3.0"
     id 'com.netflix.nebula.ospackage' version "11.10.0"
     id 'checkstyle'
+    id "com.diffplug.spotless" version "6.25.0"
 }
 
 repositories {
@@ -60,6 +61,7 @@ apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.rest-test'
 apply plugin: 'opensearch.pluginzip'
+apply from: 'gradle/formatting.gradle'
 
 
 checkstyle {

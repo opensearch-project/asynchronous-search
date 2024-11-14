@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.persistence;
 
 import org.opensearch.commons.authuser.User;
@@ -40,24 +43,42 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
      */
     public void testSerializationRoundTripWithSearchResponse() throws IOException {
         AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong());
-        String id = AsynchronousSearchIdConverter.buildAsyncId(new AsynchronousSearchId(UUID.randomUUID().toString(),
-                randomNonNegativeLong(), asContextId));
+        String id = AsynchronousSearchIdConverter.buildAsyncId(
+            new AsynchronousSearchId(UUID.randomUUID().toString(), randomNonNegativeLong(), asContextId)
+        );
         long expirationTimeMillis = randomNonNegativeLong();
         long startTimeMillis = randomNonNegativeLong();
         SearchResponse searchResponse = getMockSearchResponse();
         User user = TestClientUtils.randomUserOrNull();
         SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
-        AsynchronousSearchPersistenceContext asPersistenceContext =
-                new AsynchronousSearchPersistenceContext(id, asContextId, new AsynchronousSearchPersistenceModel(startTimeMillis,
-                        expirationTimeMillis, searchResponse, null, user), System::currentTimeMillis,
-                        new NamedWriteableRegistry(searchModule.getNamedWriteables()));
-        assertEquals(asPersistenceContext, new AsynchronousSearchPersistenceContext(id, asContextId,
-                new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
-                System::currentTimeMillis, new NamedWriteableRegistry(Collections.emptyList())));
+        AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(
+            id,
+            asContextId,
+            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
+            System::currentTimeMillis,
+            new NamedWriteableRegistry(searchModule.getNamedWriteables())
+        );
         assertEquals(
-                asPersistenceContext.getAsynchronousSearchResponse(),
-                new AsynchronousSearchResponse(id, asPersistenceContext.getAsynchronousSearchState(), startTimeMillis,
-                        expirationTimeMillis, searchResponse, null));
+            asPersistenceContext,
+            new AsynchronousSearchPersistenceContext(
+                id,
+                asContextId,
+                new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
+                System::currentTimeMillis,
+                new NamedWriteableRegistry(Collections.emptyList())
+            )
+        );
+        assertEquals(
+            asPersistenceContext.getAsynchronousSearchResponse(),
+            new AsynchronousSearchResponse(
+                id,
+                asPersistenceContext.getAsynchronousSearchState(),
+                startTimeMillis,
+                expirationTimeMillis,
+                searchResponse,
+                null
+            )
+        );
     }
 
     /**
@@ -68,20 +89,27 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
      */
     public void testSerializationRoundTripWithError() throws IOException {
         AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong());
-        String id = AsynchronousSearchIdConverter.buildAsyncId(new AsynchronousSearchId(UUID.randomUUID().toString(),
-                randomNonNegativeLong(),
-                asContextId));
+        String id = AsynchronousSearchIdConverter.buildAsyncId(
+            new AsynchronousSearchId(UUID.randomUUID().toString(), randomNonNegativeLong(), asContextId)
+        );
         long expirationTimeMillis = randomNonNegativeLong();
         long startTimeMillis = randomNonNegativeLong();
         ShardSearchFailure shardSearchFailure = new ShardSearchFailure(new RuntimeException("runtime-exception"));
-        SearchPhaseExecutionException exception = new SearchPhaseExecutionException("phase", "msg", new NullPointerException(),
-                new ShardSearchFailure[] {shardSearchFailure});
+        SearchPhaseExecutionException exception = new SearchPhaseExecutionException(
+            "phase",
+            "msg",
+            new NullPointerException(),
+            new ShardSearchFailure[] { shardSearchFailure }
+        );
         User user = TestClientUtils.randomUser();
         SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
-        AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(id, asContextId,
-                new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user),
-                System::currentTimeMillis,
-                new NamedWriteableRegistry(searchModule.getNamedWriteables()));
+        AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(
+            id,
+            asContextId,
+            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user),
+            System::currentTimeMillis,
+            new NamedWriteableRegistry(searchModule.getNamedWriteables())
+        );
         OpenSearchException deserializedException = asPersistenceContext.getAsynchronousSearchResponse().getError();
         assertTrue(deserializedException instanceof SearchPhaseExecutionException);
         assertEquals("phase", ((SearchPhaseExecutionException) deserializedException).getPhaseName());
@@ -92,13 +120,23 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
     }
 
     protected SearchResponse getMockSearchResponse() {
-        return new SearchResponse(new InternalSearchResponse(
+        return new SearchResponse(
+            new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
                 InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
-                new SearchProfileShardResults(Collections.emptyMap()), false, false, 1),
-                "", 1, 1, 0, 0,
-                ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);
+                new SearchProfileShardResults(Collections.emptyMap()),
+                false,
+                false,
+                1
+            ),
+            "",
+            1,
+            1,
+            0,
+            0,
+            ShardSearchFailure.EMPTY_ARRAY,
+            SearchResponse.Clusters.EMPTY
+        );
     }
 }
-

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.commons;
 
 import org.opensearch.search.asynchronous.action.DeleteAsynchronousSearchAction;
@@ -69,12 +72,11 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSin
     public void setUp() throws Exception {
         super.setUp();
         Map<Long, AsynchronousSearchActiveContext> allActiveContexts = getInstanceFromNode(AsynchronousSearchService.class)
-                .getAllActiveContexts();
+            .getAllActiveContexts();
         assertTrue(allActiveContexts.toString(), allActiveContexts.isEmpty());
         createIndex(TEST_INDEX, Settings.builder().put("index.refresh_interval", -1).build());
         for (int i = 0; i < 10; i++)
-            client().prepareIndex(TEST_INDEX).setId(String.valueOf(i)).setSource("field", "value" + i)
-                    .setRefreshPolicy(IMMEDIATE).get();
+            client().prepareIndex(TEST_INDEX).setId(String.valueOf(i)).setSource("field", "value" + i).setRefreshPolicy(IMMEDIATE).get();
     }
 
     @Override
@@ -87,33 +89,48 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSin
         return plugins;
     }
 
-    public static ActionFuture<AsynchronousSearchResponse> executeSubmitAsynchronousSearch(Client client,
-                                                                                           SubmitAsynchronousSearchRequest request) {
+    public static ActionFuture<AsynchronousSearchResponse> executeSubmitAsynchronousSearch(
+        Client client,
+        SubmitAsynchronousSearchRequest request
+    ) {
         return client.execute(SubmitAsynchronousSearchAction.INSTANCE, request);
     }
 
-    public static ActionFuture<AsynchronousSearchResponse> executeGetAsynchronousSearch(Client client,
-                                                                                        GetAsynchronousSearchRequest request) {
+    public static ActionFuture<AsynchronousSearchResponse> executeGetAsynchronousSearch(
+        Client client,
+        GetAsynchronousSearchRequest request
+    ) {
         return client.execute(GetAsynchronousSearchAction.INSTANCE, request);
     }
 
-    public static ActionFuture<AcknowledgedResponse> executeDeleteAsynchronousSearch(Client client,
-                                                                                     DeleteAsynchronousSearchRequest request) {
+    public static ActionFuture<AcknowledgedResponse> executeDeleteAsynchronousSearch(
+        Client client,
+        DeleteAsynchronousSearchRequest request
+    ) {
         return client.execute(DeleteAsynchronousSearchAction.INSTANCE, request);
     }
 
-    public static void executeDeleteAsynchronousSearch(Client client, DeleteAsynchronousSearchRequest request,
-                                                       ActionListener<AcknowledgedResponse> listener) {
+    public static void executeDeleteAsynchronousSearch(
+        Client client,
+        DeleteAsynchronousSearchRequest request,
+        ActionListener<AcknowledgedResponse> listener
+    ) {
         client.execute(DeleteAsynchronousSearchAction.INSTANCE, request, listener);
     }
 
-    public static void executeSubmitAsynchronousSearch(Client client, SubmitAsynchronousSearchRequest request,
-                                                       ActionListener<AsynchronousSearchResponse> listener) {
+    public static void executeSubmitAsynchronousSearch(
+        Client client,
+        SubmitAsynchronousSearchRequest request,
+        ActionListener<AsynchronousSearchResponse> listener
+    ) {
         client.execute(SubmitAsynchronousSearchAction.INSTANCE, request, listener);
     }
 
-    public static void executeGetAsynchronousSearch(Client client, GetAsynchronousSearchRequest request,
-                                                    ActionListener<AsynchronousSearchResponse> listener) {
+    public static void executeGetAsynchronousSearch(
+        Client client,
+        GetAsynchronousSearchRequest request,
+        ActionListener<AsynchronousSearchResponse> listener
+    ) {
         client.execute(GetAsynchronousSearchAction.INSTANCE, request, listener);
     }
 
@@ -151,13 +168,24 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSin
     protected SearchResponse getMockSearchResponse() {
         int totalShards = randomInt(100);
         int successfulShards = totalShards - randomInt(100);
-        return new SearchResponse(new InternalSearchResponse(
+        return new SearchResponse(
+            new InternalSearchResponse(
                 new SearchHits(new SearchHit[0], new TotalHits(0L, TotalHits.Relation.EQUAL_TO), 0.0f),
                 InternalAggregations.from(Collections.emptyList()),
                 new Suggest(Collections.emptyList()),
-                new SearchProfileShardResults(Collections.emptyMap()), false, false, randomInt(5)),
-                "", totalShards, successfulShards, 0, randomNonNegativeLong(),
-                ShardSearchFailure.EMPTY_ARRAY, SearchResponse.Clusters.EMPTY);
+                new SearchProfileShardResults(Collections.emptyMap()),
+                false,
+                false,
+                randomInt(5)
+            ),
+            "",
+            totalShards,
+            successfulShards,
+            0,
+            randomNonNegativeLong(),
+            ShardSearchFailure.EMPTY_ARRAY,
+            SearchResponse.Clusters.EMPTY
+        );
     }
 
     public static class SearchDelayPlugin extends MockScriptPlugin {
@@ -195,9 +223,10 @@ public abstract class AsynchronousSearchSingleNodeTestCase extends OpenSearchSin
         waitUntil(() -> getInstanceFromNode(AsynchronousSearchService.class).getAllActiveContexts().isEmpty());
         logger.warn("delete asynchronous search response index");
         CountDownLatch deleteLatch = new CountDownLatch(1);
-        client().admin().indices().prepareDelete(INDEX).execute(ActionListener.wrap(r -> deleteLatch.countDown(), e -> {
-            deleteLatch.countDown();
-        }));
+        client().admin()
+            .indices()
+            .prepareDelete(INDEX)
+            .execute(ActionListener.wrap(r -> deleteLatch.countDown(), e -> { deleteLatch.countDown(); }));
         deleteLatch.await();
     }
 

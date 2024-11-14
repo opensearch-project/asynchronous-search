@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/opensearch-project/asynchronous-search/branch/main/graph/badge.svg)](https://codecov.io/gh/opensearch-project/asynchronous-search)
 
 # Asynchronous search
-Asynchronous search makes it possible for users to run such queries without worrying about the query timing out. 
+Asynchronous search makes it possible for users to run such queries without worrying about the query timing out.
 These queries run in the background, and users can track the progress, and retrieve partial results as they become available.
 
 The asynchronous search plugin supports the below operations
@@ -48,12 +48,12 @@ GET /_plugins/_asynchronous_search/stats
 ## Setup
 
 1. Check out this package from version control.
-2. Launch Intellij IDEA, choose **Import Project**, and select the `settings.gradle` file in the root of this package. 
+2. Launch Intellij IDEA, choose **Import Project**, and select the `settings.gradle` file in the root of this package.
 3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 8 before running `./gradlew`.
   - Unix System
     1. `export JAVA_HOME=jdk-install-dir`: Replace `jdk-install-dir` with the JAVA_HOME directory of your system.
     2. `export PATH=$JAVA_HOME/bin:$PATH`
- 
+
   - Windows System
     1. Find **My Computers** from file directory, right click and select **properties**.
     2. Select the **Advanced** tab, select **Environment variables**.
@@ -83,7 +83,7 @@ When launching a cluster using one of the above commands, logs are placed in `bu
 
 ### Debugging
 
-Sometimes it is useful to attach a debugger to either the OpenSearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the OpenSearch cluster or the integ tests, first, make sure start a debugger listening on port `5005`. 
+Sometimes it is useful to attach a debugger to either the OpenSearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the OpenSearch cluster or the integ tests, first, make sure start a debugger listening on port `5005`.
 
 To debug the server code, run:
 

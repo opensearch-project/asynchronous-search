@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.management;
 
 import org.opensearch.search.asynchronous.service.AsynchronousSearchPersistenceService;
@@ -52,26 +55,34 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
     private static final String NODE_ID_PREFIX = "node_";
     private static final String INITIAL_CLUSTER_ID = UUIDs.randomBase64UUID();
     // the initial indices which every cluster state test starts out with
-    private static final List<Index> initialIndices = Arrays.asList(new Index("idx1", UUIDs.randomBase64UUID()),
-            new Index("idx2", UUIDs.randomBase64UUID()),
-            new Index("idx3", UUIDs.randomBase64UUID()));
+    private static final List<Index> initialIndices = Arrays.asList(
+        new Index("idx1", UUIDs.randomBase64UUID()),
+        new Index("idx2", UUIDs.randomBase64UUID()),
+        new Index("idx3", UUIDs.randomBase64UUID())
+    );
 
     @Before
     public void createObjects() {
-        Settings settings = Settings.builder().put(NODE_NAME_SETTING.getKey(), "node")
-                .put("node.attr.asynchronous_search_enabled", true).build();
+        Settings settings = Settings.builder()
+            .put(NODE_NAME_SETTING.getKey(), "node")
+            .put("node.attr.asynchronous_search_enabled", true)
+            .build();
         deterministicTaskQueue = new DeterministicTaskQueue(settings, random());
     }
 
     public void testSchedulesContextReaperAtRefreshIntervals() {
         long refreshInterval = randomLongBetween(100000, 200000);
         final Settings settings = Settings.builder()
-                .put(AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
-                .build();
-        AsynchronousSearchManagementService managementService = new AsynchronousSearchManagementService(settings,
-                Mockito.mock(ClusterService.class),
-                deterministicTaskQueue.getThreadPool(), Mockito.mock(AsynchronousSearchService.class), Mockito.mock(TransportService.class),
-                Mockito.mock(AsynchronousSearchPersistenceService.class));
+            .put(AsynchronousSearchManagementService.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
+            .build();
+        AsynchronousSearchManagementService managementService = new AsynchronousSearchManagementService(
+            settings,
+            Mockito.mock(ClusterService.class),
+            deterministicTaskQueue.getThreadPool(),
+            Mockito.mock(AsynchronousSearchService.class),
+            Mockito.mock(TransportService.class),
+            Mockito.mock(AsynchronousSearchPersistenceService.class)
+        );
         final long startTimeMillis = deterministicTaskQueue.getCurrentTimeMillis();
         managementService.doStart();
         assertFalse(deterministicTaskQueue.hasRunnableTasks());
@@ -97,11 +108,15 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
     public void testSchedulesResponseCleanupAtRefreshIntervals() {
         long refreshInterval = randomLongBetween(60000, 120000);
         final Settings settings = Settings.builder()
-                .put(AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
-                .build();
-        DiscoveryNode localNode = new DiscoveryNode("local-node", buildNewFakeTransportAddress(),
-                Collections.singletonMap("asynchronous_search_enabled", "true"), Sets.newHashSet(DiscoveryNodeRole.DATA_ROLE),
-                Version.CURRENT);
+            .put(AsynchronousSearchManagementService.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.getKey(), refreshInterval + "ms")
+            .build();
+        DiscoveryNode localNode = new DiscoveryNode(
+            "local-node",
+            buildNewFakeTransportAddress(),
+            Collections.singletonMap("asynchronous_search_enabled", "true"),
+            Sets.newHashSet(DiscoveryNodeRole.DATA_ROLE),
+            Version.CURRENT
+        );
         ClusterService mockClusterService = ClusterServiceUtils.createClusterService(deterministicTaskQueue.getThreadPool(), localNode);
         final MockTransport mockTransport = new MockTransport() {
             @Override
@@ -114,15 +129,25 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
                 }
             }
         };
-        final TransportService transportService = mockTransport.createTransportService(settings,
-                deterministicTaskQueue.getThreadPool(), NOOP_TRANSPORT_INTERCEPTOR, boundTransportAddress ->
-                        new DiscoveryNode("local-node", buildNewFakeTransportAddress(), Version.CURRENT), null, emptySet(),
-                NoopTracer.INSTANCE);
+        final TransportService transportService = mockTransport.createTransportService(
+            settings,
+            deterministicTaskQueue.getThreadPool(),
+            NOOP_TRANSPORT_INTERCEPTOR,
+            boundTransportAddress -> new DiscoveryNode("local-node", buildNewFakeTransportAddress(), Version.CURRENT),
+            null,
+            emptySet(),
+            NoopTracer.INSTANCE
+        );
         transportService.start();
         transportService.acceptIncomingRequests();
-        AsynchronousSearchManagementService managementService = new AsynchronousSearchManagementService(settings, mockClusterService,
-                deterministicTaskQueue.getThreadPool(), Mockito.mock(AsynchronousSearchService.class), transportService,
-                Mockito.mock(AsynchronousSearchPersistenceService.class));
+        AsynchronousSearchManagementService managementService = new AsynchronousSearchManagementService(
+            settings,
+            mockClusterService,
+            deterministicTaskQueue.getThreadPool(),
+            Mockito.mock(AsynchronousSearchService.class),
+            transportService,
+            Mockito.mock(AsynchronousSearchPersistenceService.class)
+        );
         final long startTimeMillis = deterministicTaskQueue.getCurrentTimeMillis();
         final int numNodesInCluster = 3;
         ClusterState previousState = createSimpleClusterState();
@@ -155,15 +180,24 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
     private static ClusterState createState(final int numNodes, final boolean isLocalClusterManager, final List<Index> indices) {
         final Metadata metadata = createMetadata(indices);
         return ClusterState.builder(TEST_CLUSTER_NAME)
-                .nodes(createDiscoveryNodes(numNodes, isLocalClusterManager))
-                .metadata(metadata)
-                .routingTable(createRoutingTable(1, metadata))
-                .build();
+            .nodes(createDiscoveryNodes(numNodes, isLocalClusterManager))
+            .metadata(metadata)
+            .routingTable(createRoutingTable(1, metadata))
+            .build();
     }
 
     private static DiscoveryNode newNode(final String nodeId, Set<DiscoveryNodeRole> roles) {
-        return new DiscoveryNode(nodeId, nodeId, nodeId, "host", "host_address", buildNewFakeTransportAddress(),
-                Collections.singletonMap("asynchronous_search_enabled", "true"), roles, Version.CURRENT);
+        return new DiscoveryNode(
+            nodeId,
+            nodeId,
+            nodeId,
+            "host",
+            "host_address",
+            buildNewFakeTransportAddress(),
+            Collections.singletonMap("asynchronous_search_enabled", "true"),
+            roles,
+            Version.CURRENT
+        );
     }
 
     // Create the metadata for a cluster state.
@@ -183,16 +217,17 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
 
     // Create the index metadata for a given index, with the specified version.
     private static IndexMetadata createIndexMetadata(final Index index, final long version) {
-        final Settings settings = Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
-                .build();
+        final Settings settings = Settings.builder()
+            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+            .put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+            .build();
         return IndexMetadata.builder(index.getName())
-                .settings(settings)
-                .numberOfShards(1)
-                .numberOfReplicas(0)
-                .creationDate(System.currentTimeMillis())
-                .version(version)
-                .build();
+            .settings(settings)
+            .numberOfShards(1)
+            .numberOfReplicas(0)
+            .creationDate(System.currentTimeMillis())
+            .version(version)
+            .build();
     }
 
     // Create the routing table for a cluster state.
@@ -204,12 +239,12 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
         return builder.build();
     }
 
-    // Create the discovery nodes for a cluster state.  For our testing purposes, we want
+    // Create the discovery nodes for a cluster state. For our testing purposes, we want
     // the first to be cluster_manager, the second to be cluster_manager eligible, the third to be a data node,
     // and the remainder can be any kinds of nodes (cluster_manager eligible, data, or both).
     private static DiscoveryNodes createDiscoveryNodes(final int numNodes, final boolean isLocalClusterManager) {
-        assert (numNodes >= 3) : "the initial cluster state for event change tests should have a minimum of 3 nodes " +
-                "so there are a minimum of 2 cluster_manager nodes for testing cluster_manager change events.";
+        assert (numNodes >= 3) : "the initial cluster state for event change tests should have a minimum of 3 nodes "
+            + "so there are a minimum of 2 cluster_manager nodes for testing cluster_manager change events.";
         final DiscoveryNodes.Builder builder = DiscoveryNodes.builder();
 
         // randomly assign the local node if not cluster_manager
@@ -218,7 +253,7 @@ public class AsynchronousSearchManagementServiceTests extends OpenSearchTestCase
             final String nodeId = NODE_ID_PREFIX + i;
             Set<DiscoveryNodeRole> roles = new HashSet<>();
             if (i == 0) {
-                //local node id
+                // local node id
                 builder.localNodeId(nodeId);
                 roles.add(DiscoveryNodeRole.CLUSTER_MANAGER_ROLE);
             } else if (i == 1) {

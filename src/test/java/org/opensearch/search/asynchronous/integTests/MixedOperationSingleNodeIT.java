@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase;
@@ -43,29 +46,38 @@ public class MixedOperationSingleNodeIT extends AsynchronousSearchSingleNodeTest
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
             submitAsynchronousSearchRequest.keepOnCompletion(true);
             submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-            AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(),
-                    submitAsynchronousSearchRequest).actionGet();
+            AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
+                .actionGet();
             assertNotNull(submitResponse);
             int concurrentRuns = randomIntBetween(20, 50);
-            assertConcurrentGetOrUpdatesWithDeletes(submitResponse,
-                    (numSuccess, numGetFailures, numVersionConflictFailure, numResourceNotFoundFailures) -> {
-                        assertEquals(concurrentRuns, numSuccess.get() + numResourceNotFoundFailures.get()
-                                + numVersionConflictFailure.get());
-                        assertEquals(0, numGetFailures.get());
-                    }, false, concurrentRuns, true);
+            assertConcurrentGetOrUpdatesWithDeletes(
+                submitResponse,
+                (numSuccess, numGetFailures, numVersionConflictFailure, numResourceNotFoundFailures) -> {
+                    assertEquals(concurrentRuns, numSuccess.get() + numResourceNotFoundFailures.get() + numVersionConflictFailure.get());
+                    assertEquals(0, numGetFailures.get());
+                },
+                false,
+                concurrentRuns,
+                true
+            );
             assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
         } finally {
             CountDownLatch deleteLatch = new CountDownLatch(1);
-            client().admin().indices().prepareDelete(INDEX).execute(ActionListener.wrap(r -> deleteLatch.countDown(), e -> {
-                deleteLatch.countDown();
-            }));
+            client().admin()
+                .indices()
+                .prepareDelete(INDEX)
+                .execute(ActionListener.wrap(r -> deleteLatch.countDown(), e -> { deleteLatch.countDown(); }));
             deleteLatch.await();
         }
     }
 
-    private void assertConcurrentGetOrUpdatesWithDeletes(AsynchronousSearchResponse submitResponse, QuadConsumer<AtomicInteger,
-            AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer, boolean update, int concurrentRuns, boolean retainResponse)
-            throws InterruptedException {
+    private void assertConcurrentGetOrUpdatesWithDeletes(
+        AsynchronousSearchResponse submitResponse,
+        QuadConsumer<AtomicInteger, AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        boolean update,
+        int concurrentRuns,
+        boolean retainResponse
+    ) throws InterruptedException {
         AtomicInteger numSuccess = new AtomicInteger();
         AtomicInteger numGetFailures = new AtomicInteger();
         AtomicInteger numVersionConflictFailures = new AtomicInteger();
@@ -86,59 +98,71 @@ public class MixedOperationSingleNodeIT extends AsynchronousSearchSingleNodeTest
                 Runnable thread = () -> {
                     if (currentThreadIteration == randomDeleteThread) {
                         DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(
-                                submitResponse.getId());
-                        executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest,
-                                new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
-                                    @Override
-                                    public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                                        assertTrue(acknowledgedResponse.isAcknowledged());
-                                        numSuccess.incrementAndGet();
-                                    }
+                            submitResponse.getId()
+                        );
+                        executeDeleteAsynchronousSearch(
+                            client(),
+                            deleteAsynchronousSearchRequest,
+                            new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
+                                @Override
+                                public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                                    assertTrue(acknowledgedResponse.isAcknowledged());
+                                    numSuccess.incrementAndGet();
+                                }
 
-                                    @Override
-                                    public void onFailure(Exception e) {
-                                        if (e instanceof OpenSearchTimeoutException) {
-                                            numTimeouts.incrementAndGet();
-                                        } else {
-                                            fail("Unexpected exception " + e.getMessage());
-                                        }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    if (e instanceof OpenSearchTimeoutException) {
+                                        numTimeouts.incrementAndGet();
+                                    } else {
+                                        fail("Unexpected exception " + e.getMessage());
                                     }
-                                }, countDownLatch));
+                                }
+                            }, countDownLatch)
+                        );
                     } else {
                         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(
-                                submitResponse.getId());
+                            submitResponse.getId()
+                        );
                         long requestedTime = System.currentTimeMillis() + keepAlive;
                         if (update) {
                             logger.info("Triggering asynchronous search gets with keep alive [{}] --->", requestedTime);
                             getAsynchronousSearchRequest.setKeepAlive(TimeValue.timeValueMillis(keepAlive));
                         }
                         getAsynchronousSearchRequest.setWaitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 5000)));
-                        executeGetAsynchronousSearch(client(), getAsynchronousSearchRequest, new LatchedActionListener<>(
-                                new ActionListener<AsynchronousSearchResponse>() {
-                                    @Override
-                                    public void onResponse(AsynchronousSearchResponse asResponse) {
-                                        if (update) {
-                                            assertThat(asResponse.getExpirationTimeMillis(), greaterThanOrEqualTo(
-                                                    System.currentTimeMillis() + lowerKeepAliveMillis));
-                                            assertThat(asResponse.getExpirationTimeMillis(), lessThanOrEqualTo(
-                                                    System.currentTimeMillis() + higherKeepAliveMillis));
-                                        }
-                                        numSuccess.incrementAndGet();
+                        executeGetAsynchronousSearch(
+                            client(),
+                            getAsynchronousSearchRequest,
+                            new LatchedActionListener<>(new ActionListener<AsynchronousSearchResponse>() {
+                                @Override
+                                public void onResponse(AsynchronousSearchResponse asResponse) {
+                                    if (update) {
+                                        assertThat(
+                                            asResponse.getExpirationTimeMillis(),
+                                            greaterThanOrEqualTo(System.currentTimeMillis() + lowerKeepAliveMillis)
+                                        );
+                                        assertThat(
+                                            asResponse.getExpirationTimeMillis(),
+                                            lessThanOrEqualTo(System.currentTimeMillis() + higherKeepAliveMillis)
+                                        );
                                     }
+                                    numSuccess.incrementAndGet();
+                                }
 
-                                    @Override
-                                    public void onFailure(Exception e) {
-                                        if (e instanceof VersionConflictEngineException) {
-                                            numVersionConflictFailures.incrementAndGet();
-                                        } else if (e instanceof ResourceNotFoundException) {
-                                            numResourceNotFoundFailures.incrementAndGet();
-                                        } else if (e instanceof OpenSearchTimeoutException) {
-                                            numTimeouts.incrementAndGet();
-                                        } else {
-                                            numGetFailures.incrementAndGet();
-                                        }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    if (e instanceof VersionConflictEngineException) {
+                                        numVersionConflictFailures.incrementAndGet();
+                                    } else if (e instanceof ResourceNotFoundException) {
+                                        numResourceNotFoundFailures.incrementAndGet();
+                                    } else if (e instanceof OpenSearchTimeoutException) {
+                                        numTimeouts.incrementAndGet();
+                                    } else {
+                                        numGetFailures.incrementAndGet();
                                     }
-                                }, countDownLatch));
+                                }
+                            }, countDownLatch)
+                        );
                     }
                 };
                 operationThreads.add(thread);

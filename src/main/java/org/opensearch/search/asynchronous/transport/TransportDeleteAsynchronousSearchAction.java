@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.transport;
 
 import org.opensearch.commons.authuser.User;
@@ -25,28 +28,51 @@ import org.opensearch.transport.TransportService;
 /**
  * Transport action for deleting an asynchronous search request
  */
-public class TransportDeleteAsynchronousSearchAction extends TransportAsynchronousSearchRoutingAction<DeleteAsynchronousSearchRequest,
-        AcknowledgedResponse> {
+public class TransportDeleteAsynchronousSearchAction extends TransportAsynchronousSearchRoutingAction<
+    DeleteAsynchronousSearchRequest,
+    AcknowledgedResponse> {
 
     private static final Logger logger = LogManager.getLogger(TransportAsynchronousSearchRoutingAction.class);
 
     private final AsynchronousSearchService asynchronousSearchService;
 
     @Inject
-    public TransportDeleteAsynchronousSearchAction(ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-                                            ActionFilters actionFilters, AsynchronousSearchService asynchronousSearchService,
-                                                   Client client) {
-        super(transportService, clusterService, threadPool, client, DeleteAsynchronousSearchAction.NAME, actionFilters,
-                asynchronousSearchService, DeleteAsynchronousSearchRequest::new, AcknowledgedResponse::new);
+    public TransportDeleteAsynchronousSearchAction(
+        ThreadPool threadPool,
+        TransportService transportService,
+        ClusterService clusterService,
+        ActionFilters actionFilters,
+        AsynchronousSearchService asynchronousSearchService,
+        Client client
+    ) {
+        super(
+            transportService,
+            clusterService,
+            threadPool,
+            client,
+            DeleteAsynchronousSearchAction.NAME,
+            actionFilters,
+            asynchronousSearchService,
+            DeleteAsynchronousSearchRequest::new,
+            AcknowledgedResponse::new
+        );
         this.asynchronousSearchService = asynchronousSearchService;
     }
 
     @Override
-    public void handleRequest(AsynchronousSearchId asynchronousSearchId, DeleteAsynchronousSearchRequest request,
-                              ActionListener<AcknowledgedResponse> listener, User user) {
+    public void handleRequest(
+        AsynchronousSearchId asynchronousSearchId,
+        DeleteAsynchronousSearchRequest request,
+        ActionListener<AcknowledgedResponse> listener,
+        User user
+    ) {
         try {
-            asynchronousSearchService.freeContext(request.getId(), asynchronousSearchId.getAsynchronousSearchContextId(), user,
-                    ActionListener.wrap((complete) -> listener.onResponse(new AcknowledgedResponse(complete)), listener::onFailure));
+            asynchronousSearchService.freeContext(
+                request.getId(),
+                asynchronousSearchId.getAsynchronousSearchContextId(),
+                user,
+                ActionListener.wrap((complete) -> listener.onResponse(new AcknowledgedResponse(complete)), listener::onFailure)
+            );
         } catch (Exception e) {
             logger.error(() -> new ParameterizedMessage("Unable to delete asynchronous search [{}]", request.getId()), e);
             listener.onFailure(e);

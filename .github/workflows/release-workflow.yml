@@ -120,4 +120,3 @@ jobs:
         with:
           name: asynchronous-search-plugin
           path: asynchronous-search-artifacts
-

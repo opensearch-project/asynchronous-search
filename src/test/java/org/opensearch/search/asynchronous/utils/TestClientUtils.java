@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.utils;
 
 import org.opensearch.commons.authuser.User;
@@ -35,8 +38,7 @@ import static org.opensearch.common.unit.TimeValue.timeValueMillis;
 
 public class TestClientUtils {
     static final String INDEX = AsynchronousSearchPersistenceService.ASYNC_SEARCH_RESPONSE_INDEX;
-    static final BackoffPolicy STORE_BACKOFF_POLICY =
-            BackoffPolicy.exponentialBackoff(timeValueMillis(100), 20);
+    static final BackoffPolicy STORE_BACKOFF_POLICY = BackoffPolicy.exponentialBackoff(timeValueMillis(100), 20);
 
     public static AsynchronousSearchResponse blockingSubmitAsynchronousSearch(Client client, SubmitAsynchronousSearchRequest request) {
         ActionFuture<AsynchronousSearchResponse> execute = submitAsynchronousSearch(client, request);
@@ -68,16 +70,22 @@ public class TestClientUtils {
     /**
      * Match with submit asynchronous search response.
      */
-    static AsynchronousSearchResponse blockingGetAsynchronousSearchResponse(Client client, AsynchronousSearchResponse submitResponse,
-                                                              GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
+    static AsynchronousSearchResponse blockingGetAsynchronousSearchResponse(
+        Client client,
+        AsynchronousSearchResponse submitResponse,
+        GetAsynchronousSearchRequest getAsynchronousSearchRequest
+    ) {
         AsynchronousSearchResponse getResponse = blockingGetAsynchronousSearchResponse(client, getAsynchronousSearchRequest);
         assert getResponse.getId().equals(submitResponse.getId());
         assert getResponse.getStartTimeMillis() == submitResponse.getStartTimeMillis();
         return getResponse;
     }
 
-    public static AsynchronousSearchResponse getFinalAsynchronousSearchResponse(Client client, AsynchronousSearchResponse submitResponse,
-                                                                  GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
+    public static AsynchronousSearchResponse getFinalAsynchronousSearchResponse(
+        Client client,
+        AsynchronousSearchResponse submitResponse,
+        GetAsynchronousSearchRequest getAsynchronousSearchRequest
+    ) {
         AsynchronousSearchResponse getResponse;
         do {
             getResponse = blockingGetAsynchronousSearchResponse(client, submitResponse, getAsynchronousSearchRequest);
@@ -123,10 +131,12 @@ public class TestClientUtils {
     }
 
     public static User randomUser() {
-        return new User(OpenSearchRestTestCase.randomAlphaOfLength(10), Arrays.asList(
-                OpenSearchRestTestCase.randomAlphaOfLength(10),
-                OpenSearchRestTestCase.randomAlphaOfLength(10)),
-                Arrays.asList(OpenSearchRestTestCase.randomAlphaOfLength(10), "all_access"), Arrays.asList());
+        return new User(
+            OpenSearchRestTestCase.randomAlphaOfLength(10),
+            Arrays.asList(OpenSearchRestTestCase.randomAlphaOfLength(10), OpenSearchRestTestCase.randomAlphaOfLength(10)),
+            Arrays.asList(OpenSearchRestTestCase.randomAlphaOfLength(10), "all_access"),
+            Arrays.asList()
+        );
     }
 
     public static User randomUserOrNull() {
