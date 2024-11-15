@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.transport;
 
 import org.opensearch.commons.ConfigConstants;
@@ -42,8 +45,9 @@ import org.opensearch.transport.TransportService;
  * {@link TransportSubmitAsynchronousSearchAction}. The class forwards the request to the coordinator and executes the
  * {@link TransportGetAsynchronousSearchAction} or the {@link TransportDeleteAsynchronousSearchAction}
  */
-public abstract class TransportAsynchronousSearchRoutingAction<Request extends AsynchronousSearchRoutingRequest<Request>,
-        Response extends ActionResponse> extends HandledTransportAction<Request, Response> {
+public abstract class TransportAsynchronousSearchRoutingAction<
+    Request extends AsynchronousSearchRoutingRequest<Request>,
+    Response extends ActionResponse> extends HandledTransportAction<Request, Response> {
 
     private static final Logger logger = LogManager.getLogger(TransportAsynchronousSearchRoutingAction.class);
 
@@ -55,10 +59,17 @@ public abstract class TransportAsynchronousSearchRoutingAction<Request extends A
     private final Client client;
     private final AsynchronousSearchService asynchronousSearchService;
 
-    public TransportAsynchronousSearchRoutingAction(TransportService transportService, ClusterService clusterService, ThreadPool threadPool,
-                                             Client client, String actionName, ActionFilters actionFilters,
-                                             AsynchronousSearchService asynchronousSearchService, Writeable.Reader<Request> requestReader,
-                                             Writeable.Reader<Response> responseReader) {
+    public TransportAsynchronousSearchRoutingAction(
+        TransportService transportService,
+        ClusterService clusterService,
+        ThreadPool threadPool,
+        Client client,
+        String actionName,
+        ActionFilters actionFilters,
+        AsynchronousSearchService asynchronousSearchService,
+        Writeable.Reader<Request> requestReader,
+        Writeable.Reader<Response> responseReader
+    ) {
         super(actionName, transportService, actionFilters, requestReader);
         this.transportService = transportService;
         this.clusterService = clusterService;
@@ -78,8 +89,12 @@ public abstract class TransportAsynchronousSearchRoutingAction<Request extends A
         }
     }
 
-    public abstract void handleRequest(AsynchronousSearchId asynchronousSearchId, Request request, ActionListener<Response> listener,
-                                       User user);
+    public abstract void handleRequest(
+        AsynchronousSearchId asynchronousSearchId,
+        Request request,
+        ActionListener<Response> listener,
+        User user
+    );
 
     final class AsyncForwardAction extends AbstractRunnable {
 
@@ -104,8 +119,14 @@ public abstract class TransportAsynchronousSearchRoutingAction<Request extends A
 
         @Override
         public void onFailure(Exception e) {
-            logger.error(() -> new ParameterizedMessage(
-                    "Failed to dispatch request for action [{}] for asynchronous search [{}]", actionName, request.getId()), e);
+            logger.error(
+                () -> new ParameterizedMessage(
+                    "Failed to dispatch request for action [{}] for asynchronous search [{}]",
+                    actionName,
+                    request.getId()
+                ),
+                e
+            );
             sendLocalRequest(asynchronousSearchId, request, listener);
         }
 
@@ -114,38 +135,55 @@ public abstract class TransportAsynchronousSearchRoutingAction<Request extends A
             ClusterState state = clusterService.state();
             // forward request only if the local node isn't the node coordinating the search and the node coordinating
             // the search exists in the cluster
-            TransportRequestOptions requestOptions = TransportRequestOptions.builder().withTimeout(
-                    asynchronousSearchService.getMaxWaitForCompletionTimeout()).build();
+            TransportRequestOptions requestOptions = TransportRequestOptions.builder()
+                .withTimeout(asynchronousSearchService.getMaxWaitForCompletionTimeout())
+                .build();
             if (targetNode != null && state.nodes().getLocalNode().equals(targetNode) == false && state.nodes().nodeExists(targetNode)) {
                 logger.debug("Forwarding asynchronous search id [{}] request to target node [{}]", request.getId(), targetNode);
-                transportService.sendRequest(targetNode, actionName, request, requestOptions,
-                        new ActionListenerResponseHandler<Response>(listener, responseReader) {
-                            @Override
-                            public void handleException(final TransportException exp) {
-                                Throwable cause = exp.unwrapCause();
-                                if (cause instanceof ConnectTransportException ||
-                                        (exp instanceof RemoteTransportException && cause instanceof NodeClosedException)) {
-                                    // we want to retry here a bit to see if the node connects backs
-                                    logger.debug("Connection exception while trying to forward request with id[{}] to " +
-                                                    "target node [{}] Error: [{}]",
-                                            request.getId(), targetNode, exp.getDetailedMessage());
-                                    //try on local node since we weren't able to forward
-                                    sendLocalRequest(asynchronousSearchId, request, listener);
-                                } else {
-                                    logger.debug("Exception received for request with id[{}] to from target node [{}],  Error: [{}]",
-                                            request.getId(), targetNode, exp.getDetailedMessage());
-                                    listener.onFailure(cause instanceof Exception ? (Exception) cause
-                                            : new NotSerializableExceptionWrapper(cause));
-                                }
+                transportService.sendRequest(
+                    targetNode,
+                    actionName,
+                    request,
+                    requestOptions,
+                    new ActionListenerResponseHandler<Response>(listener, responseReader) {
+                        @Override
+                        public void handleException(final TransportException exp) {
+                            Throwable cause = exp.unwrapCause();
+                            if (cause instanceof ConnectTransportException
+                                || (exp instanceof RemoteTransportException && cause instanceof NodeClosedException)) {
+                                // we want to retry here a bit to see if the node connects backs
+                                logger.debug(
+                                    "Connection exception while trying to forward request with id[{}] to " + "target node [{}] Error: [{}]",
+                                    request.getId(),
+                                    targetNode,
+                                    exp.getDetailedMessage()
+                                );
+                                // try on local node since we weren't able to forward
+                                sendLocalRequest(asynchronousSearchId, request, listener);
+                            } else {
+                                logger.debug(
+                                    "Exception received for request with id[{}] to from target node [{}],  Error: [{}]",
+                                    request.getId(),
+                                    targetNode,
+                                    exp.getDetailedMessage()
+                                );
+                                listener.onFailure(
+                                    cause instanceof Exception ? (Exception) cause : new NotSerializableExceptionWrapper(cause)
+                                );
                             }
+                        }
 
-                            @Override
-                            public void handleResponse(Response response) {
-                                logger.debug("Received the response for asynchronous search id [{}] from target node [{}]", request.getId(),
-                                        targetNode);
-                                listener.onResponse(response);
-                            }
-                        });
+                        @Override
+                        public void handleResponse(Response response) {
+                            logger.debug(
+                                "Received the response for asynchronous search id [{}] from target node [{}]",
+                                request.getId(),
+                                targetNode
+                            );
+                            listener.onResponse(response);
+                        }
+                    }
+                );
             } else {
                 sendLocalRequest(asynchronousSearchId, request, listener);
             }

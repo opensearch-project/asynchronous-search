@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.permits;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
@@ -58,15 +61,19 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
         int writeThreadPoolSize = randomIntBetween(1, 2);
         int writeThreadPoolQueueSize = randomIntBetween(1, 2);
         Settings settings = Settings.builder()
-                .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                        + ".size", writeThreadPoolSize)
-                .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
-                        + ".queue_size", writeThreadPoolQueueSize)
-                .build();
+            .put("thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".size", writeThreadPoolSize)
+            .put(
+                "thread_pool." + AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME + ".queue_size",
+                writeThreadPoolQueueSize
+            )
+            .build();
         final int availableProcessors = OpenSearchExecutors.allocatedProcessors(settings);
-        ScalingExecutorBuilder scalingExecutorBuilder =
-                new ScalingExecutorBuilder(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, 1,
-                        Math.min(2 * availableProcessors, Math.max(128, 512)), TimeValue.timeValueMinutes(30));
+        ScalingExecutorBuilder scalingExecutorBuilder = new ScalingExecutorBuilder(
+            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+            1,
+            Math.min(2 * availableProcessors, Math.max(128, 512)),
+            TimeValue.timeValueMinutes(30)
+        );
         threadPool = new TestThreadPool("PermitsTests", settings, scalingExecutorBuilder);
     }
 
@@ -78,8 +85,10 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
 
     @Before
     public void createAsynchronousSearchContextPermit() {
-        permits = new AsynchronousSearchContextPermits(new AsynchronousSearchContextId(UUID.randomUUID().toString(),
-                randomNonNegativeLong()), threadPool);
+        permits = new AsynchronousSearchContextPermits(
+            new AsynchronousSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong()),
+            threadPool
+        );
     }
 
     @After
@@ -90,8 +99,7 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
     public void testAllOperationsInvoked() throws InterruptedException, TimeoutException {
         int numThreads = 10;
 
-        class DummyException extends RuntimeException {
-        }
+        class DummyException extends RuntimeException {}
 
         List<PlainActionFuture<Releasable>> futures = new ArrayList<>();
         List<Thread> operationThreads = new ArrayList<>();
@@ -142,8 +150,10 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
                 assertNotNull(future.get(1, TimeUnit.MINUTES));
             } catch (ExecutionException e) {
 
-                assertThat(e.getCause(), either(instanceOf(DummyException.class))
-                        .or(instanceOf(OpenSearchRejectedExecutionException.class)));
+                assertThat(
+                    e.getCause(),
+                    either(instanceOf(DummyException.class)).or(instanceOf(OpenSearchRejectedExecutionException.class))
+                );
             }
         }
 
@@ -154,14 +164,14 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
         blockFinished.await();
     }
 
-
     public void testAsyncBlockOperationsOperationBeforeBlocked() throws InterruptedException, BrokenBarrierException {
         final CyclicBarrier barrier = new CyclicBarrier(2);
         final CountDownLatch operationExecutingLatch = new CountDownLatch(1);
         final CountDownLatch firstOperationLatch = new CountDownLatch(1);
         final CountDownLatch firstOperationCompleteLatch = new CountDownLatch(1);
-        final Thread firstOperationThread =
-                new Thread(controlledAcquire(barrier, operationExecutingLatch, firstOperationLatch, firstOperationCompleteLatch));
+        final Thread firstOperationThread = new Thread(
+            controlledAcquire(barrier, operationExecutingLatch, firstOperationLatch, firstOperationCompleteLatch)
+        );
         firstOperationThread.start();
 
         barrier.await();
@@ -181,22 +191,23 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
         final AtomicBoolean secondOperation = new AtomicBoolean();
         final Thread secondOperationThread = new Thread(() -> {
             secondOperationExecuting.countDown();
-            permits.asyncAcquirePermit(
-                    new ActionListener<Releasable>() {
-                        @Override
-                        public void onResponse(Releasable releasable) {
-                            secondOperation.set(true);
-                            releasable.close();
-                            secondOperationComplete.countDown();
-                        }
+            permits.asyncAcquirePermit(new ActionListener<Releasable>() {
+                @Override
+                public void onResponse(Releasable releasable) {
+                    secondOperation.set(true);
+                    releasable.close();
+                    secondOperationComplete.countDown();
+                }
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    },
+                @Override
+                public void onFailure(Exception e) {
+                    throw new RuntimeException(e);
+                }
+            },
 
-                    TimeValue.timeValueMinutes(1), "");
+                TimeValue.timeValueMinutes(1),
+                ""
+            );
         });
         secondOperationThread.start();
 
@@ -243,8 +254,10 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
                     }
                 };
                 permits.asyncAcquirePermit(
-                        new LatchedActionListener<Releasable>(onAcquired, operationLatch),
-                        TimeValue.timeValueMinutes(1), "");
+                    new LatchedActionListener<Releasable>(onAcquired, operationLatch),
+                    TimeValue.timeValueMinutes(1),
+                    ""
+                );
             });
             thread.start();
             threads.add(thread);
@@ -269,8 +282,10 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
                 }
             };
             permits.asyncAcquirePermit(
-                    new LatchedActionListener<Releasable>(onAcquired, operationLatch),
-                    TimeValue.timeValueMinutes(1), "");
+                new LatchedActionListener<Releasable>(onAcquired, operationLatch),
+                TimeValue.timeValueMinutes(1),
+                ""
+            );
         });
         blockingThread.start();
 
@@ -303,15 +318,13 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
         });
     }
 
-
     public void testTimeout() throws BrokenBarrierException, InterruptedException {
         final CyclicBarrier barrier = new CyclicBarrier(2);
         final CountDownLatch operationExecutingLatch = new CountDownLatch(1);
         final CountDownLatch operationLatch = new CountDownLatch(1);
         final CountDownLatch operationCompleteLatch = new CountDownLatch(1);
 
-        final Thread thread = new Thread(controlledAcquire(barrier, operationExecutingLatch,
-                operationLatch, operationCompleteLatch));
+        final Thread thread = new Thread(controlledAcquire(barrier, operationExecutingLatch, operationLatch, operationCompleteLatch));
         thread.start();
 
         barrier.await();
@@ -320,13 +333,12 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
 
         final CountDownLatch onFailureLatch = new CountDownLatch(2);
         permits.asyncAcquireAllPermits(new LatchedActionListener<>(ActionListener.wrap(releasable -> {
-                    releasable.close();
-                    fail("Permit acquisition attempt should have timed out");
-                }, e -> {
-                    assertTrue(e instanceof TimeoutException);
-                    assertThat(e, hasToString(containsString("timed out")));
-                }), onFailureLatch),
-                TimeValue.timeValueMillis(1), "");
+            releasable.close();
+            fail("Permit acquisition attempt should have timed out");
+        }, e -> {
+            assertTrue(e instanceof TimeoutException);
+            assertThat(e, hasToString(containsString("timed out")));
+        }), onFailureLatch), TimeValue.timeValueMillis(1), "");
 
         {
             final AtomicReference<Exception> reference = new AtomicReference<>();
@@ -353,7 +365,6 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
         thread.join();
     }
 
-
     /**
      * Returns an operation that acquires a permit and synchronizes in the following manner:
      * <ul>
@@ -370,36 +381,35 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
      * @return a controllable runnable that acquires a permit
      */
     private Runnable controlledAcquire(
-            final CyclicBarrier barrier,
-            final CountDownLatch operationExecutingLatch,
-            final CountDownLatch operationLatch,
-            final CountDownLatch operationCompleteLatch) {
+        final CyclicBarrier barrier,
+        final CountDownLatch operationExecutingLatch,
+        final CountDownLatch operationLatch,
+        final CountDownLatch operationCompleteLatch
+    ) {
         return () -> {
             try {
                 barrier.await();
             } catch (final BrokenBarrierException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            permits.asyncAcquirePermit(
-                    new ActionListener<Releasable>() {
-                        @Override
-                        public void onResponse(Releasable releasable) {
-                            operationExecutingLatch.countDown();
-                            try {
-                                operationLatch.await();
-                            } catch (final InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            releasable.close();
-                            operationCompleteLatch.countDown();
-                        }
+            permits.asyncAcquirePermit(new ActionListener<Releasable>() {
+                @Override
+                public void onResponse(Releasable releasable) {
+                    operationExecutingLatch.countDown();
+                    try {
+                        operationLatch.await();
+                    } catch (final InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    releasable.close();
+                    operationCompleteLatch.countDown();
+                }
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    },
-                    TimeValue.timeValueMinutes(1), "");
+                @Override
+                public void onFailure(Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }, TimeValue.timeValueMinutes(1), "");
         };
     }
 
@@ -421,6 +431,4 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
         };
     }
 
-
 }
-

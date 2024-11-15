@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.transport;
 
 import org.opensearch.commons.ConfigConstants;
@@ -42,8 +45,9 @@ import java.util.Map;
  * a {@link AsynchronousSearchProgressListener} set on the task. The listener is wrapped with a completion timeout wrapper via
  * {@link AsynchronousSearchTimeoutWrapper} which ensures that exactly one of action listener or the timeout listener gets executed
  */
-public class TransportSubmitAsynchronousSearchAction extends HandledTransportAction<SubmitAsynchronousSearchRequest,
-        AsynchronousSearchResponse> {
+public class TransportSubmitAsynchronousSearchAction extends HandledTransportAction<
+    SubmitAsynchronousSearchRequest,
+    AsynchronousSearchResponse> {
 
     private static final Logger logger = LogManager.getLogger(TransportSubmitAsynchronousSearchAction.class);
     private final ThreadPool threadPool;
@@ -53,9 +57,15 @@ public class TransportSubmitAsynchronousSearchAction extends HandledTransportAct
     private final SearchService searchService;
 
     @Inject
-    public TransportSubmitAsynchronousSearchAction(ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-                                            ActionFilters actionFilters, AsynchronousSearchService asynchronousSearchService,
-                                            TransportSearchAction transportSearchAction, SearchService searchService) {
+    public TransportSubmitAsynchronousSearchAction(
+        ThreadPool threadPool,
+        TransportService transportService,
+        ClusterService clusterService,
+        ActionFilters actionFilters,
+        AsynchronousSearchService asynchronousSearchService,
+        TransportSearchAction transportSearchAction,
+        SearchService searchService
+    ) {
         super(SubmitAsynchronousSearchAction.NAME, transportService, actionFilters, SubmitAsynchronousSearchRequest::new);
         this.threadPool = threadPool;
         this.clusterService = clusterService;
@@ -71,50 +81,78 @@ public class TransportSubmitAsynchronousSearchAction extends HandledTransportAct
         User user = User.parse(userStr);
         try {
             final long relativeStartTimeInMillis = threadPool.relativeTimeInMillis();
-            asynchronousSearchContext = asynchronousSearchService.createAndStoreContext(request, relativeStartTimeInMillis,
-                    () -> searchService.aggReduceContextBuilder(request.getSearchRequest().source()), user);
+            asynchronousSearchContext = asynchronousSearchService.createAndStoreContext(
+                request,
+                relativeStartTimeInMillis,
+                () -> searchService.aggReduceContextBuilder(request.getSearchRequest().source()),
+                user
+            );
             assert asynchronousSearchContext.getAsynchronousSearchProgressListener() != null
-                    : "missing progress listener for an active context";
+                : "missing progress listener for an active context";
             AsynchronousSearchProgressListener progressListener = asynchronousSearchContext.getAsynchronousSearchProgressListener();
-            AsynchronousSearchContext context = asynchronousSearchContext; //making it effectively final for usage in anonymous class.
+            AsynchronousSearchContext context = asynchronousSearchContext; // making it effectively final for usage in anonymous class.
             SearchRequest searchRequest = new SearchRequest(request.getSearchRequest()) {
                 @Override
                 public SearchTask createTask(long id, String type, String action, TaskId parentTaskId, Map<String, String> headers) {
-                    AsynchronousSearchTask asynchronousSearchTask = new AsynchronousSearchTask(id, type, AsynchronousSearchTask.NAME,
-                            parentTaskId, headers,
-                            (AsynchronousSearchActiveContext) context, request, asynchronousSearchService::onCancelledFreeActiveContext);
+                    AsynchronousSearchTask asynchronousSearchTask = new AsynchronousSearchTask(
+                        id,
+                        type,
+                        AsynchronousSearchTask.NAME,
+                        parentTaskId,
+                        headers,
+                        (AsynchronousSearchActiveContext) context,
+                        request,
+                        asynchronousSearchService::onCancelledFreeActiveContext
+                    );
 
                     asynchronousSearchService.bootstrapSearch(asynchronousSearchTask, context.getContextId());
                     PrioritizedActionListener<AsynchronousSearchResponse> wrappedListener = AsynchronousSearchTimeoutWrapper
-                            .wrapScheduledTimeout(threadPool, request.getWaitForCompletionTimeout(),
-                                    AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME, listener,
-                                    (actionListener) -> { progressListener.searchProgressActionListener().removeListener(actionListener);
-                                        listener.onResponse(context.getAsynchronousSearchResponse());
-                                    });
+                        .wrapScheduledTimeout(
+                            threadPool,
+                            request.getWaitForCompletionTimeout(),
+                            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME,
+                            listener,
+                            (actionListener) -> {
+                                progressListener.searchProgressActionListener().removeListener(actionListener);
+                                listener.onResponse(context.getAsynchronousSearchResponse());
+                            }
+                        );
                     progressListener.searchProgressActionListener().addOrExecuteListener(wrappedListener);
                     return asynchronousSearchTask;
                 }
             };
-            //set the parent task as the submit task for cancellation on connection close
+            // set the parent task as the submit task for cancellation on connection close
             searchRequest.setParentTask(task.taskInfo(clusterService.localNode().getId(), false).getTaskId());
             transportSearchAction.execute(searchRequest, progressListener);
 
         } catch (Exception e) {
             logger.error(() -> new ParameterizedMessage("Failed to submit asynchronous search request [{}]", request), e);
             if (asynchronousSearchContext != null) {
-                AsynchronousSearchActiveContext asynchronousSearchActiveContext = (AsynchronousSearchActiveContext)
-                        asynchronousSearchContext;
-                asynchronousSearchService.freeContext(asynchronousSearchActiveContext.getAsynchronousSearchId(),
-                        asynchronousSearchActiveContext.getContextId(), user,
-                        ActionListener.wrap((r) -> {
-                            logger.debug(() -> new ParameterizedMessage("Successfully cleaned up context on submit asynchronous" +
-                                    " search [{}] on failure", asynchronousSearchActiveContext.getAsynchronousSearchId()), e);
-                            listener.onFailure(e);
-                        }, (ex) -> {
-                            logger.debug(() -> new ParameterizedMessage("Failed to cleaned up context on submit asynchronous search" +
-                                    " [{}] on failure", asynchronousSearchActiveContext.getAsynchronousSearchId()), ex);
-                            listener.onFailure(e);
-                        })
+                AsynchronousSearchActiveContext asynchronousSearchActiveContext =
+                    (AsynchronousSearchActiveContext) asynchronousSearchContext;
+                asynchronousSearchService.freeContext(
+                    asynchronousSearchActiveContext.getAsynchronousSearchId(),
+                    asynchronousSearchActiveContext.getContextId(),
+                    user,
+                    ActionListener.wrap((r) -> {
+                        logger.debug(
+                            () -> new ParameterizedMessage(
+                                "Successfully cleaned up context on submit asynchronous" + " search [{}] on failure",
+                                asynchronousSearchActiveContext.getAsynchronousSearchId()
+                            ),
+                            e
+                        );
+                        listener.onFailure(e);
+                    }, (ex) -> {
+                        logger.debug(
+                            () -> new ParameterizedMessage(
+                                "Failed to cleaned up context on submit asynchronous search" + " [{}] on failure",
+                                asynchronousSearchActiveContext.getAsynchronousSearchId()
+                            ),
+                            ex
+                        );
+                        listener.onFailure(e);
+                    })
                 );
             } else {
                 listener.onFailure(e);

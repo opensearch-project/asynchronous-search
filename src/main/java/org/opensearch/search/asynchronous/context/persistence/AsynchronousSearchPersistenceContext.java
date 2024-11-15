@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.context.persistence;
 
 import org.opensearch.commons.authuser.User;
@@ -34,10 +37,13 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
     private final AsynchronousSearchPersistenceModel asynchronousSearchPersistenceModel;
     private final NamedWriteableRegistry namedWriteableRegistry;
 
-    public AsynchronousSearchPersistenceContext(String asynchronousSearchId, AsynchronousSearchContextId asynchronousSearchContextId,
-                                         AsynchronousSearchPersistenceModel asynchronousSearchPersistenceModel,
-                                         LongSupplier currentTimeSupplier,
-                                         NamedWriteableRegistry namedWriteableRegistry) {
+    public AsynchronousSearchPersistenceContext(
+        String asynchronousSearchId,
+        AsynchronousSearchContextId asynchronousSearchContextId,
+        AsynchronousSearchPersistenceModel asynchronousSearchPersistenceModel,
+        LongSupplier currentTimeSupplier,
+        NamedWriteableRegistry namedWriteableRegistry
+    ) {
         super(asynchronousSearchContextId, currentTimeSupplier);
         Objects.requireNonNull(asynchronousSearchId);
         Objects.requireNonNull(asynchronousSearchContextId);
@@ -76,16 +82,26 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
         if (asynchronousSearchPersistenceModel.getResponse() == null) {
             return null;
         } else {
-            BytesReference bytesReference =
-                    BytesReference.fromByteBuffer(ByteBuffer.wrap(Base64.getUrlDecoder().decode(
-                            asynchronousSearchPersistenceModel.getResponse())));
-            try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
-                    namedWriteableRegistry)) {
+            BytesReference bytesReference = BytesReference.fromByteBuffer(
+                ByteBuffer.wrap(Base64.getUrlDecoder().decode(asynchronousSearchPersistenceModel.getResponse()))
+            );
+            try (
+                NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(
+                    bytesReference.streamInput(),
+                    namedWriteableRegistry
+                )
+            ) {
                 wrapperStreamInput.setVersion(wrapperStreamInput.readVersion());
                 return new SearchResponse(wrapperStreamInput);
             } catch (IOException e) {
-                logger.error(() -> new ParameterizedMessage("Failed to parse search response for asynchronous search [{}] Response : [{}] ",
-                        asynchronousSearchId, asynchronousSearchPersistenceModel.getResponse()), e);
+                logger.error(
+                    () -> new ParameterizedMessage(
+                        "Failed to parse search response for asynchronous search [{}] Response : [{}] ",
+                        asynchronousSearchId,
+                        asynchronousSearchPersistenceModel.getResponse()
+                    ),
+                    e
+                );
                 return null;
             }
         }
@@ -96,16 +112,26 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
         if (asynchronousSearchPersistenceModel.getError() == null) {
             return null;
         }
-        BytesReference bytesReference =
-                BytesReference.fromByteBuffer(ByteBuffer.wrap(Base64.getUrlDecoder()
-                        .decode(asynchronousSearchPersistenceModel.getError())));
-        try (NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(bytesReference.streamInput(),
-                namedWriteableRegistry)) {
+        BytesReference bytesReference = BytesReference.fromByteBuffer(
+            ByteBuffer.wrap(Base64.getUrlDecoder().decode(asynchronousSearchPersistenceModel.getError()))
+        );
+        try (
+            NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(
+                bytesReference.streamInput(),
+                namedWriteableRegistry
+            )
+        ) {
             wrapperStreamInput.setVersion(wrapperStreamInput.readVersion());
             return wrapperStreamInput.readException();
         } catch (IOException e) {
-            logger.error(() -> new ParameterizedMessage("Failed to parse search error for asynchronous search [{}] Error : [{}] ",
-                    asynchronousSearchId, asynchronousSearchPersistenceModel.getResponse()), e);
+            logger.error(
+                () -> new ParameterizedMessage(
+                    "Failed to parse search error for asynchronous search [{}] Error : [{}] ",
+                    asynchronousSearchId,
+                    asynchronousSearchPersistenceModel.getResponse()
+                ),
+                e
+            );
             return null;
         }
     }
@@ -127,14 +153,11 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         AsynchronousSearchPersistenceContext asynchronousSearchPersistenceContext = (AsynchronousSearchPersistenceContext) o;
-        return asynchronousSearchPersistenceContext.getAsynchronousSearchId()
-                .equals(this.asynchronousSearchId) && asynchronousSearchPersistenceContext.getAsynchronousSearchPersistenceModel()
-                .equals(this.asynchronousSearchPersistenceModel);
+        return asynchronousSearchPersistenceContext.getAsynchronousSearchId().equals(this.asynchronousSearchId)
+            && asynchronousSearchPersistenceContext.getAsynchronousSearchPersistenceModel().equals(this.asynchronousSearchPersistenceModel);
     }
 
 }

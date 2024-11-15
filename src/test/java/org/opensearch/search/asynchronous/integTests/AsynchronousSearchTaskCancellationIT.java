@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.opensearch.common.xcontent.XContentType;
@@ -50,7 +53,7 @@ public class AsynchronousSearchTaskCancellationIT extends AsynchronousSearchInte
         return Arrays.asList(ScriptedBlockPlugin.class, AsynchronousSearchPlugin.class);
     }
 
-    //We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
+    // We need to apply blocks via ScriptedBlockPlugin, external clusters are immutable
     @Override
     protected boolean ignoreExternalCluster() {
         return true;
@@ -61,9 +64,9 @@ public class AsynchronousSearchTaskCancellationIT extends AsynchronousSearchInte
         boolean lowLevelCancellation = randomBoolean();
         logger.info("Using lowLevelCancellation: {}", lowLevelCancellation);
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), lowLevelCancellation)
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), lowLevelCancellation)
+            .build();
     }
 
     private void indexTestData() {
@@ -71,8 +74,7 @@ public class AsynchronousSearchTaskCancellationIT extends AsynchronousSearchInte
             // Make sure we have a few segments
             BulkRequestBuilder bulkRequestBuilder = client().prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             for (int j = 0; j < 20; j++) {
-                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j))
-                        .setSource("field", "value"));
+                bulkRequestBuilder.add(client().prepareIndex("test").setId(Integer.toString(i * 5 + j)).setSource("field", "value"));
             }
             assertNoFailures(bulkRequestBuilder.get());
         }
@@ -94,26 +96,23 @@ public class AsynchronousSearchTaskCancellationIT extends AsynchronousSearchInte
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         indexTestData();
 
-        SearchRequest searchRequest = client().prepareSearch("test").setQuery(
-                scriptQuery(new Script(
-                        ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
-                .request();
-        //We need a NodeClient to make sure the listener gets injected in the search request execution.
-        //Randomized client randomly return NodeClient/TransportClient
+        SearchRequest searchRequest = client().prepareSearch("test")
+            .setQuery(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
+            .request();
+        // We need a NodeClient to make sure the listener gets injected in the search request execution.
+        // Randomized client randomly return NodeClient/TransportClient
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(10000));
         testCase(internalCluster().smartClient(), submitAsynchronousSearchRequest, plugins);
     }
 
-
     public void testCancellationDuringFetchPhase() throws Exception {
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
         indexTestData();
         SearchRequest searchRequest = client().prepareSearch("test")
-                .addScriptField("test_field",
-                        new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())
-                ).request();
+            .addScriptField("test_field", new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap()))
+            .request();
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(50000));

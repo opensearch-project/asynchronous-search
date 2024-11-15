@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.opensearch.search.asynchronous.commons.AsynchronousSearchSingleNodeTestCase;
@@ -43,15 +46,13 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentDeletes(submitResponse.getId(),
-                (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
-                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
-                }, concurrentRuns);
+        assertConcurrentDeletes(submitResponse.getId(), (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
+            assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+            assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+        }, concurrentRuns);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
 
@@ -62,15 +63,13 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentDeletes(submitResponse.getId(),
-                (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get());
-                    assertEquals(0, numDeleteUnAcknowledged.get());
-                }, concurrentRuns);
+        assertConcurrentDeletes(submitResponse.getId(), (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
+            assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get());
+            assertEquals(0, numDeleteUnAcknowledged.get());
+        }, concurrentRuns);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
 
@@ -81,16 +80,14 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentDeletes(submitResponse.getId(),
-                (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertEquals(0, numDeleteAcknowledged.get());
-                    assertEquals(0, numDeleteUnAcknowledged.get());
-                    assertEquals(concurrentRuns, numResourceNotFound.get());
-                }, concurrentRuns);
+        assertConcurrentDeletes(submitResponse.getId(), (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
+            assertEquals(0, numDeleteAcknowledged.get());
+            assertEquals(0, numDeleteUnAcknowledged.get());
+            assertEquals(concurrentRuns, numResourceNotFound.get());
+        }, concurrentRuns);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
 
@@ -101,16 +98,14 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(5000));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(20, 50);
-        assertConcurrentDeletes(submitResponse.getId(),
-                (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
-                    assertEquals(0, numDeleteUnAcknowledged.get());
-                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
-                }, concurrentRuns);
+        assertConcurrentDeletes(submitResponse.getId(), (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
+            assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+            assertEquals(0, numDeleteUnAcknowledged.get());
+            assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+        }, concurrentRuns);
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
 
@@ -122,15 +117,18 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
-        assertConcurrentDeletesForBlockedSearch(submitResponse.getId(),
-                (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
-                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
-                }, concurrentRuns, plugins);
+        assertConcurrentDeletesForBlockedSearch(
+            submitResponse.getId(),
+            (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
+                assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+                assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+            },
+            concurrentRuns,
+            plugins
+        );
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
 
@@ -142,20 +140,27 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(false);
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueMillis(randomLongBetween(1, 500)));
-        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest)
-        .actionGet();
+        AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest).actionGet();
         assertNotNull(submitResponse);
         int concurrentRuns = randomIntBetween(10, 20);
-        assertConcurrentDeletesForBlockedSearch(submitResponse.getId(),
-                (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
-                    assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
-                    assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
-                }, concurrentRuns, plugins);
+        assertConcurrentDeletesForBlockedSearch(
+            submitResponse.getId(),
+            (numDeleteAcknowledged, numDeleteUnAcknowledged, numResourceNotFound) -> {
+                assertThat(numDeleteAcknowledged.get(), Matchers.greaterThan(0));
+                assertEquals(concurrentRuns, numDeleteAcknowledged.get() + numResourceNotFound.get() + numDeleteUnAcknowledged.get());
+            },
+            concurrentRuns,
+            plugins
+        );
         assertAsynchronousSearchResourceCleanUp(submitResponse.getId());
     }
 
-    private void assertConcurrentDeletesForBlockedSearch(String id, TriConsumer<AtomicInteger, AtomicInteger,
-            AtomicInteger> assertionConsumer, int concurrentRuns, List<SearchDelayPlugin> plugins) throws Exception {
+    private void assertConcurrentDeletesForBlockedSearch(
+        String id,
+        TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        int concurrentRuns,
+        List<SearchDelayPlugin> plugins
+    ) throws Exception {
         AtomicInteger numDeleteAcknowledged = new AtomicInteger();
         AtomicInteger numDeleteUnAcknowledged = new AtomicInteger();
         AtomicInteger numResourceNotFound = new AtomicInteger();
@@ -169,24 +174,27 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
                 Runnable thread = () -> {
                     logger.info("Triggering asynchronous search delete --->");
                     DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(id);
-                    executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest, new LatchedActionListener<>
-                            (new ActionListener<AcknowledgedResponse>() {
-                                @Override
-                                public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                                    if (acknowledgedResponse.isAcknowledged()) {
-                                        numDeleteAcknowledged.incrementAndGet();
-                                    } else {
-                                        numDeleteUnAcknowledged.incrementAndGet();
-                                    }
+                    executeDeleteAsynchronousSearch(
+                        client(),
+                        deleteAsynchronousSearchRequest,
+                        new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
+                            @Override
+                            public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                                if (acknowledgedResponse.isAcknowledged()) {
+                                    numDeleteAcknowledged.incrementAndGet();
+                                } else {
+                                    numDeleteUnAcknowledged.incrementAndGet();
                                 }
+                            }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    if (e instanceof ResourceNotFoundException) {
-                                        numResourceNotFound.incrementAndGet();
-                                    }
+                            @Override
+                            public void onFailure(Exception e) {
+                                if (e instanceof ResourceNotFoundException) {
+                                    numResourceNotFound.incrementAndGet();
                                 }
-                            }, countDownLatch));
+                            }
+                        }, countDownLatch)
+                    );
                 };
                 operationThreads.add(thread);
             }
@@ -200,8 +208,11 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
         }
     }
 
-    private void assertConcurrentDeletes(String id, TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
-                                         int concurrentRuns) throws InterruptedException {
+    private void assertConcurrentDeletes(
+        String id,
+        TriConsumer<AtomicInteger, AtomicInteger, AtomicInteger> assertionConsumer,
+        int concurrentRuns
+    ) throws InterruptedException {
         AtomicInteger numDeleteAcknowledged = new AtomicInteger();
         AtomicInteger numDeleteUnAcknowledged = new AtomicInteger();
         AtomicInteger numResourceNotFound = new AtomicInteger();
@@ -215,24 +226,27 @@ public class DeleteAsynchronousSearchSingleNodeIT extends AsynchronousSearchSing
                 Runnable thread = () -> {
                     logger.info("Triggering asynchronous search delete --->");
                     DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest = new DeleteAsynchronousSearchRequest(id);
-                    executeDeleteAsynchronousSearch(client(), deleteAsynchronousSearchRequest, new LatchedActionListener<>
-                            (new ActionListener<AcknowledgedResponse>() {
-                                @Override
-                                public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                                    if (acknowledgedResponse.isAcknowledged()) {
-                                        numDeleteAcknowledged.incrementAndGet();
-                                    } else {
-                                        numDeleteUnAcknowledged.incrementAndGet();
-                                    }
+                    executeDeleteAsynchronousSearch(
+                        client(),
+                        deleteAsynchronousSearchRequest,
+                        new LatchedActionListener<>(new ActionListener<AcknowledgedResponse>() {
+                            @Override
+                            public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                                if (acknowledgedResponse.isAcknowledged()) {
+                                    numDeleteAcknowledged.incrementAndGet();
+                                } else {
+                                    numDeleteUnAcknowledged.incrementAndGet();
                                 }
+                            }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    if (e instanceof ResourceNotFoundException) {
-                                        numResourceNotFound.incrementAndGet();
-                                    }
+                            @Override
+                            public void onFailure(Exception e) {
+                                if (e instanceof ResourceNotFoundException) {
+                                    numResourceNotFound.incrementAndGet();
                                 }
-                            }, countDownLatch));
+                            }
+                        }, countDownLatch)
+                    );
                 };
                 operationThreads.add(thread);
             }

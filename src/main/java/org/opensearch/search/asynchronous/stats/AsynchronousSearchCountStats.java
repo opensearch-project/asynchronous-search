@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.stats;
 
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -28,8 +31,17 @@ public class AsynchronousSearchCountStats implements Writeable, ToXContentFragme
     private final long cancelledCount;
     private final long submittedCount;
 
-    public AsynchronousSearchCountStats(long runningCount, long persistedCount, long completedCount, long failedCount, long throttledCount,
-                                 long persistFailedCount, long initializedCount, long submittedCount, long cancelledCount) {
+    public AsynchronousSearchCountStats(
+        long runningCount,
+        long persistedCount,
+        long completedCount,
+        long failedCount,
+        long throttledCount,
+        long persistFailedCount,
+        long initializedCount,
+        long submittedCount,
+        long cancelledCount
+    ) {
         this.runningCount = runningCount;
         this.persistedCount = persistedCount;
         this.persistFailedCount = persistFailedCount;

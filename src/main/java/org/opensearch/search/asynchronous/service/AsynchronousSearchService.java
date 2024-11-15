@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.service;
 
 import org.apache.logging.log4j.LogManager;
@@ -95,23 +98,31 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
 
     private static final Logger logger = LogManager.getLogger(AsynchronousSearchService.class);
 
-    public static final Setting<TimeValue> MAX_KEEP_ALIVE_SETTING =
-            Setting.positiveTimeSetting("plugins.asynchronous_search.max_keep_alive",
-                    LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING,
-                    Setting.Property.NodeScope, Setting.Property.Dynamic);
-    public static final Setting<TimeValue> MAX_SEARCH_RUNNING_TIME_SETTING =
-            Setting.positiveTimeSetting("plugins.asynchronous_search.max_search_running_time",
-                    LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING,
-                    Setting.Property.NodeScope, Setting.Property.Dynamic);
+    public static final Setting<TimeValue> MAX_KEEP_ALIVE_SETTING = Setting.positiveTimeSetting(
+        "plugins.asynchronous_search.max_keep_alive",
+        LegacyOpendistroAsynchronousSearchSettings.MAX_KEEP_ALIVE_SETTING,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
+    public static final Setting<TimeValue> MAX_SEARCH_RUNNING_TIME_SETTING = Setting.positiveTimeSetting(
+        "plugins.asynchronous_search.max_search_running_time",
+        LegacyOpendistroAsynchronousSearchSettings.MAX_SEARCH_RUNNING_TIME_SETTING,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
     public static final Setting<TimeValue> MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING = Setting.positiveTimeSetting(
-            "plugins.asynchronous_search.max_wait_for_completion_timeout",
-            LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
-            Setting.Property.NodeScope, Setting.Property.Dynamic);
+        "plugins.asynchronous_search.max_wait_for_completion_timeout",
+        LegacyOpendistroAsynchronousSearchSettings.MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
 
-    public static final Setting<Boolean> PERSIST_SEARCH_FAILURES_SETTING =
-            Setting.boolSetting("plugins.asynchronous_search.persist_search_failures",
-                    LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING,
-                    Setting.Property.NodeScope, Setting.Property.Dynamic);
+    public static final Setting<Boolean> PERSIST_SEARCH_FAILURES_SETTING = Setting.boolSetting(
+        "plugins.asynchronous_search.persist_search_failures",
+        LegacyOpendistroAsynchronousSearchSettings.PERSIST_SEARCH_FAILURES_SETTING,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
 
     private volatile long maxKeepAlive;
     private volatile long maxWaitForCompletionTimeout;
@@ -129,18 +140,22 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     private final AsynchronousSearchContextEventListener contextEventListener;
     private volatile boolean persistSearchFailure;
 
-    public AsynchronousSearchService(AsynchronousSearchPersistenceService asynchronousSearchPersistenceService,
-                                     AsynchronousSearchActiveStore asynchronousSearchActiveStore, Client client,
-                                     ClusterService clusterService, ThreadPool threadPool,
-                                     AsynchronousSearchContextEventListener contextEventListener,
-                                     NamedWriteableRegistry namedWriteableRegistry) {
+    public AsynchronousSearchService(
+        AsynchronousSearchPersistenceService asynchronousSearchPersistenceService,
+        AsynchronousSearchActiveStore asynchronousSearchActiveStore,
+        Client client,
+        ClusterService clusterService,
+        ThreadPool threadPool,
+        AsynchronousSearchContextEventListener contextEventListener,
+        NamedWriteableRegistry namedWriteableRegistry
+    ) {
         this.contextEventListener = contextEventListener;
         this.client = client;
         Settings settings = clusterService.getSettings();
         clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_KEEP_ALIVE_SETTING, this::setKeepAlive);
         setKeepAlive(MAX_KEEP_ALIVE_SETTING.get(settings));
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING,
-                this::setMaxWaitForCompletionTimeout);
+        clusterService.getClusterSettings()
+            .addSettingsUpdateConsumer(MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING, this::setMaxWaitForCompletionTimeout);
         setMaxWaitForCompletionTimeout(MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.get(settings));
         clusterService.getClusterSettings().addSettingsUpdateConsumer(MAX_SEARCH_RUNNING_TIME_SETTING, this::setMaxSearchRunningTime);
         setMaxSearchRunningTime(MAX_SEARCH_RUNNING_TIME_SETTING.get(settings));
@@ -152,8 +167,14 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
         this.currentTimeSupplier = System::currentTimeMillis;
         this.asynchronousSearchActiveStore = asynchronousSearchActiveStore;
         this.asynchronousSearchStateMachine = initStateMachine();
-        this.asynchronousSearchPostProcessor = new AsynchronousSearchPostProcessor(persistenceService, asynchronousSearchActiveStore,
-                asynchronousSearchStateMachine, this::freeActiveContext, threadPool, clusterService);
+        this.asynchronousSearchPostProcessor = new AsynchronousSearchPostProcessor(
+            persistenceService,
+            asynchronousSearchActiveStore,
+            asynchronousSearchStateMachine,
+            this::freeActiveContext,
+            threadPool,
+            clusterService
+        );
         this.namedWriteableRegistry = namedWriteableRegistry;
     }
 
@@ -178,23 +199,42 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
      * @param reduceContextBuilder    the reference for the reduceContextBuilder
      * @return the AsynchronousSearchContext for the submitted request
      */
-    public AsynchronousSearchContext createAndStoreContext(SubmitAsynchronousSearchRequest request, long relativeStartTimeMillis,
-                                                    Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder, User user) {
+    public AsynchronousSearchContext createAndStoreContext(
+        SubmitAsynchronousSearchRequest request,
+        long relativeStartTimeMillis,
+        Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder,
+        User user
+    ) {
         validateRequest(request);
-        AsynchronousSearchContextId asynchronousSearchContextId = new AsynchronousSearchContextId(UUIDs.base64UUID(),
-                idGenerator.incrementAndGet());
+        AsynchronousSearchContextId asynchronousSearchContextId = new AsynchronousSearchContextId(
+            UUIDs.base64UUID(),
+            idGenerator.incrementAndGet()
+        );
         contextEventListener.onNewContext(asynchronousSearchContextId);
-        AsynchronousSearchProgressListener progressActionListener = new AsynchronousSearchProgressListener(relativeStartTimeMillis,
-                (response) -> asynchronousSearchPostProcessor.processSearchResponse(response, asynchronousSearchContextId),
-                (e) -> asynchronousSearchPostProcessor.processSearchFailure(e, asynchronousSearchContextId),
-                threadPool.executor(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME),
-                threadPool::relativeTimeInMillis,
-                reduceContextBuilder);
-        AsynchronousSearchActiveContext asynchronousSearchContext = new AsynchronousSearchActiveContext(asynchronousSearchContextId,
-                clusterService.localNode().getId(), request.getKeepAlive(), request.getKeepOnCompletion(), threadPool, currentTimeSupplier,
-                progressActionListener, user, () -> persistSearchFailure);
-        asynchronousSearchActiveStore.putContext(asynchronousSearchContextId, asynchronousSearchContext,
-                contextEventListener::onContextRejected);
+        AsynchronousSearchProgressListener progressActionListener = new AsynchronousSearchProgressListener(
+            relativeStartTimeMillis,
+            (response) -> asynchronousSearchPostProcessor.processSearchResponse(response, asynchronousSearchContextId),
+            (e) -> asynchronousSearchPostProcessor.processSearchFailure(e, asynchronousSearchContextId),
+            threadPool.executor(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME),
+            threadPool::relativeTimeInMillis,
+            reduceContextBuilder
+        );
+        AsynchronousSearchActiveContext asynchronousSearchContext = new AsynchronousSearchActiveContext(
+            asynchronousSearchContextId,
+            clusterService.localNode().getId(),
+            request.getKeepAlive(),
+            request.getKeepOnCompletion(),
+            threadPool,
+            currentTimeSupplier,
+            progressActionListener,
+            user,
+            () -> persistSearchFailure
+        );
+        asynchronousSearchActiveStore.putContext(
+            asynchronousSearchContextId,
+            asynchronousSearchContext,
+            contextEventListener::onContextRejected
+        );
         contextEventListener.onContextInitialized(asynchronousSearchContextId);
         return asynchronousSearchContext;
     }
@@ -207,15 +247,22 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
      * @param asynchronousSearchContextId the id of the active asyncsearch context
      */
     public void bootstrapSearch(SearchTask searchTask, AsynchronousSearchContextId asynchronousSearchContextId) {
-        Optional<AsynchronousSearchActiveContext> asynchronousSearchContextOptional = asynchronousSearchActiveStore
-                .getContext(asynchronousSearchContextId);
+        Optional<AsynchronousSearchActiveContext> asynchronousSearchContextOptional = asynchronousSearchActiveStore.getContext(
+            asynchronousSearchContextId
+        );
         if (asynchronousSearchContextOptional.isPresent()) {
             AsynchronousSearchActiveContext context = asynchronousSearchContextOptional.get();
             try {
                 asynchronousSearchStateMachine.trigger(new SearchStartedEvent(context, searchTask));
             } catch (AsynchronousSearchStateMachineClosedException e) {
-                throw new IllegalStateException(String.format(Locale.ROOT, "Unexpected! State machine already closed for " +
-                        "context [%s] while triggering event [%s]", context.getAsynchronousSearchId(), SearchStartedEvent.class.getName()));
+                throw new IllegalStateException(
+                    String.format(
+                        Locale.ROOT,
+                        "Unexpected! State machine already closed for " + "context [%s] while triggering event [%s]",
+                        context.getAsynchronousSearchId(),
+                        SearchStartedEvent.class.getName()
+                    )
+                );
             }
         }
     }
@@ -231,12 +278,17 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
      * @param user                 current user
      * @param listener             to be invoked on finding an {@linkplain AsynchronousSearchContext}
      */
-    public void findContext(String id, AsynchronousSearchContextId asynchronousSearchContextId, User user,
-                            ActionListener<AsynchronousSearchContext> listener) {
+    public void findContext(
+        String id,
+        AsynchronousSearchContextId asynchronousSearchContextId,
+        User user,
+        ActionListener<AsynchronousSearchContext> listener
+    ) {
 
         ActionListener<AsynchronousSearchContext> exceptionTranslationListener = getExceptionTranslationWrapper(id, listener);
-        Optional<AsynchronousSearchActiveContext> optionalAsynchronousSearchActiveContext = asynchronousSearchActiveStore
-                .getContext(asynchronousSearchContextId);
+        Optional<AsynchronousSearchActiveContext> optionalAsynchronousSearchActiveContext = asynchronousSearchActiveStore.getContext(
+            asynchronousSearchContextId
+        );
         // If context is CLOSED we can't acquire permits and hence can't update active context
         // so most likely a CLOSED context is stale
         if (optionalAsynchronousSearchActiveContext.isPresent() && optionalAsynchronousSearchActiveContext.get().isAlive()) {
@@ -244,22 +296,36 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
             AsynchronousSearchActiveContext asynchronousSearchActiveContext = optionalAsynchronousSearchActiveContext.get();
             if (isUserValid(user, asynchronousSearchActiveContext.getUser()) == false) {
                 logger.debug("Invalid user requesting GET active context for asynchronous search id {}", id);
-                exceptionTranslationListener.onFailure(new OpenSearchSecurityException(
-                        "User doesn't have necessary roles to access the asynchronous search with id " + id, RestStatus.FORBIDDEN));
+                exceptionTranslationListener.onFailure(
+                    new OpenSearchSecurityException(
+                        "User doesn't have necessary roles to access the asynchronous search with id " + id,
+                        RestStatus.FORBIDDEN
+                    )
+                );
             } else {
                 exceptionTranslationListener.onResponse(asynchronousSearchActiveContext);
             }
         } else {
             logger.debug("Active context is not present for asynchronous search ID [{}]", id);
-            persistenceService.getResponse(id, user, wrap(
-                    (persistenceModel) ->
-                            exceptionTranslationListener.onResponse(new AsynchronousSearchPersistenceContext(id,
-                                    asynchronousSearchContextId, persistenceModel, currentTimeSupplier, namedWriteableRegistry)),
+            persistenceService.getResponse(
+                id,
+                user,
+                wrap(
+                    (persistenceModel) -> exceptionTranslationListener.onResponse(
+                        new AsynchronousSearchPersistenceContext(
+                            id,
+                            asynchronousSearchContextId,
+                            persistenceModel,
+                            currentTimeSupplier,
+                            namedWriteableRegistry
+                        )
+                    ),
                     ex -> {
                         logger.debug(() -> new ParameterizedMessage("Context not found for ID  in the system index {}", id), ex);
                         exceptionTranslationListener.onFailure(ex);
                     }
-            ));
+                )
+            );
         }
     }
 
@@ -269,13 +335,16 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
 
     public Set<AsynchronousSearchContext> getContextsToReap() {
         Map<Long, AsynchronousSearchActiveContext> allContexts = asynchronousSearchActiveStore.getAllContexts();
-        return Collections.unmodifiableSet(allContexts.values().stream()
+        return Collections.unmodifiableSet(
+            allContexts.values()
+                .stream()
                 .filter(Objects::nonNull)
-                .filter((c) -> EnumSet.of(CLOSED, PERSIST_FAILED).contains(c.getAsynchronousSearchState()) ||
-                        isOverRunning(c) || c.isExpired())
-                .collect(Collectors.toSet()));
+                .filter(
+                    (c) -> EnumSet.of(CLOSED, PERSIST_FAILED).contains(c.getAsynchronousSearchState()) || isOverRunning(c) || c.isExpired()
+                )
+                .collect(Collectors.toSet())
+        );
     }
-
 
     /**
      * Attempts to find both an {@linkplain AsynchronousSearchActiveContext} and an {@linkplain AsynchronousSearchPersistenceContext}
@@ -287,130 +356,167 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
      * @param user                 current user
      * @param listener             listener to invoke on deletion or failure to do so
      */
-    public void freeContext(String id, AsynchronousSearchContextId asynchronousSearchContextId, User user,
-                            ActionListener<Boolean> listener) {
+    public void freeContext(
+        String id,
+        AsynchronousSearchContextId asynchronousSearchContextId,
+        User user,
+        ActionListener<Boolean> listener
+    ) {
         ActionListener<Boolean> exceptionTranslationWrapper = getExceptionTranslationWrapper(id, listener);
-        Optional<AsynchronousSearchActiveContext> asynchronousSearchContextOptional = asynchronousSearchActiveStore
-                .getContext(asynchronousSearchContextId);
+        Optional<AsynchronousSearchActiveContext> asynchronousSearchContextOptional = asynchronousSearchActiveStore.getContext(
+            asynchronousSearchContextId
+        );
         if (asynchronousSearchContextOptional.isPresent()) {
             logger.debug("Active context present for asynchronous search id [{}]", id);
             AsynchronousSearchActiveContext asynchronousSearchContext = asynchronousSearchContextOptional.get();
             if (isUserValid(user, asynchronousSearchContext.getUser())) {
                 cancelAndFreeActiveAndPersistedContext(asynchronousSearchContext, exceptionTranslationWrapper, user);
             } else {
-                exceptionTranslationWrapper.onFailure(new OpenSearchSecurityException(
-                        "User doesn't have necessary roles to access the asynchronous search with id " + id, RestStatus.FORBIDDEN));
+                exceptionTranslationWrapper.onFailure(
+                    new OpenSearchSecurityException(
+                        "User doesn't have necessary roles to access the asynchronous search with id " + id,
+                        RestStatus.FORBIDDEN
+                    )
+                );
             }
         } else {
             logger.debug("Active context NOT present for asynchronous search [{}]", id);
-            //asynchronous search context didn't exist so obviously we didn't delete
-            //deleted persisted context if one exists. If not the listener returns acknowledged as false
-            //we don't need to acquire lock if the in-memory context doesn't exist. For persistence context we have a distributed view
-            //with the last writer wins policy
+            // asynchronous search context didn't exist so obviously we didn't delete
+            // deleted persisted context if one exists. If not the listener returns acknowledged as false
+            // we don't need to acquire lock if the in-memory context doesn't exist. For persistence context we have a distributed view
+            // with the last writer wins policy
             logger.debug("Deleting asynchronous search [{}] from system index ", id);
             persistenceService.deleteResponse(id, user, exceptionTranslationWrapper);
         }
     }
 
-    private void cancelTask(AsynchronousSearchActiveContext asynchronousSearchContext, String reason,
-                            ActionListener<CancelTasksResponse> listener) {
-        CancelTasksRequest cancelTasksRequest = new CancelTasksRequest()
-                .setTaskId(new TaskId(clusterService.localNode().getId(), asynchronousSearchContext.getTask().getId()))
-                .setReason(reason);
+    private void cancelTask(
+        AsynchronousSearchActiveContext asynchronousSearchContext,
+        String reason,
+        ActionListener<CancelTasksResponse> listener
+    ) {
+        CancelTasksRequest cancelTasksRequest = new CancelTasksRequest().setTaskId(
+            new TaskId(clusterService.localNode().getId(), asynchronousSearchContext.getTask().getId())
+        ).setReason(reason);
         client.admin().cluster().cancelTasks(cancelTasksRequest, listener);
 
     }
+
     private boolean shouldCancel(AsynchronousSearchActiveContext asynchronousSearchContext) {
-        return asynchronousSearchContext.getTask() != null && asynchronousSearchContext.getTask().isCancelled() == false
-                && asynchronousSearchContext.isCompleted() == false;
+        return asynchronousSearchContext.getTask() != null
+            && asynchronousSearchContext.getTask().isCancelled() == false
+            && asynchronousSearchContext.isCompleted() == false;
     }
 
     // We are skipping user check in this while deleting from the persisted layer
     // as we have already checked for user in the present active context.
-    private void cancelAndFreeActiveAndPersistedContext(AsynchronousSearchActiveContext asynchronousSearchContext,
-                                                        ActionListener<Boolean> listener, User user) {
+    private void cancelAndFreeActiveAndPersistedContext(
+        AsynchronousSearchActiveContext asynchronousSearchContext,
+        ActionListener<Boolean> listener,
+        User user
+    ) {
         // if there are no context found to be cleaned up we throw a ResourceNotFoundException
         AtomicReference<Releasable> releasableReference = new AtomicReference<>(() -> {});
         ActionListener<Boolean> releasableListener = runAfter(listener, releasableReference.get()::close);
-        GroupedActionListener<Boolean> groupedDeletionListener = new GroupedActionListener<>(
-                wrap((responses) -> {
-                    if (responses.stream().anyMatch(r -> r)) {
-                        logger.debug("Free context for asynchronous search [{}] successful ",
-                                asynchronousSearchContext.getAsynchronousSearchId());
+        GroupedActionListener<Boolean> groupedDeletionListener = new GroupedActionListener<>(wrap((responses) -> {
+            if (responses.stream().anyMatch(r -> r)) {
+                logger.debug("Free context for asynchronous search [{}] successful ", asynchronousSearchContext.getAsynchronousSearchId());
+                releasableListener.onResponse(true);
+            } else {
+                logger.debug("Freeing context, asynchronous search [{}] not found ", asynchronousSearchContext.getAsynchronousSearchId());
+                releasableListener.onFailure(new ResourceNotFoundException(asynchronousSearchContext.getAsynchronousSearchId()));
+            }
+        }, releasableListener::onFailure), 2);
+
+        // We get a true or a ResourceNotFound from persistence layer. We want to translate it to either a true/false or any other exception
+        // that should be surfaced up
+        ActionListener<Boolean> translatedListener = wrap(groupedDeletionListener::onResponse, (ex) -> {
+            if (ex instanceof ResourceNotFoundException) {
+                groupedDeletionListener.onResponse(false);
+            } else {
+                logger.debug(
+                    () -> new ParameterizedMessage(
+                        "Translating exception, received for asynchronous search [{}]",
+                        asynchronousSearchContext.getAsynchronousSearchId()
+                    ),
+                    ex
+                );
+                groupedDeletionListener.onFailure(ex);
+            }
+        });
+        String triggeredBy = user != null ? (" by user [" + user + "]") : "";
+        String cancelTaskReason = "Delete asynchronous search ["
+            + asynchronousSearchContext.getAsynchronousSearchId()
+            + "] has been triggered"
+            + triggeredBy
+            + ". Attempting to cancel in-progress search task";
+        // Intent of the lock here is to disallow ongoing migration to system index
+        // as if that is underway we might end up creating a new document post a DELETE was executed
+        asynchronousSearchContext.acquireContextPermitIfRequired(wrap(releasable -> {
+            releasableReference.set(releasable);
+            if (asynchronousSearchContext.keepOnCompletion()) {
+                handleCancelTaskPermitAcquired(asynchronousSearchContext, groupedDeletionListener, cancelTaskReason);
+                logger.debug(
+                    "Deleting asynchronous search id [{}] from system index ",
+                    asynchronousSearchContext.getAsynchronousSearchId()
+                );
+                persistenceService.deleteResponse(asynchronousSearchContext.getAsynchronousSearchId(), user, translatedListener);
+            } else { // keep on completion is false. simply cancel task and clean up active context
+                handleCancelTaskPermitAcquired(asynchronousSearchContext, wrap(r -> {
+                    if (r) {
                         releasableListener.onResponse(true);
                     } else {
-                        logger.debug("Freeing context, asynchronous search [{}] not found ",
-                                asynchronousSearchContext.getAsynchronousSearchId());
                         releasableListener.onFailure(new ResourceNotFoundException(asynchronousSearchContext.getAsynchronousSearchId()));
                     }
-                }, releasableListener::onFailure), 2);
+                }, releasableListener::onFailure), cancelTaskReason);
+            }
+        }, exception -> {
+            Throwable cause = ExceptionsHelper.unwrapCause(exception);
+            if (cause instanceof TimeoutException) {
+                // this should ideally not happen. This would mean we couldn't acquire permits within the timeout
+                logger.debug(
+                    () -> new ParameterizedMessage(
+                        "Failed to acquire permits for " + "asynchronous search id [{}] for updating context within timeout 5s",
+                        asynchronousSearchContext.getAsynchronousSearchId()
+                    ),
+                    exception
+                );
+                listener.onFailure(new OpenSearchTimeoutException(asynchronousSearchContext.getAsynchronousSearchId()));
+            } else {
+                // best effort clean up with acknowledged as false
+                if (asynchronousSearchContext.keepOnCompletion()) {
 
-        //We get a true or a ResourceNotFound from persistence layer. We want to translate it to either a true/false or any other exception
-        //that should be surfaced up
-        ActionListener<Boolean> translatedListener = wrap(
-                groupedDeletionListener::onResponse, (ex) -> {
-                    if (ex instanceof ResourceNotFoundException) {
-                        groupedDeletionListener.onResponse(false);
-                    } else {
-                        logger.debug(() -> new ParameterizedMessage("Translating exception, received for asynchronous search [{}]",
-                                asynchronousSearchContext.getAsynchronousSearchId()), ex);
-                        groupedDeletionListener.onFailure(ex);
-                    }
-                });
-        String triggeredBy = user != null ? (" by user [" + user + "]") : "";
-        String cancelTaskReason = "Delete asynchronous search [" + asynchronousSearchContext.getAsynchronousSearchId()
-                + "] has been triggered" + triggeredBy + ". Attempting to cancel in-progress search task";
-        //Intent of the lock here is to disallow ongoing migration to system index
-        // as if that is underway we might end up creating a new document post a DELETE was executed
-        asynchronousSearchContext.acquireContextPermitIfRequired(wrap(
-                releasable -> {
-                    releasableReference.set(releasable);
-                    if (asynchronousSearchContext.keepOnCompletion()) {
-                        handleCancelTaskPermitAcquired(asynchronousSearchContext, groupedDeletionListener, cancelTaskReason);
-                        logger.debug("Deleting asynchronous search id [{}] from system index ",
-                                asynchronousSearchContext.getAsynchronousSearchId());
-                        persistenceService.deleteResponse(asynchronousSearchContext.getAsynchronousSearchId(), user, translatedListener);
-                    } else { //keep on completion is false. simply cancel task and clean up active context
-                        handleCancelTaskPermitAcquired(asynchronousSearchContext, wrap(r -> {
-                            if (r) {
-                                releasableListener.onResponse(true);
-                            } else {
-                                releasableListener.onFailure(
-                                        new ResourceNotFoundException(asynchronousSearchContext.getAsynchronousSearchId()));
-                            }
-                        }, releasableListener::onFailure), cancelTaskReason);
-                    }
-                }, exception -> {
-                    Throwable cause = ExceptionsHelper.unwrapCause(exception);
-                    if (cause instanceof TimeoutException) {
-                        // this should ideally not happen. This would mean we couldn't acquire permits within the timeout
-                        logger.debug(() -> new ParameterizedMessage("Failed to acquire permits for " +
-                                "asynchronous search id [{}] for updating context within timeout 5s",
-                                asynchronousSearchContext.getAsynchronousSearchId()), exception);
-                        listener.onFailure(new OpenSearchTimeoutException(asynchronousSearchContext.getAsynchronousSearchId()));
-                    } else {
-                        // best effort clean up with acknowledged as false
-                        if (asynchronousSearchContext.keepOnCompletion()) {
-
-                            handleCancelTaskPermitAcquisitionFailed(asynchronousSearchContext, groupedDeletionListener, cancelTaskReason,
-                                    exception);
-                            logger.debug("Deleting asynchronous search id [{}] from system index ",
-                                    asynchronousSearchContext.getAsynchronousSearchId());
-                            persistenceService.deleteResponse(asynchronousSearchContext.getAsynchronousSearchId(),
-                                    user, translatedListener);
-                        } else {
-                            handleCancelTaskPermitAcquisitionFailed(asynchronousSearchContext, releasableListener, cancelTaskReason,
-                                    exception);
-                        }
-                    }
+                    handleCancelTaskPermitAcquisitionFailed(
+                        asynchronousSearchContext,
+                        groupedDeletionListener,
+                        cancelTaskReason,
+                        exception
+                    );
+                    logger.debug(
+                        "Deleting asynchronous search id [{}] from system index ",
+                        asynchronousSearchContext.getAsynchronousSearchId()
+                    );
+                    persistenceService.deleteResponse(asynchronousSearchContext.getAsynchronousSearchId(), user, translatedListener);
+                } else {
+                    handleCancelTaskPermitAcquisitionFailed(asynchronousSearchContext, releasableListener, cancelTaskReason, exception);
                 }
-        ), TimeValue.timeValueSeconds(5), "free context");
+            }
+        }), TimeValue.timeValueSeconds(5), "free context");
     }
 
-    private void handleCancelTaskPermitAcquisitionFailed(AsynchronousSearchActiveContext asynchronousSearchContext,
-                                                         ActionListener<Boolean> listener, String cancelTaskReason, Exception e) {
-        logger.debug(() -> new ParameterizedMessage("Failed to acquire permits for asynchronous search id " +
-                "[{}] for freeing context", asynchronousSearchContext.getAsynchronousSearchId()), e);
+    private void handleCancelTaskPermitAcquisitionFailed(
+        AsynchronousSearchActiveContext asynchronousSearchContext,
+        ActionListener<Boolean> listener,
+        String cancelTaskReason,
+        Exception e
+    ) {
+        logger.debug(
+            () -> new ParameterizedMessage(
+                "Failed to acquire permits for asynchronous search id " + "[{}] for freeing context",
+                asynchronousSearchContext.getAsynchronousSearchId()
+            ),
+            e
+        );
         if (shouldCancel(asynchronousSearchContext)) {
             cancelTask(asynchronousSearchContext, cancelTaskReason, wrap(() -> listener.onResponse(false)));
         } else {
@@ -418,25 +524,34 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
         }
     }
 
-    private void handleCancelTaskPermitAcquired(AsynchronousSearchActiveContext asynchronousSearchContext,
-                                                    ActionListener<Boolean> listener, String cancelTaskReason) {
+    private void handleCancelTaskPermitAcquired(
+        AsynchronousSearchActiveContext asynchronousSearchContext,
+        ActionListener<Boolean> listener,
+        String cancelTaskReason
+    ) {
         if (shouldCancel(asynchronousSearchContext)) {
             cancelTask(asynchronousSearchContext, cancelTaskReason, wrap(cancelTasksResponse -> {
-                        logger.debug("Successfully cancelled tasks [{}] with asynchronous search [{}] with response [{}]",
-                                asynchronousSearchContext.getTask(), asynchronousSearchContext.getAsynchronousSearchId(),
-                                cancelTasksResponse);
-                    /* we don't free active context here as AsynchronousSearchTask#onCancelled() takes care of that. This ensures that
-                    freeActiveContext() is invoked only after task is cancelled or completed */
-                        listener.onResponse(true);
-                    },
-                    e -> {
-                        logger.error(() -> new ParameterizedMessage(
-                                "Failed to cancel task [{}] with asynchronous search [{}] with exception",
-                                asynchronousSearchContext.getTask(), asynchronousSearchContext.getAsynchronousSearchId()),
-                                e);
-                        //no onCancelled hook due to failure, so we invoke free active context
-                        listener.onResponse(freeActiveContext(asynchronousSearchContext));
-                    }));
+                logger.debug(
+                    "Successfully cancelled tasks [{}] with asynchronous search [{}] with response [{}]",
+                    asynchronousSearchContext.getTask(),
+                    asynchronousSearchContext.getAsynchronousSearchId(),
+                    cancelTasksResponse
+                );
+                /* we don't free active context here as AsynchronousSearchTask#onCancelled() takes care of that. This ensures that
+                freeActiveContext() is invoked only after task is cancelled or completed */
+                listener.onResponse(true);
+            }, e -> {
+                logger.error(
+                    () -> new ParameterizedMessage(
+                        "Failed to cancel task [{}] with asynchronous search [{}] with exception",
+                        asynchronousSearchContext.getTask(),
+                        asynchronousSearchContext.getAsynchronousSearchId()
+                    ),
+                    e
+                );
+                // no onCancelled hook due to failure, so we invoke free active context
+                listener.onResponse(freeActiveContext(asynchronousSearchContext));
+            }));
         } else {
             listener.onResponse(freeActiveContext(asynchronousSearchContext));
         }
@@ -452,9 +567,10 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     boolean freeActiveContext(AsynchronousSearchActiveContext asynchronousSearchContext) {
         try {
             // asserts that task is cancelled/completed/removed so that we don't leave orphan tasks
-            assert asynchronousSearchContext.getTask() == null || asynchronousSearchContext.getTask().isCancelled() ||
-                    asynchronousSearchContext.isCompleted() : "Either the asynchronous search task should have been cancelled or " +
-                    "completed ";
+            assert asynchronousSearchContext.getTask() == null
+                || asynchronousSearchContext.getTask().isCancelled()
+                || asynchronousSearchContext.isCompleted() : "Either the asynchronous search task should have been cancelled or "
+                    + "completed ";
             asynchronousSearchStateMachine.trigger(new SearchDeletedEvent(asynchronousSearchContext));
             return true;
         } catch (AsynchronousSearchStateMachineClosedException ex) {
@@ -486,79 +602,137 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
      * @param user                 current user
      * @param listener             listener to invoke after updating expiration.
      */
-    public void updateKeepAliveAndGetContext(String id, TimeValue keepAlive, AsynchronousSearchContextId asynchronousSearchContextId,
-                                             User user, ActionListener<AsynchronousSearchContext> listener) {
+    public void updateKeepAliveAndGetContext(
+        String id,
+        TimeValue keepAlive,
+        AsynchronousSearchContextId asynchronousSearchContextId,
+        User user,
+        ActionListener<AsynchronousSearchContext> listener
+    ) {
         ActionListener<AsynchronousSearchContext> exceptionTranslationWrapper = getExceptionTranslationWrapper(id, listener);
         validateKeepAlive(keepAlive);
         long requestedExpirationTime = currentTimeSupplier.getAsLong() + keepAlive.getMillis();
         // find an active context on this node if one exists
-        Optional<AsynchronousSearchActiveContext> asynchronousSearchContextOptional = asynchronousSearchActiveStore
-                .getContext(asynchronousSearchContextId);
+        Optional<AsynchronousSearchActiveContext> asynchronousSearchContextOptional = asynchronousSearchActiveStore.getContext(
+            asynchronousSearchContextId
+        );
         // for all other stages we don't really care much as those contexts are destined to be discarded
         if (asynchronousSearchContextOptional.isPresent()) {
             AsynchronousSearchActiveContext asynchronousSearchActiveContext = asynchronousSearchContextOptional.get();
-            asynchronousSearchActiveContext.acquireContextPermitIfRequired(wrap(
-                    releasable -> {
-                        ActionListener<AsynchronousSearchContext> releasableActionListener = runAfter(exceptionTranslationWrapper,
-                                releasable::close);
-                        // At this point it's possible that the response would have been persisted to system index
-                        if (asynchronousSearchActiveContext.isAlive() == false && asynchronousSearchActiveContext.keepOnCompletion()) {
-                            logger.debug("Updating persistence store after state is PERSISTED asynchronous search id [{}] " +
-                                    "for updating context", asynchronousSearchActiveContext.getAsynchronousSearchId());
-                            persistenceService.updateExpirationTime(id, requestedExpirationTime, user, wrap(
-                                    (actionResponse) ->
-                                            releasableActionListener.onResponse(new AsynchronousSearchPersistenceContext(id,
-                                                    asynchronousSearchContextId,
-                                                    actionResponse, currentTimeSupplier, namedWriteableRegistry)),
-                                    releasableActionListener::onFailure));
-                        } else {
-                            if (isUserValid(user, asynchronousSearchActiveContext.getUser())) {
-                                logger.debug("Updating persistence store: NO as state is NOT PERSISTED yet asynchronous search id [{}] " +
-                                        "for updating context", asynchronousSearchActiveContext.getAsynchronousSearchId());
-                                asynchronousSearchActiveContext.setExpirationTimeMillis(requestedExpirationTime);
-                                releasableActionListener.onResponse(asynchronousSearchActiveContext);
-                            } else {
-                                releasableActionListener.onFailure(
-                                        new OpenSearchSecurityException("User doesn't have necessary roles to access the " +
-                                                "asynchronous search with id " + id, RestStatus.FORBIDDEN));
-                            }
-                        }
-                    },
-                    exception -> {
-                        Throwable cause = ExceptionsHelper.unwrapCause(exception);
-                        if (cause instanceof TimeoutException) {
-                            // this should ideally not happen. This would mean we couldn't acquire permits within the timeout
-                            logger.debug(() -> new ParameterizedMessage("Failed to acquire permits for " +
-                                    "asynchronous search id [{}] for updating context within timeout 5s",
-                                    asynchronousSearchActiveContext.getAsynchronousSearchId()), exception);
-                            listener.onFailure(new OpenSearchTimeoutException(id));
-                        } else {
-                            // best effort we try an update the doc if one exists
-                            if (asynchronousSearchActiveContext.keepOnCompletion()) {
-                                logger.debug(
-                                        "Updating persistence store after failing to acquire permits for asynchronous search id [{}] for " +
-                                                "updating context with expiration time [{}]", asynchronousSearchActiveContext
-                                                .getAsynchronousSearchId(),
-                                        requestedExpirationTime);
-                                persistenceService.updateExpirationTime(id, requestedExpirationTime, user,
-                                        wrap((actionResponse) -> exceptionTranslationWrapper.onResponse(
-                                                new AsynchronousSearchPersistenceContext(id, asynchronousSearchContextId,
-                                                        actionResponse, currentTimeSupplier, namedWriteableRegistry)),
-                                                exceptionTranslationWrapper::onFailure));
-                            } else {
-                                exceptionTranslationWrapper.onFailure(new ResourceNotFoundException(
-                                        asynchronousSearchActiveContext.getAsynchronousSearchId()));
-                            }
-                        }
-                    }), TimeValue.timeValueSeconds(5), "update keep alive");
+            asynchronousSearchActiveContext.acquireContextPermitIfRequired(wrap(releasable -> {
+                ActionListener<AsynchronousSearchContext> releasableActionListener = runAfter(
+                    exceptionTranslationWrapper,
+                    releasable::close
+                );
+                // At this point it's possible that the response would have been persisted to system index
+                if (asynchronousSearchActiveContext.isAlive() == false && asynchronousSearchActiveContext.keepOnCompletion()) {
+                    logger.debug(
+                        "Updating persistence store after state is PERSISTED asynchronous search id [{}] " + "for updating context",
+                        asynchronousSearchActiveContext.getAsynchronousSearchId()
+                    );
+                    persistenceService.updateExpirationTime(
+                        id,
+                        requestedExpirationTime,
+                        user,
+                        wrap(
+                            (actionResponse) -> releasableActionListener.onResponse(
+                                new AsynchronousSearchPersistenceContext(
+                                    id,
+                                    asynchronousSearchContextId,
+                                    actionResponse,
+                                    currentTimeSupplier,
+                                    namedWriteableRegistry
+                                )
+                            ),
+                            releasableActionListener::onFailure
+                        )
+                    );
+                } else {
+                    if (isUserValid(user, asynchronousSearchActiveContext.getUser())) {
+                        logger.debug(
+                            "Updating persistence store: NO as state is NOT PERSISTED yet asynchronous search id [{}] "
+                                + "for updating context",
+                            asynchronousSearchActiveContext.getAsynchronousSearchId()
+                        );
+                        asynchronousSearchActiveContext.setExpirationTimeMillis(requestedExpirationTime);
+                        releasableActionListener.onResponse(asynchronousSearchActiveContext);
+                    } else {
+                        releasableActionListener.onFailure(
+                            new OpenSearchSecurityException(
+                                "User doesn't have necessary roles to access the " + "asynchronous search with id " + id,
+                                RestStatus.FORBIDDEN
+                            )
+                        );
+                    }
+                }
+            }, exception -> {
+                Throwable cause = ExceptionsHelper.unwrapCause(exception);
+                if (cause instanceof TimeoutException) {
+                    // this should ideally not happen. This would mean we couldn't acquire permits within the timeout
+                    logger.debug(
+                        () -> new ParameterizedMessage(
+                            "Failed to acquire permits for " + "asynchronous search id [{}] for updating context within timeout 5s",
+                            asynchronousSearchActiveContext.getAsynchronousSearchId()
+                        ),
+                        exception
+                    );
+                    listener.onFailure(new OpenSearchTimeoutException(id));
+                } else {
+                    // best effort we try an update the doc if one exists
+                    if (asynchronousSearchActiveContext.keepOnCompletion()) {
+                        logger.debug(
+                            "Updating persistence store after failing to acquire permits for asynchronous search id [{}] for "
+                                + "updating context with expiration time [{}]",
+                            asynchronousSearchActiveContext.getAsynchronousSearchId(),
+                            requestedExpirationTime
+                        );
+                        persistenceService.updateExpirationTime(
+                            id,
+                            requestedExpirationTime,
+                            user,
+                            wrap(
+                                (actionResponse) -> exceptionTranslationWrapper.onResponse(
+                                    new AsynchronousSearchPersistenceContext(
+                                        id,
+                                        asynchronousSearchContextId,
+                                        actionResponse,
+                                        currentTimeSupplier,
+                                        namedWriteableRegistry
+                                    )
+                                ),
+                                exceptionTranslationWrapper::onFailure
+                            )
+                        );
+                    } else {
+                        exceptionTranslationWrapper.onFailure(
+                            new ResourceNotFoundException(asynchronousSearchActiveContext.getAsynchronousSearchId())
+                        );
+                    }
+                }
+            }), TimeValue.timeValueSeconds(5), "update keep alive");
         } else {
             // try update the doc on the index assuming there exists one.
-            logger.debug("Updating persistence store after active context evicted for asynchronous search id [{}] " +
-                    "for updating context", id);
-            persistenceService.updateExpirationTime(id, requestedExpirationTime, user,
-                    wrap((actionResponse) -> exceptionTranslationWrapper.onResponse(new AsynchronousSearchPersistenceContext(
-                                    id, asynchronousSearchContextId, actionResponse, currentTimeSupplier, namedWriteableRegistry)),
-                            exceptionTranslationWrapper::onFailure));
+            logger.debug(
+                "Updating persistence store after active context evicted for asynchronous search id [{}] " + "for updating context",
+                id
+            );
+            persistenceService.updateExpirationTime(
+                id,
+                requestedExpirationTime,
+                user,
+                wrap(
+                    (actionResponse) -> exceptionTranslationWrapper.onResponse(
+                        new AsynchronousSearchPersistenceContext(
+                            id,
+                            asynchronousSearchContextId,
+                            actionResponse,
+                            currentTimeSupplier,
+                            namedWriteableRegistry
+                        )
+                    ),
+                    exceptionTranslationWrapper::onFailure
+                )
+            );
         }
     }
 
@@ -568,48 +742,109 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
 
     private AsynchronousSearchStateMachine initStateMachine() {
         AsynchronousSearchStateMachine stateMachine = new AsynchronousSearchStateMachine(
-                EnumSet.allOf(AsynchronousSearchState.class), INIT, contextEventListener);
+            EnumSet.allOf(AsynchronousSearchState.class),
+            INIT,
+            contextEventListener
+        );
 
         stateMachine.markTerminalStates(EnumSet.of(CLOSED));
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(INIT, RUNNING,
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                INIT,
+                RUNNING,
                 (s, e) -> ((AsynchronousSearchActiveContext) e.asynchronousSearchContext()).setTask(e.getSearchTask()),
-                (contextId, listener) -> listener.onContextRunning(contextId), SearchStartedEvent.class));
+                (contextId, listener) -> listener.onContextRunning(contextId),
+                SearchStartedEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(RUNNING, SUCCEEDED,
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                RUNNING,
+                SUCCEEDED,
                 (s, e) -> ((AsynchronousSearchActiveContext) e.asynchronousSearchContext()).processSearchResponse(e.getSearchResponse()),
-                (contextId, listener) -> listener.onContextCompleted(contextId), SearchSuccessfulEvent.class));
+                (contextId, listener) -> listener.onContextCompleted(contextId),
+                SearchSuccessfulEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(RUNNING, FAILED,
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                RUNNING,
+                FAILED,
                 (s, e) -> ((AsynchronousSearchActiveContext) e.asynchronousSearchContext()).processSearchFailure(e.getException()),
-                (contextId, listener) -> listener.onContextFailed(contextId), SearchFailureEvent.class));
+                (contextId, listener) -> listener.onContextFailed(contextId),
+                SearchFailureEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(SUCCEEDED, PERSISTING,
-                (s, e) -> asynchronousSearchPostProcessor.persistResponse((AsynchronousSearchActiveContext) e.asynchronousSearchContext(),
-                        e.getAsynchronousSearchPersistenceModel()),
-                (contextId, listener) -> {}, BeginPersistEvent.class));
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                SUCCEEDED,
+                PERSISTING,
+                (s, e) -> asynchronousSearchPostProcessor.persistResponse(
+                    (AsynchronousSearchActiveContext) e.asynchronousSearchContext(),
+                    e.getAsynchronousSearchPersistenceModel()
+                ),
+                (contextId, listener) -> {},
+                BeginPersistEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(FAILED, PERSISTING,
-                (s, e) -> asynchronousSearchPostProcessor.persistResponse((AsynchronousSearchActiveContext) e.asynchronousSearchContext(),
-                        e.getAsynchronousSearchPersistenceModel()),
-                (contextId, listener) -> {}, BeginPersistEvent.class));
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                FAILED,
+                PERSISTING,
+                (s, e) -> asynchronousSearchPostProcessor.persistResponse(
+                    (AsynchronousSearchActiveContext) e.asynchronousSearchContext(),
+                    e.getAsynchronousSearchPersistenceModel()
+                ),
+                (contextId, listener) -> {},
+                BeginPersistEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(PERSISTING, PERSIST_SUCCEEDED,
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                PERSISTING,
+                PERSIST_SUCCEEDED,
                 (s, e) -> {},
-                (contextId, listener) -> listener.onContextPersisted(contextId), SearchResponsePersistedEvent.class));
+                (contextId, listener) -> listener.onContextPersisted(contextId),
+                SearchResponsePersistedEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(PERSISTING, PERSIST_FAILED,
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                PERSISTING,
+                PERSIST_FAILED,
                 (s, e) -> {},
-                (contextId, listener) -> listener.onContextPersistFailed(contextId), SearchResponsePersistFailedEvent.class));
+                (contextId, listener) -> listener.onContextPersistFailed(contextId),
+                SearchResponsePersistFailedEvent.class
+            )
+        );
 
-        stateMachine.registerTransition(new AsynchronousSearchTransition<>(RUNNING, CLOSED,
+        stateMachine.registerTransition(
+            new AsynchronousSearchTransition<>(
+                RUNNING,
+                CLOSED,
                 (s, e) -> asynchronousSearchActiveStore.freeContext(e.asynchronousSearchContext().getContextId()),
-                (contextId, listener) -> listener.onRunningContextDeleted(contextId), SearchDeletedEvent.class));
+                (contextId, listener) -> listener.onRunningContextDeleted(contextId),
+                SearchDeletedEvent.class
+            )
+        );
 
         for (AsynchronousSearchState state : EnumSet.of(PERSISTING, PERSIST_SUCCEEDED, PERSIST_FAILED, SUCCEEDED, FAILED, INIT)) {
-            stateMachine.registerTransition(new AsynchronousSearchTransition<>(state, CLOSED,
+            stateMachine.registerTransition(
+                new AsynchronousSearchTransition<>(
+                    state,
+                    CLOSED,
                     (s, e) -> asynchronousSearchActiveStore.freeContext(e.asynchronousSearchContext().getContextId()),
-                    (contextId, listener) -> listener.onContextDeleted(contextId), SearchDeletedEvent.class));
+                    (contextId, listener) -> listener.onContextDeleted(contextId),
+                    SearchDeletedEvent.class
+                )
+            );
         }
         return stateMachine;
     }
@@ -657,19 +892,28 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     private void validateWaitForCompletionTimeout(TimeValue waitForCompletionTimeout) {
         if (waitForCompletionTimeout.getMillis() > maxWaitForCompletionTimeout) {
             throw new IllegalArgumentException(
-                    "Wait for completion timeout for asynchronous search (" + waitForCompletionTimeout.getMillis()
-                            + ") is too large. It must be less than (" + TimeValue.timeValueMillis(maxWaitForCompletionTimeout)
-                            + ").This limit can be set by changing the [" + MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey()
-                            + "] cluster level setting.");
+                "Wait for completion timeout for asynchronous search ("
+                    + waitForCompletionTimeout.getMillis()
+                    + ") is too large. It must be less than ("
+                    + TimeValue.timeValueMillis(maxWaitForCompletionTimeout)
+                    + ").This limit can be set by changing the ["
+                    + MAX_WAIT_FOR_COMPLETION_TIMEOUT_SETTING.getKey()
+                    + "] cluster level setting."
+            );
         }
     }
 
     private void validateKeepAlive(TimeValue keepAlive) {
         if (keepAlive.getMillis() > maxKeepAlive) {
             throw new IllegalArgumentException(
-                    "Keep alive for asynchronous search (" + keepAlive.getMillis() + ") is too large. It must be less than (" +
-                            TimeValue.timeValueMillis(maxKeepAlive) + ").This limit can be set by changing the ["
-                            + MAX_KEEP_ALIVE_SETTING.getKey() + "] cluster level setting.");
+                "Keep alive for asynchronous search ("
+                    + keepAlive.getMillis()
+                    + ") is too large. It must be less than ("
+                    + TimeValue.timeValueMillis(maxKeepAlive)
+                    + ").This limit can be set by changing the ["
+                    + MAX_KEEP_ALIVE_SETTING.getKey()
+                    + "] cluster level setting."
+            );
         }
     }
 
@@ -678,8 +922,8 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
      * @return Where the search has been running beyond the max search running time.
      */
     private boolean isOverRunning(AsynchronousSearchActiveContext asynchronousSearchActiveContext) {
-        return EnumSet.of(RUNNING, INIT).contains(asynchronousSearchActiveContext.getAsynchronousSearchState()) &&
-                asynchronousSearchActiveContext.getStartTimeMillis() + maxSearchRunningTime < threadPool.absoluteTimeInMillis();
+        return EnumSet.of(RUNNING, INIT).contains(asynchronousSearchActiveContext.getAsynchronousSearchState())
+            && asynchronousSearchActiveContext.getStartTimeMillis() + maxSearchRunningTime < threadPool.absoluteTimeInMillis();
     }
 
     private <T> ActionListener<T> getExceptionTranslationWrapper(String id, ActionListener<T> listener) {

@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.restIT;
 
 import org.opensearch.action.search.SearchRequest;
@@ -28,34 +31,43 @@ public class ApiParamsValidationIT extends AsynchronousSearchRestTestCase {
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest());
         request.keepAlive(TimeValue.timeValueDays(100));
         ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(request));
-        assertThat(responseException.getMessage(), containsString("Keep alive for asynchronous search (" +
-                request.getKeepAlive().getMillis() + ") is too large"));
+        assertThat(
+            responseException.getMessage(),
+            containsString("Keep alive for asynchronous search (" + request.getKeepAlive().getMillis() + ") is too large")
+        );
     }
 
     public void testSubmitInvalidWaitForCompletion() throws IOException {
         SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest());
         request.waitForCompletionTimeout(TimeValue.timeValueMinutes(2));
         ResponseException responseException = expectThrows(ResponseException.class, () -> executeSubmitAsynchronousSearch(request));
-        assertThat(responseException.getMessage(), containsString("Wait for completion timeout for asynchronous search (" +
-                request.getWaitForCompletionTimeout().getMillis() + ") is too large"));
+        assertThat(
+            responseException.getMessage(),
+            containsString(
+                "Wait for completion timeout for asynchronous search ("
+                    + request.getWaitForCompletionTimeout().getMillis()
+                    + ") is too large"
+            )
+        );
     }
 
     public void testSubmitDefaultKeepAlive() throws IOException {
-        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(
-                new SearchRequest("test"));
+        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest("test"));
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.CLOSED);
         assertTrue(legalStates.contains(submitResponse.getState()));
-        assertTrue((submitResponse.getExpirationTimeMillis()
-                > System.currentTimeMillis() + TimeValue.timeValueHours(23).getMillis() + TimeValue.timeValueMinutes(59).millis()) &&
-                (submitResponse.getExpirationTimeMillis() < System.currentTimeMillis() + TimeValue.timeValueHours(24).getMillis() +
-                        TimeValue.timeValueMillis(1).getMillis()));
+        assertTrue(
+            (submitResponse.getExpirationTimeMillis() > System.currentTimeMillis() + TimeValue.timeValueHours(23).getMillis() + TimeValue
+                .timeValueMinutes(59)
+                .millis())
+                && (submitResponse.getExpirationTimeMillis() < System.currentTimeMillis() + TimeValue.timeValueHours(24).getMillis()
+                    + TimeValue.timeValueMillis(1).getMillis())
+        );
         assertHitCount(submitResponse.getSearchResponse(), 5);
     }
 
     public void testSubmitDefaultWaitForCompletion() throws IOException {
-        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(
-                new SearchRequest("test"));
+        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest("test"));
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.SUCCEEDED, AsynchronousSearchState.CLOSED);
         assertTrue(legalStates.contains(submitResponse.getState()));
@@ -64,7 +76,8 @@ public class ApiParamsValidationIT extends AsynchronousSearchRestTestCase {
 
     public void testSubmitSearchOnInvalidIndex() throws IOException {
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(
-                new SearchRequest("invalid-index"));
+            new SearchRequest("invalid-index")
+        );
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         List<AsynchronousSearchState> legalStates = Arrays.asList(AsynchronousSearchState.FAILED, AsynchronousSearchState.CLOSED);
         assertNull(submitResponse.getSearchResponse());
@@ -81,16 +94,22 @@ public class ApiParamsValidationIT extends AsynchronousSearchRestTestCase {
         AsynchronousSearchResponse submitResponse = executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest);
         GetAsynchronousSearchRequest getAsynchronousSearchRequest = new GetAsynchronousSearchRequest(submitResponse.getId());
         getAsynchronousSearchRequest.setKeepAlive(TimeValue.timeValueDays(100));
-        ResponseException responseException = expectThrows(ResponseException.class, () -> executeGetAsynchronousSearch(
-                getAsynchronousSearchRequest));
-        assertThat(responseException.getMessage(), containsString("Keep alive for asynchronous search (" +
-                getAsynchronousSearchRequest.getKeepAlive().getMillis() + ") is too large"));
+        ResponseException responseException = expectThrows(
+            ResponseException.class,
+            () -> executeGetAsynchronousSearch(getAsynchronousSearchRequest)
+        );
+        assertThat(
+            responseException.getMessage(),
+            containsString(
+                "Keep alive for asynchronous search (" + getAsynchronousSearchRequest.getKeepAlive().getMillis() + ") is too large"
+            )
+        );
         executeDeleteAsynchronousSearch(new DeleteAsynchronousSearchRequest(submitResponse.getId()));
     }
 
     public void testSuggestOnlySearchRequest() {
         SearchSourceBuilder source = new SearchSourceBuilder().suggest(new SuggestBuilder());
-        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest(new String[]{"test"}, source));
+        SubmitAsynchronousSearchRequest request = new SubmitAsynchronousSearchRequest(new SearchRequest(new String[] { "test" }, source));
         try {
             AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(request);
         } catch (Exception e) {

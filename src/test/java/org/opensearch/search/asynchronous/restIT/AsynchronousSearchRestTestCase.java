@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.restIT;
 
 import org.opensearch.common.xcontent.XContentFactory;
@@ -47,14 +50,14 @@ import java.util.Collections;
 
 import static org.hamcrest.Matchers.containsString;
 
-
 /**
  * Verifies asynchronous search APIs - submit, get, delete end to end using rest client
  */
 public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRestTestCase {
 
     private final NamedXContentRegistry registry = new NamedXContentRegistry(
-            new SearchModule(Settings.EMPTY, Collections.emptyList()).getNamedXContents());
+        new SearchModule(Settings.EMPTY, Collections.emptyList()).getNamedXContents()
+    );
 
     @Before
     public void indexDocuments() throws IOException {
@@ -86,28 +89,30 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         client().performRequest(new Request(HttpPost.METHOD_NAME, "/_refresh"));
     }
 
-  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
-      GetAsynchronousSearchRequest getAsynchronousSearchRequest) throws IOException {
-    return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
-  }
+    protected AsynchronousSearchResponse executeGetAsynchronousSearch(GetAsynchronousSearchRequest getAsynchronousSearchRequest)
+        throws IOException {
+        return executeGetAsynchronousSearch(getAsynchronousSearchRequest, false);
+    }
 
-  protected AsynchronousSearchResponse executeGetAsynchronousSearch(
-      GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi)
-      throws IOException {
-    Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, shouldUseLegacyApi);
-    Response resp = client().performRequest(getRequest);
-    return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
-  }
+    protected AsynchronousSearchResponse executeGetAsynchronousSearch(
+        GetAsynchronousSearchRequest getAsynchronousSearchRequest,
+        boolean shouldUseLegacyApi
+    ) throws IOException {
+        Request getRequest = RestTestUtils.buildHttpRequest(getAsynchronousSearchRequest, shouldUseLegacyApi);
+        Response resp = client().performRequest(getRequest);
+        return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
+    }
 
-  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
-      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest)
-      throws IOException {
-    return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
-  }
+    protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+        @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest
+    ) throws IOException {
+        return executeSubmitAsynchronousSearch(submitAsynchronousSearchRequest, false);
+    }
 
-  protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
-      @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
-      throws IOException {
+    protected AsynchronousSearchResponse executeSubmitAsynchronousSearch(
+        @Nullable SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest,
+        boolean shouldUseLegacyApi
+    ) throws IOException {
         Request request = RestTestUtils.buildHttpRequest(submitAsynchronousSearchRequest, shouldUseLegacyApi);
         Response resp = client().performRequest(request);
         return parseEntity(resp.getEntity(), AsynchronousSearchResponse::fromXContent);
@@ -134,7 +139,6 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         void reset();
     }
 
-
     @AfterClass
     public static void dumpCoverage() throws IOException, MalformedObjectNameException {
         // jacoco.dir is set in esplugin-coverage.gradle, if it doesn't exist we don't
@@ -147,8 +151,11 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         String serverUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:7777/jmxrmi";
         try (JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl))) {
             IProxy proxy = MBeanServerInvocationHandler.newProxyInstance(
-                    connector.getMBeanServerConnection(), new ObjectName("org.jacoco:type=Runtime"), IProxy.class,
-                    false);
+                connector.getMBeanServerConnection(),
+                new ObjectName("org.jacoco:type=Runtime"),
+                IProxy.class,
+                false
+            );
 
             Path path = org.opensearch.common.io.PathUtils.get(jacocoBuildPath + "/integTestRunner.exec");
             Files.write(path, proxy.getExecutionData(false));
@@ -157,9 +164,8 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         }
     }
 
-    protected final <Resp> Resp parseEntity(final HttpEntity entity,
-                                            final CheckedFunction<XContentParser, Resp, IOException> entityParser)
-            throws IOException {
+    protected final <Resp> Resp parseEntity(final HttpEntity entity, final CheckedFunction<XContentParser, Resp, IOException> entityParser)
+        throws IOException {
         if (entity == null) {
             throw new IllegalStateException("Response body expected but not returned");
         }
@@ -170,30 +176,32 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
         if (xContentType == null) {
             throw new IllegalStateException("Unsupported Content-Type: " + entity.getContentType().getValue());
         }
-        try (XContentParser parser = xContentType.xContent().createParser(
-                registry, DeprecationHandler.IGNORE_DEPRECATIONS, entity.getContent())) {
+        try (
+            XContentParser parser = xContentType.xContent()
+                .createParser(registry, DeprecationHandler.IGNORE_DEPRECATIONS, entity.getContent())
+        ) {
             return entityParser.apply(parser);
         }
     }
 
-    protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(AsynchronousSearchResponse submitResponse,
-                                                                               GetAsynchronousSearchRequest getAsynchronousSearchRequest)
-            throws IOException {
+    protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
+        AsynchronousSearchResponse submitResponse,
+        GetAsynchronousSearchRequest getAsynchronousSearchRequest
+    ) throws IOException {
         return getAssertedAsynchronousSearchResponse(submitResponse, getAsynchronousSearchRequest, false);
     }
 
-  protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
-      AsynchronousSearchResponse submitResponse,
-      GetAsynchronousSearchRequest getAsynchronousSearchRequest,
-      boolean shouldUseLegacyApi)
-      throws IOException {
+    protected AsynchronousSearchResponse getAssertedAsynchronousSearchResponse(
+        AsynchronousSearchResponse submitResponse,
+        GetAsynchronousSearchRequest getAsynchronousSearchRequest,
+        boolean shouldUseLegacyApi
+    ) throws IOException {
         AsynchronousSearchResponse getResponse;
         getResponse = executeGetAsynchronousSearch(getAsynchronousSearchRequest, shouldUseLegacyApi);
         assertEquals(submitResponse.getId(), getResponse.getId());
         assertEquals(submitResponse.getStartTimeMillis(), getResponse.getStartTimeMillis());
         return getResponse;
     }
-
 
     protected void assertRnf(Exception e) {
         assertTrue(e instanceof ResponseException);
@@ -204,8 +212,7 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
     protected static void assertHitCount(SearchResponse countResponse, long expectedHitCount) {
         final TotalHits totalHits = countResponse.getHits().getTotalHits();
         if (totalHits.relation != TotalHits.Relation.EQUAL_TO || totalHits.value != expectedHitCount) {
-            fail("Count is " + totalHits + " but " + expectedHitCount
-                    + " was expected. " + countResponse.toString());
+            fail("Count is " + totalHits + " but " + expectedHitCount + " was expected. " + countResponse.toString());
         }
     }
 
@@ -216,11 +223,11 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
 
     protected void updateClusterSettings(String settingKey, Object value) throws Exception {
         XContentBuilder builder = XContentFactory.jsonBuilder()
-                .startObject()
-                .startObject("persistent")
-                .field(settingKey, value)
-                .endObject()
-                .endObject();
+            .startObject()
+            .startObject("persistent")
+            .field(settingKey, value)
+            .endObject()
+            .endObject();
         Request request = new Request("PUT", "_cluster/settings");
         request.setJsonEntity(builder.toString());
         Response response = client().performRequest(request);
