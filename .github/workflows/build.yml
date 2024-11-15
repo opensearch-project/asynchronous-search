@@ -30,16 +30,11 @@ jobs:
       # this image tag is subject to change as more dependencies and updates will arrive over time
       image: ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }}
       # need to switch to root so that github actions can install runner binary on container without permission issues.
-      options: --user root
-
-    # actions/checkout@v4 and actions/setup-java@v4 use node 20:
-    # https://github.com/actions/checkout/releases/tag/v4.0.0
-    # container image does not have GLIBC_2.28 required for this node version
-    # as such use @v3 actions instead for this workflow and set ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+      options: ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-options }}
 
     steps:
+      - name: Run start commands
+        run: ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
       - name: Set up JDK ${{ matrix.java }} for build and test
         uses: actions/setup-java@v3
