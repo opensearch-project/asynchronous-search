@@ -43,7 +43,7 @@ jobs:
           java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build with Gradle
         id: step-build-test-linux
         run: |
@@ -57,7 +57,7 @@ jobs:
         uses: codecov/codecov-action@v1.2.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: async-plugin-linux-${{ matrix.java }}
           path: ${{ steps.step-build-test-linux.outputs.build-test-linux }}
@@ -84,7 +84,7 @@ jobs:
           distribution: temurin # Temurin is a distribution of adoptium
           java-version: ${{ matrix.java }}
       - name: Checkout Branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           name: async-plugin-linux-${{ matrix.java }}
@@ -139,7 +139,7 @@ jobs:
             ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
           fi
       - name: Upload failed logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: logs
@@ -163,7 +163,7 @@ jobs:
           java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build with Gradle
         run: ./gradlew.bat build -x integTest -x jacocoTestReport
         env:
@@ -174,7 +174,7 @@ jobs:
           cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: asynchronous-search-plugin-windows
           path: asynchronous-search-artifacts
@@ -197,7 +197,7 @@ jobs:
           java-version: ${{ matrix.java }}
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build with Gradle
         run: ./gradlew build -x integTest -x jacocoTestReport
         env:
@@ -208,7 +208,7 @@ jobs:
           cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: asynchronous-search-plugin-mac
           path: asynchronous-search-artifacts
