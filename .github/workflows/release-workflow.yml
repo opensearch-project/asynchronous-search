@@ -118,7 +118,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Workflow Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: asynchronous-search-plugin
           path: asynchronous-search-artifacts
