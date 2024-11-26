@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.integTests;
 
 import org.opensearch.search.asynchronous.action.AsynchronousSearchStatsAction;
@@ -50,35 +53,39 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
         boolean lowLevelCancellation = randomBoolean();
         logger.info("Using lowLevelCancellation: {}", lowLevelCancellation);
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), asConcurrentLimit)
-                .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put(AsynchronousSearchActiveStore.NODE_CONCURRENT_RUNNING_SEARCHES_SETTING.getKey(), asConcurrentLimit)
+            .put(AsynchronousSearchService.PERSIST_SEARCH_FAILURES_SETTING.getKey(), true)
+            .build();
     }
 
     public void testNodewiseStats() throws InterruptedException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
-                        .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
+        indexRandom(
+            super.ignoreExternalCluster(),
+            client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(index).setId("3").setSource("field1", "quick")
+        );
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest(index));
         submitAsynchronousSearchRequest.waitForCompletionTimeout(TimeValue.timeValueSeconds(2));
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         List<DiscoveryNode> dataNodes = new LinkedList<>();
-        clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> {
-            dataNodes.add(node);
-        });
+        clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> { dataNodes.add(node); });
         assertFalse(dataNodes.isEmpty());
         DiscoveryNode randomDataNode = dataNodes.get(randomInt(dataNodes.size() - 1));
         try {
-            AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(client(randomDataNode.getName()),
-                    submitAsynchronousSearchRequest);
+            AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(
+                client(randomDataNode.getName()),
+                submitAsynchronousSearchRequest
+            );
             assertNotNull(asResponse.getSearchResponse());
             TestClientUtils.assertResponsePersistence(client(), asResponse.getId());
-            AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
-                    new AsynchronousSearchStatsRequest()).get();
+            AsynchronousSearchStatsResponse statsResponse = client().execute(
+                AsynchronousSearchStatsAction.INSTANCE,
+                new AsynchronousSearchStatsRequest()
+            ).get();
             String responseAsString = statsResponse.toString();
             for (DiscoveryNode dataNode : dataNodes) {
                 assertThat(responseAsString, containsString(dataNode.getId()));
@@ -112,15 +119,15 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             threadPool = new TestThreadPool(AsynchronousSearchStatsIT.class.getName());
             String index = "idx";
             createIndex(index);
-            indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
-                            .setSource("field1", "the quick brown fox jumps"),
-                    client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
-                    client().prepareIndex(index).setId("3").setSource("field1", "quick"));
+            indexRandom(
+                super.ignoreExternalCluster(),
+                client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
+                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(index).setId("3").setSource("field1", "quick")
+            );
 
             List<DiscoveryNode> dataNodes = new LinkedList<>();
-            clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> {
-                dataNodes.add(node);
-            });
+            clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> { dataNodes.add(node); });
             assertFalse(dataNodes.isEmpty());
             int numThreads = 20;
             List<Runnable> threads = new ArrayList<>();
@@ -145,14 +152,14 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
 
                         } else {
                             expectedNumFailures.getAndIncrement();
-                            submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest(
-                                    "non_existent_index"));
+                            submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest("non_existent_index"));
                             submitAsynchronousSearchRequest.keepOnCompletion(keepOnCompletion);
                         }
 
-                        AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(client(
-                                dataNodes.get(randomInt(1)).getName()),
-                                submitAsynchronousSearchRequest);
+                        AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(
+                            client(dataNodes.get(randomInt(1)).getName()),
+                            submitAsynchronousSearchRequest
+                        );
                         if (keepOnCompletion) {
                             TestClientUtils.assertResponsePersistence(client(), asResponse.getId());
                         }
@@ -166,8 +173,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
             TestThreadPool finalThreadPool = threadPool;
             threads.forEach(t -> finalThreadPool.generic().execute(t));
             latch.await();
-            AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
-                    new AsynchronousSearchStatsRequest()).get();
+            AsynchronousSearchStatsResponse statsResponse = client().execute(
+                AsynchronousSearchStatsAction.INSTANCE,
+                new AsynchronousSearchStatsRequest()
+            ).get();
             AtomicLong actualNumSuccesses = new AtomicLong();
             AtomicLong actualNumFailures = new AtomicLong();
             AtomicLong actualNumPersisted = new AtomicLong();
@@ -197,21 +206,24 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testRunningAsynchronousSearchCountStat() throws InterruptedException, ExecutionException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
-                        .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
+        indexRandom(
+            super.ignoreExternalCluster(),
+            client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(index).setId("3").setSource("field1", "quick")
+        );
 
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
-        SearchRequest searchRequest = client().prepareSearch(index).setQuery(
-                scriptQuery(new Script(
-                        ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
-                .request();
+        SearchRequest searchRequest = client().prepareSearch(index)
+            .setQuery(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
+            .request();
         SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(searchRequest);
         submitAsynchronousSearchRequest.keepOnCompletion(true);
         AsynchronousSearchResponse asResponse = executeSubmitAsynchronousSearch(client(), submitAsynchronousSearchRequest);
-        AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
-                new AsynchronousSearchStatsRequest()).get();
+        AsynchronousSearchStatsResponse statsResponse = client().execute(
+            AsynchronousSearchStatsAction.INSTANCE,
+            new AsynchronousSearchStatsRequest()
+        ).get();
         long runningSearchCount = 0;
         for (AsynchronousSearchStats node : statsResponse.getNodes()) {
             runningSearchCount += node.getAsynchronousSearchCountStats().getRunningCount();
@@ -237,24 +249,23 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
     public void testThrottledAsynchronousSearchCount() throws InterruptedException, ExecutionException {
         String index = "idx";
         createIndex(index);
-        indexRandom(super.ignoreExternalCluster(), client().prepareIndex(index).setId("1")
-                        .setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(index).setId("3").setSource("field1", "quick"));
+        indexRandom(
+            super.ignoreExternalCluster(),
+            client().prepareIndex(index).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(index).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(index).setId("3").setSource("field1", "quick")
+        );
 
         List<DiscoveryNode> dataNodes = new LinkedList<>();
-        clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> {
-            dataNodes.add(node);
-        });
+        clusterService().state().nodes().getDataNodes().values().iterator().forEachRemaining(node -> { dataNodes.add(node); });
         assertFalse(dataNodes.isEmpty());
         DiscoveryNode randomDataNode = dataNodes.get(randomInt(dataNodes.size() - 1));
         int numThreads = 21;
         List<Thread> threads = new ArrayList<>();
         List<ScriptedBlockPlugin> plugins = initBlockFactory();
-        SearchRequest searchRequest = client().prepareSearch(index).setQuery(
-                scriptQuery(new Script(
-                        ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
-                .request();
+        SearchRequest searchRequest = client().prepareSearch(index)
+            .setQuery(scriptQuery(new Script(ScriptType.INLINE, "mockscript", SCRIPT_NAME, Collections.emptyMap())))
+            .request();
         for (int i = 0; i < numThreads; i++) {
             Thread t = new Thread(() -> {
                 try {
@@ -279,8 +290,10 @@ public class AsynchronousSearchStatsIT extends AsynchronousSearchIntegTestCase {
 
     private boolean verifyThrottlingFromStats() {
         try {
-            AsynchronousSearchStatsResponse statsResponse = client().execute(AsynchronousSearchStatsAction.INSTANCE,
-                    new AsynchronousSearchStatsRequest()).get();
+            AsynchronousSearchStatsResponse statsResponse = client().execute(
+                AsynchronousSearchStatsAction.INSTANCE,
+                new AsynchronousSearchStatsRequest()
+            ).get();
             for (AsynchronousSearchStats nodeStats : statsResponse.getNodes()) {
                 if (nodeStats.getAsynchronousSearchCountStats().getThrottledCount() == 1L) {
                     return true;

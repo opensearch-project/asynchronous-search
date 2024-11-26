@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.management;
 
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContext;
@@ -72,22 +75,30 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
     private TimeValue activeContextReaperInterval;
     private TimeValue persistedResponseCleanUpInterval;
 
-    public static final String PERSISTED_RESPONSE_CLEANUP_ACTION_NAME =
-            "indices:data/read/opendistro/asynchronous_search/response_cleanup";
+    public static final String PERSISTED_RESPONSE_CLEANUP_ACTION_NAME = "indices:data/read/opendistro/asynchronous_search/response_cleanup";
 
-    public static final Setting<TimeValue> ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING =
-            Setting.timeSetting("plugins.asynchronous_search.active.context.reaper_interval",
-                    LegacyOpendistroAsynchronousSearchSettings.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
-                    TimeValue.timeValueSeconds(5), Setting.Property.NodeScope);
-    public static final Setting<TimeValue> PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING =
-            Setting.timeSetting("plugins.asynchronous_search.expired.persisted_response.cleanup_interval",
-                    LegacyOpendistroAsynchronousSearchSettings.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING, TimeValue.timeValueSeconds(5),
-                    Setting.Property.NodeScope);
+    public static final Setting<TimeValue> ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING = Setting.timeSetting(
+        "plugins.asynchronous_search.active.context.reaper_interval",
+        LegacyOpendistroAsynchronousSearchSettings.ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING,
+        TimeValue.timeValueSeconds(5),
+        Setting.Property.NodeScope
+    );
+    public static final Setting<TimeValue> PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING = Setting.timeSetting(
+        "plugins.asynchronous_search.expired.persisted_response.cleanup_interval",
+        LegacyOpendistroAsynchronousSearchSettings.PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING,
+        TimeValue.timeValueSeconds(5),
+        Setting.Property.NodeScope
+    );
 
     @Inject
-    public AsynchronousSearchManagementService(Settings settings, ClusterService clusterService, ThreadPool threadPool,
-                                        AsynchronousSearchService asynchronousSearchService, TransportService transportService,
-                                        AsynchronousSearchPersistenceService asynchronousSearchPersistenceService) {
+    public AsynchronousSearchManagementService(
+        Settings settings,
+        ClusterService clusterService,
+        ThreadPool threadPool,
+        AsynchronousSearchService asynchronousSearchService,
+        TransportService transportService,
+        AsynchronousSearchPersistenceService asynchronousSearchPersistenceService
+    ) {
         this.clusterService = clusterService;
         this.threadPool = threadPool;
         this.clusterService.addListener(this);
@@ -97,8 +108,14 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
         this.activeContextReaperInterval = ACTIVE_CONTEXT_REAPER_INTERVAL_SETTING.get(settings);
         this.persistedResponseCleanUpInterval = PERSISTED_RESPONSE_CLEAN_UP_INTERVAL_SETTING.get(settings);
 
-        transportService.registerRequestHandler(PERSISTED_RESPONSE_CLEANUP_ACTION_NAME, ThreadPool.Names.SAME, false, false,
-                AsynchronousSearchCleanUpRequest::new, new PersistedResponseCleanUpTransportHandler());
+        transportService.registerRequestHandler(
+            PERSISTED_RESPONSE_CLEANUP_ACTION_NAME,
+            ThreadPool.Names.SAME,
+            false,
+            false,
+            AsynchronousSearchCleanUpRequest::new,
+            new PersistedResponseCleanUpTransportHandler()
+        );
     }
 
     class PersistedResponseCleanUpTransportHandler implements TransportRequestHandler<AsynchronousSearchCleanUpRequest> {
@@ -109,20 +126,22 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
                 try {
                     channel.sendResponse(e);
                 } catch (IOException ex) {
-                    logger.warn(() -> new ParameterizedMessage(
-                            "Failed to send cleanup error response for request [{}]", request), ex);
+                    logger.warn(() -> new ParameterizedMessage("Failed to send cleanup error response for request [{}]", request), ex);
                 }
             }));
         }
     }
 
     private void asyncCleanUpOperation(AsynchronousSearchCleanUpRequest request, Task task, ActionListener<AcknowledgedResponse> listener) {
-        transportService.getThreadPool().executor(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME)
-                .execute(() -> performPersistedResponseCleanUpAction(request, listener));
+        transportService.getThreadPool()
+            .executor(AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME)
+            .execute(() -> performPersistedResponseCleanUpAction(request, listener));
     }
 
-    private void performPersistedResponseCleanUpAction(AsynchronousSearchCleanUpRequest request,
-                                                       ActionListener<AcknowledgedResponse> listener) {
+    private void performPersistedResponseCleanUpAction(
+        AsynchronousSearchCleanUpRequest request,
+        ActionListener<AcknowledgedResponse> listener
+    ) {
         asynchronousSearchPersistenceService.deleteExpiredResponses(listener, request.absoluteTimeInMillis);
     }
 
@@ -150,8 +169,11 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
 
     @Override
     protected void doStart() {
-        activeContextReaperScheduledFuture = threadPool.scheduleWithFixedDelay(new ActiveContextReaper(), activeContextReaperInterval,
-                AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME);
+        activeContextReaperScheduledFuture = threadPool.scheduleWithFixedDelay(
+            new ActiveContextReaper(),
+            activeContextReaperInterval,
+            AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME
+        );
     }
 
     @Override
@@ -174,14 +196,24 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
                 Set<AsynchronousSearchContext> toFree = asynchronousSearchService.getContextsToReap();
                 // don't block on response
                 toFree.forEach(
-                    context -> asynchronousSearchService.freeContext(context.getAsynchronousSearchId(), context.getContextId(),
-                        null, ActionListener.wrap(
-                            (response) -> logger.debug("Successfully freed up context [{}] running duration [{}]",
-                                context.getAsynchronousSearchId(), context.getExpirationTimeMillis() - context.getStartTimeMillis()),
-                            (exception) -> logger.debug(() -> new ParameterizedMessage(
-                                "Failed to cleanup asynchronous search context [{}] running duration [{}] due to ",
-                                context.getAsynchronousSearchId(),context.getExpirationTimeMillis()
-                                    - context.getStartTimeMillis()), exception)
+                    context -> asynchronousSearchService.freeContext(
+                        context.getAsynchronousSearchId(),
+                        context.getContextId(),
+                        null,
+                        ActionListener.wrap(
+                            (response) -> logger.debug(
+                                "Successfully freed up context [{}] running duration [{}]",
+                                context.getAsynchronousSearchId(),
+                                context.getExpirationTimeMillis() - context.getStartTimeMillis()
+                            ),
+                            (exception) -> logger.debug(
+                                () -> new ParameterizedMessage(
+                                    "Failed to cleanup asynchronous search context [{}] running duration [{}] due to ",
+                                    context.getAsynchronousSearchId(),
+                                    context.getExpirationTimeMillis() - context.getStartTimeMillis()
+                                ),
+                                exception
+                            )
                         )
                     )
                 );
@@ -194,49 +226,53 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
     public final void performCleanUp() {
         final ThreadContext threadContext = threadPool.getThreadContext();
         try (ThreadContext.StoredContext ignore = threadContext.stashContext()) {
-            // we have to execute under the system context so that if security is enabled the sync is authorized
-            threadContext.markAsSystemContext();
             final Map<String, DiscoveryNode> dataNodes = clusterService.state().nodes().getDataNodes();
-            List<DiscoveryNode> nodes = Stream.of(dataNodes.values().toArray(new DiscoveryNode[0]))
-                    .collect(Collectors.toList());
+            List<DiscoveryNode> nodes = Stream.of(dataNodes.values().toArray(new DiscoveryNode[0])).collect(Collectors.toList());
             if (nodes == null || nodes.isEmpty()) {
                 logger.debug("Found empty data nodes with asynchronous search enabled attribute [{}] for response clean up", dataNodes);
                 return;
             }
             int pos = Randomness.get().nextInt(nodes.size());
             DiscoveryNode randomNode = nodes.get(pos);
-            transportService.sendRequest(randomNode, PERSISTED_RESPONSE_CLEANUP_ACTION_NAME,
-                    new AsynchronousSearchCleanUpRequest(threadPool.absoluteTimeInMillis()),
-                    new TransportResponseHandler<AcknowledgedResponse>() {
+            transportService.sendRequest(
+                randomNode,
+                PERSISTED_RESPONSE_CLEANUP_ACTION_NAME,
+                new AsynchronousSearchCleanUpRequest(threadPool.absoluteTimeInMillis()),
+                new TransportResponseHandler<AcknowledgedResponse>() {
 
-                        @Override
-                        public AcknowledgedResponse read(StreamInput in) throws IOException {
-                            return new AcknowledgedResponse(in);
-                        }
+                    @Override
+                    public AcknowledgedResponse read(StreamInput in) throws IOException {
+                        return new AcknowledgedResponse(in);
+                    }
 
-                        @Override
-                        public void handleResponse(AcknowledgedResponse response) {
-                            logger.debug("Successfully executed clean up action on node [{}] with response [{}]", randomNode,
-                                    response.isAcknowledged());
-                        }
+                    @Override
+                    public void handleResponse(AcknowledgedResponse response) {
+                        logger.debug(
+                            "Successfully executed clean up action on node [{}] with response [{}]",
+                            randomNode,
+                            response.isAcknowledged()
+                        );
+                    }
 
-                        @Override
-                        public void handleException(TransportException e) {
-                            logger.error(() -> new ParameterizedMessage("Exception executing action [{}]",
-                                    PERSISTED_RESPONSE_CLEANUP_ACTION_NAME), e);
-                        }
+                    @Override
+                    public void handleException(TransportException e) {
+                        logger.error(
+                            () -> new ParameterizedMessage("Exception executing action [{}]", PERSISTED_RESPONSE_CLEANUP_ACTION_NAME),
+                            e
+                        );
+                    }
 
-                        @Override
-                        public String executor() {
-                            return AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME;
-                        }
-                    });
+                    @Override
+                    public String executor() {
+                        return AsynchronousSearchPlugin.OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME;
+                    }
+                }
+            );
 
         } catch (Exception ex) {
             logger.error("Failed to schedule asynchronous search cleanup", ex);
         }
     }
-
 
     private class ResponseCleanUpRunnable extends AbstractRunnable {
         private final String reason;
@@ -255,15 +291,13 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             logger.warn(new ParameterizedMessage("sync search clean up job failed [{}]", reason), e);
         }
 
-
         @Override
         public void onRejection(Exception e) {
-            final boolean shutDown = e instanceof OpenSearchRejectedExecutionException && ((OpenSearchRejectedExecutionException) e)
-                    .isExecutorShutdown();
+            final boolean shutDown = e instanceof OpenSearchRejectedExecutionException
+                && ((OpenSearchRejectedExecutionException) e).isExecutorShutdown();
             logger.log(shutDown ? Level.DEBUG : Level.WARN, "asynchronous search clean up job rejected [{}]", reason, e);
         }
     }
-
 
     private class PersistedResponseCleanUpAndRescheduleRunnable extends ResponseCleanUpRunnable {
         PersistedResponseCleanUpAndRescheduleRunnable() {
@@ -287,7 +321,6 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             }
         }
     }
-
 
     static class AsynchronousSearchCleanUpRequest extends ActionRequest {
 
@@ -320,7 +353,6 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
             return absoluteTimeInMillis;
         }
 
-
         @Override
         public int hashCode() {
             return Objects.hash(absoluteTimeInMillis);
@@ -328,10 +360,8 @@ public class AsynchronousSearchManagementService extends AbstractLifecycleCompon
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
             AsynchronousSearchCleanUpRequest asynchronousSearchCleanUpRequest = (AsynchronousSearchCleanUpRequest) o;
             return absoluteTimeInMillis == asynchronousSearchCleanUpRequest.absoluteTimeInMillis;
         }

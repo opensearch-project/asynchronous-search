@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.utils;
 
 import org.opensearch.common.xcontent.XContentType;
@@ -53,19 +56,20 @@ public class RestTestUtils {
         return buildHttpRequest(submitAsynchronousSearchRequest, false);
     }
 
-    public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest
-    , boolean shouldUseLegacyApi) throws IOException {
+    public static Request buildHttpRequest(SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest, boolean shouldUseLegacyApi)
+        throws IOException {
 
         SearchRequest searchRequest = submitAsynchronousSearchRequest.getSearchRequest();
-    Request request =
-        new Request(
+        Request request = new Request(
             HttpPost.METHOD_NAME,
             /*trim first backslash*/
             endpoint(
                 searchRequest.indices(),
-                    shouldUseLegacyApi
+                shouldUseLegacyApi
                     ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI.substring(1)
-                    : AsynchronousSearchPlugin.BASE_URI.substring(1)));
+                    : AsynchronousSearchPlugin.BASE_URI.substring(1)
+            )
+        );
 
         Params params = new Params();
         addSearchRequestParams(params, searchRequest);
@@ -83,41 +87,40 @@ public class RestTestUtils {
     }
 
     public static Request buildHttpRequest(GetAsynchronousSearchRequest getAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
-    Request request =
-        new Request(
+        Request request = new Request(
             HttpGet.METHOD_NAME,
-                shouldUseLegacyApi
-                ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
-                    + "/"
-                    + getAsynchronousSearchRequest.getId()
-                : AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId());
+            shouldUseLegacyApi
+                ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + getAsynchronousSearchRequest.getId()
+                : AsynchronousSearchPlugin.BASE_URI + "/" + getAsynchronousSearchRequest.getId()
+        );
         Params params = new Params();
         addGetAsynchronousSearchRequestParams(params, getAsynchronousSearchRequest);
         request.addParameters(params.asMap());
         return request;
     }
+
     public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest) {
         return buildHttpRequest(deleteAsynchronousSearchRequest, false);
     }
 
-  public static Request buildHttpRequest(
-      DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
-    return new Request(
-        HttpDelete.METHOD_NAME,
-        shouldUseLegacyApi
-            ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI
-                + "/"
-                + deleteAsynchronousSearchRequest.getId()
-            : AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId());
-  }
+    public static Request buildHttpRequest(DeleteAsynchronousSearchRequest deleteAsynchronousSearchRequest, boolean shouldUseLegacyApi) {
+        return new Request(
+            HttpDelete.METHOD_NAME,
+            shouldUseLegacyApi
+                ? AsynchronousSearchPlugin.LEGACY_OPENDISTRO_BASE_URI + "/" + deleteAsynchronousSearchRequest.getId()
+                : AsynchronousSearchPlugin.BASE_URI + "/" + deleteAsynchronousSearchRequest.getId()
+        );
+    }
 
     private static void addGetAsynchronousSearchRequestParams(Params params, GetAsynchronousSearchRequest getAsynchronousSearchRequest) {
         params.withKeepAlive(getAsynchronousSearchRequest.getKeepAlive());
         params.withWaitForCompletionTimeout(getAsynchronousSearchRequest.getWaitForCompletionTimeout());
     }
 
-    private static void addSubmitAsynchronousSearchRequestParams(Params params, SubmitAsynchronousSearchRequest
-            submitAsynchronousSearchRequest) {
+    private static void addSubmitAsynchronousSearchRequestParams(
+        Params params,
+        SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest
+    ) {
         params.withKeepAlive(submitAsynchronousSearchRequest.getKeepAlive());
         params.withWaitForCompletionTimeout(submitAsynchronousSearchRequest.getWaitForCompletionTimeout());
         params.withKeepOnCompletion(submitAsynchronousSearchRequest.getKeepOnCompletion());
@@ -147,8 +150,7 @@ public class RestTestUtils {
     }
 
     public static String endpoint(String[] indices, String endpoint) {
-        return new EndpointBuilder().addCommaSeparatedPathParts(indices)
-                .addPathPartAsIs(endpoint).build();
+        return new EndpointBuilder().addCommaSeparatedPathParts(indices).addPathPartAsIs(endpoint).build();
     }
 
     static class EndpointBuilder {
@@ -189,13 +191,13 @@ public class RestTestUtils {
 
         private static String encodePart(String pathPart) {
             try {
-                //encode each part (e.g. index, type and id) separately before merging them into the path
-                //we prepend "/" to the path part to make this path absolute, otherwise there can be issues with
-                //paths that start with `-` or contain `:`
-                //the authority must be an empty string and not null, else paths that being with slashes could have them
-                //misinterpreted as part of the authority.
+                // encode each part (e.g. index, type and id) separately before merging them into the path
+                // we prepend "/" to the path part to make this path absolute, otherwise there can be issues with
+                // paths that start with `-` or contain `:`
+                // the authority must be an empty string and not null, else paths that being with slashes could have them
+                // misinterpreted as part of the authority.
                 URI uri = new URI(null, "", "/" + pathPart, null, null);
-                //manually encode any slash that each part may contain
+                // manually encode any slash that each part may contain
                 return uri.getRawPath().substring(1).replaceAll("/", "%2F");
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("Path part [" + pathPart + "] couldn't be encoded", e);
@@ -206,8 +208,7 @@ public class RestTestUtils {
     static class Params {
         private final Map<String, String> parameters = new HashMap<>();
 
-        Params() {
-        }
+        Params() {}
 
         Params putParam(String name, String value) {
             if (Strings.hasLength(value)) {
@@ -504,9 +505,9 @@ public class RestTestUtils {
     }
 
     static HttpEntity createEntity(ToXContent toXContent, XContentType xContentType, ToXContent.Params toXContentParams)
-            throws IOException {
-        BytesRef source = org.opensearch.core.xcontent.XContentHelper.toXContent(
-                toXContent, xContentType, toXContentParams, false).toBytesRef();
+        throws IOException {
+        BytesRef source = org.opensearch.core.xcontent.XContentHelper.toXContent(toXContent, xContentType, toXContentParams, false)
+            .toBytesRef();
         return new NByteArrayEntity(source.bytes, source.offset, source.length, createContentType(xContentType));
     }
 

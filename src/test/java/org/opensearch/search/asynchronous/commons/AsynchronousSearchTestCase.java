@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.commons;
 
 import org.opensearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
@@ -19,29 +22,46 @@ import java.util.function.Function;
 public abstract class AsynchronousSearchTestCase extends OpenSearchTestCase {
 
     public static AsynchronousSearchProgressListener mockAsynchronousSearchProgressListener(ThreadPool threadPool) {
-        return new AsynchronousSearchProgressListener(threadPool.absoluteTimeInMillis(), r -> null, e -> null, threadPool.generic(),
-                threadPool::relativeTimeInMillis, () -> getReduceContextBuilder());
+        return new AsynchronousSearchProgressListener(
+            threadPool.absoluteTimeInMillis(),
+            r -> null,
+            e -> null,
+            threadPool.generic(),
+            threadPool::relativeTimeInMillis,
+            () -> getReduceContextBuilder()
+        );
     }
 
-    public static AsynchronousSearchProgressListener mockAsynchronousSearchProgressListener(ThreadPool threadPool,
-                                                                       Function<SearchResponse, AsynchronousSearchResponse> successFunction,
-                                                                       Function<Exception, AsynchronousSearchResponse> failureFunction) {
-        return new AsynchronousSearchProgressListener(threadPool.absoluteTimeInMillis(), successFunction, failureFunction,
-                threadPool.generic(),
-                threadPool::relativeTimeInMillis, () -> getReduceContextBuilder());
+    public static AsynchronousSearchProgressListener mockAsynchronousSearchProgressListener(
+        ThreadPool threadPool,
+        Function<SearchResponse, AsynchronousSearchResponse> successFunction,
+        Function<Exception, AsynchronousSearchResponse> failureFunction
+    ) {
+        return new AsynchronousSearchProgressListener(
+            threadPool.absoluteTimeInMillis(),
+            successFunction,
+            failureFunction,
+            threadPool.generic(),
+            threadPool::relativeTimeInMillis,
+            () -> getReduceContextBuilder()
+        );
     }
 
     private static InternalAggregation.ReduceContextBuilder getReduceContextBuilder() {
         return new InternalAggregation.ReduceContextBuilder() {
             @Override
             public InternalAggregation.ReduceContext forPartialReduction() {
-                return InternalAggregation.ReduceContext.forPartialReduction(BigArrays.NON_RECYCLING_INSTANCE, null,
-                        null);
+                return InternalAggregation.ReduceContext.forPartialReduction(BigArrays.NON_RECYCLING_INSTANCE, null, null);
             }
 
             public InternalAggregation.ReduceContext forFinalReduction() {
                 return InternalAggregation.ReduceContext.forFinalReduction(
-                        BigArrays.NON_RECYCLING_INSTANCE, null, b -> {}, PipelineAggregator.PipelineTree.EMPTY);
-            }};
+                    BigArrays.NON_RECYCLING_INSTANCE,
+                    null,
+                    b -> {},
+                    PipelineAggregator.PipelineTree.EMPTY
+                );
+            }
+        };
     }
 }

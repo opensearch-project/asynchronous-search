@@ -1,8 +1,11 @@
 /*
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
-
 package org.opensearch.search.asynchronous.utils;
 
 import org.opensearch.commons.authuser.User;
@@ -17,31 +20,27 @@ public class UserAuthUtils {
 
     @SuppressWarnings("unchecked")
     public static User parseUser(Map<String, Object> userDetails) throws IOException {
-        if(userDetails == null) {
+        if (userDetails == null) {
             return null;
         }
         String name = "";
         List<String> backendRoles = new ArrayList<>();
         List<String> roles = new ArrayList<>();
         List<String> customAttNames = new ArrayList<>();
-        for (Map.Entry<String,Object> userDetail : userDetails.entrySet())
-        {
+        for (Map.Entry<String, Object> userDetail : userDetails.entrySet()) {
             String fieldName = userDetail.getKey();
             switch (fieldName) {
                 case User.NAME_FIELD:
                     name = (String) userDetail.getValue();
                     break;
                 case User.BACKEND_ROLES_FIELD:
-                    if(userDetail.getValue()!= null)
-                        backendRoles = (List<String>) userDetail.getValue();
+                    if (userDetail.getValue() != null) backendRoles = (List<String>) userDetail.getValue();
                     break;
                 case User.ROLES_FIELD:
-                    if(userDetail.getValue()!= null)
-                        roles = (List<String>) userDetail.getValue();
+                    if (userDetail.getValue() != null) roles = (List<String>) userDetail.getValue();
                     break;
                 case User.CUSTOM_ATTRIBUTE_NAMES_FIELD:
-                    if(userDetail.getValue()!= null)
-                        customAttNames = (List<String>) userDetail.getValue();
+                    if (userDetail.getValue() != null) customAttNames = (List<String>) userDetail.getValue();
                     break;
                 default:
                     break;
@@ -51,10 +50,10 @@ public class UserAuthUtils {
     }
 
     public static boolean isUserValid(@Nullable User currentUser, @Nullable User originalUser) {
-        if(originalUser == null || currentUser == null) {
+        if (originalUser == null || currentUser == null) {
             return true;
         }
-        if(currentUser.getBackendRoles() == null) {
+        if (currentUser.getBackendRoles() == null) {
             return originalUser.getBackendRoles() == null;
         }
         return currentUser.getBackendRoles().containsAll(originalUser.getBackendRoles());
