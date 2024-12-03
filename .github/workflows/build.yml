@@ -74,7 +74,7 @@ jobs:
             ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
           fi
       - name: Upload failed logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: logs
@@ -89,9 +89,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
-          name: asynchronous-search-plugin-ubuntu
+          name: asynchronous-search-plugin-ubuntu-${{ matrix.java }}
           path: asynchronous-search-artifacts
   windows-build:
     # Job name
@@ -117,9 +117,9 @@ jobs:
           cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
-          name: asynchronous-search-plugin-windows
+          name: asynchronous-search-plugin-windows-${{ matrix.java }}
           path: asynchronous-search-artifacts
   mac-os-build:
     # Job name
@@ -145,7 +145,7 @@ jobs:
           cp ./build/distributions/*.zip asynchronous-search-artifacts
       # This step uses the upload-artifact Github action: https://github.com/actions/upload-artifact
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
-          name: asynchronous-search-plugin-mac
+          name: asynchronous-search-plugin-mac-${{ matrix.java }}
           path: asynchronous-search-artifacts
