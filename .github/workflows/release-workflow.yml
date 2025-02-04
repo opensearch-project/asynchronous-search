@@ -13,21 +13,19 @@ jobs:
   build:
     strategy:
       matrix:
-        java: [21]
+        java: [11,17,21]
     # Job name
     name: Build Asynchronous Search with JDK ${{ matrix.java }}
     # This job runs on Linux
     runs-on: ubuntu-latest
-
     steps:
       # This step uses the checkout Github action: https://github.com/actions/checkout
       - name: Checkout Branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
       # This step uses the setup-java Github action: https://github.com/actions/setup-java
       - name: Set Up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
-          distribution: temurin # Temurin is a distribution of adoptium
           java-version: ${{ matrix.java }}
 
       # Building zip, deb and rpm files
@@ -118,7 +116,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Workflow Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: asynchronous-search-plugin
           path: asynchronous-search-artifacts
