@@ -25,7 +25,7 @@ import org.opensearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.search.SearchPhaseExecutionException;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.index.reindex.ReindexModulePlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginsService;

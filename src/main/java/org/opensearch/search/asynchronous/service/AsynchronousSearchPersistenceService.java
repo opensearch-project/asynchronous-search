@@ -29,7 +29,7 @@ import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.update.UpdateRequest;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.core.common.io.stream.NotSerializableExceptionWrapper;

@@ -27,7 +27,7 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.support.WriteRequest;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.core.common.Strings;
 import org.opensearch.common.settings.Settings;

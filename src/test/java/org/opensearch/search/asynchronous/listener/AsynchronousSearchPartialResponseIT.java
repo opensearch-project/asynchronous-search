@@ -17,7 +17,7 @@ import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchShard;
 import org.opensearch.action.search.SearchTask;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.BucketOrder;
