@@ -15,7 +15,7 @@ import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.ShardSearchFailure;
-import org.opensearch.client.Requests;
+import org.opensearch.transport.client.Requests;
 import org.opensearch.common.Randomness;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.Writeable;
