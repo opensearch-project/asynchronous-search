@@ -17,7 +17,7 @@ import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchShard;
 import org.opensearch.action.search.SearchTask;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.BucketOrder;
@@ -84,7 +84,7 @@ public class AsynchronousSearchPartialResponseIT extends OpenSearchIntegTestCase
         String shardRouting = routingKeyForShard("idx", randomIntBetween(0, shardCount - 1));
         SearchResponse resp = client().prepareSearch("idx").setRouting(shardRouting).setQuery(matchAllQuery()).get();
         assertSearchResponse(resp);
-        long totalHits = resp.getHits().getTotalHits().value;
+        long totalHits = resp.getHits().getTotalHits().value();
         assertThat(totalHits, is(20L));
     }
 

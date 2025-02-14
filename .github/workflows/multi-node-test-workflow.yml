@@ -18,7 +18,7 @@ jobs:
   build:
     strategy:
       matrix:
-        java: [ 21 ]
+        java: [21, 23]
     needs: Get-CI-Image-Tag
     # Job name
     name: Build Asynchronous Search
@@ -56,5 +56,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: logs
+          name: multi-test-linux-${{ matrix.java }}
           path: build/testclusters/integTest-*/logs/*

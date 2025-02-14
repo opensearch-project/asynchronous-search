@@ -11,7 +11,7 @@ package org.opensearch.search.asynchronous.rest;
 import org.opensearch.search.asynchronous.action.SubmitAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.request.SubmitAsynchronousSearchRequest;
 import org.opensearch.action.search.SearchRequest;
-import org.opensearch.client.node.NodeClient;
+import org.opensearch.transport.client.node.NodeClient;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestCancellableNodeClient;

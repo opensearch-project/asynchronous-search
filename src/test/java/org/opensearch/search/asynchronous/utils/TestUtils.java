@@ -9,7 +9,7 @@
 package org.opensearch.search.asynchronous.utils;
 
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.client.Requests;
+import org.opensearch.transport.client.Requests;
 import org.opensearch.cluster.ClusterName;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.block.ClusterBlocks;

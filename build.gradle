@@ -11,8 +11,8 @@ buildscript {
         distribution = 'oss-zip'
         opensearch_group = "org.opensearch"
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
-        opensearch_version = System.getProperty("opensearch.version", "3.0.0-SNAPSHOT")
-        buildVersionQualifier = System.getProperty("build.version_qualifier", "")
+        opensearch_version = System.getProperty("opensearch.version", "3.0.0-alpha1-SNAPSHOT")
+        buildVersionQualifier = System.getProperty("build.version_qualifier", "alpha1")
         version_tokens = opensearch_version.tokenize('-')
         opensearch_build = version_tokens[0] + '.0'
         if (buildVersionQualifier) {
@@ -284,7 +284,7 @@ Boolean bwcBundleTest = (project.findProperty('customDistributionDownloadType') 
 When testing between major versions note that ONLY the latest minor release of the previous version is api compatible.
 */
 
-String bwcVersion = "2.19.0.0"
+String bwcVersion = "2.20.0.0"
 String bwcVersionShort = bwcVersion.replaceAll(/\.0+$/, "")
 String nxtVersionShort = opensearch_version.replaceAll("-SNAPSHOT", "")
 

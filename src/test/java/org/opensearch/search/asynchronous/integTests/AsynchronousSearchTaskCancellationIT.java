@@ -21,7 +21,7 @@ import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.core.common.Strings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;

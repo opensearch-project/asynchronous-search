@@ -32,7 +32,7 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.ShardSearchFailure;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.reindex.ReindexModulePlugin;

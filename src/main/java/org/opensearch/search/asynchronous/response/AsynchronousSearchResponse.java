@@ -18,7 +18,7 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.client.Requests;
+import org.opensearch.transport.client.Requests;
 import org.opensearch.common.Nullable;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.bytes.BytesReference;

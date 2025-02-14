@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.support.ActionFilters;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.threadpool.ThreadPool;

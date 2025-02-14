@@ -21,7 +21,7 @@ import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksResponse
 import org.opensearch.action.search.SearchAction;
 import org.opensearch.action.search.SearchTask;
 import org.opensearch.action.support.GroupedActionListener;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.cluster.ClusterChangedEvent;
 import org.opensearch.cluster.ClusterStateListener;
 import org.opensearch.cluster.service.ClusterService;

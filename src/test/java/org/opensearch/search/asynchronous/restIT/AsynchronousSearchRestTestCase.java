@@ -211,8 +211,8 @@ public abstract class AsynchronousSearchRestTestCase extends SecurityEnabledRest
 
     protected static void assertHitCount(SearchResponse countResponse, long expectedHitCount) {
         final TotalHits totalHits = countResponse.getHits().getTotalHits();
-        if (totalHits.relation != TotalHits.Relation.EQUAL_TO || totalHits.value != expectedHitCount) {
-            fail("Count is " + totalHits + " but " + expectedHitCount + " was expected. " + countResponse.toString());
+        if (totalHits.relation() != TotalHits.Relation.EQUAL_TO || totalHits.value() != expectedHitCount) {
+            fail("Count is " + totalHits + " but " + expectedHitCount + " was expected. " + countResponse);
         }
     }
 

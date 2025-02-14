@@ -24,7 +24,7 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.bulk.BackoffPolicy;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
-import org.opensearch.client.Client;
+import org.opensearch.transport.client.Client;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.test.rest.OpenSearchRestTestCase;

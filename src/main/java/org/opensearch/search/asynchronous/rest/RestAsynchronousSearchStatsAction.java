@@ -13,7 +13,7 @@ import org.opensearch.search.asynchronous.action.AsynchronousSearchStatsAction;
 import org.opensearch.search.asynchronous.request.AsynchronousSearchStatsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opensearch.client.node.NodeClient;
+import org.opensearch.transport.client.node.NodeClient;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestActions;
