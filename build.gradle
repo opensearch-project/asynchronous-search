@@ -148,7 +148,6 @@ dependencies {
     testImplementation "org.opensearch.plugin:lang-painless:${opensearch_version}"
     testImplementation "org.opensearch.test:framework:${opensearch_version}"
     compileOnly "org.opensearch.plugin:opensearch-scripting-painless-spi:${versions.opensearch}"
-    compileOnly "org.opensearch.plugin:transport-netty4-client:${opensearch_version}"
     compileOnly "org.opensearch:opensearch:${opensearch_version}"
     implementation "org.opensearch:common-utils:${common_utils_version}"
     configurations.all {
