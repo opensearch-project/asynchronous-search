@@ -40,4 +40,4 @@ See [CONTRIBUTING](CONTRIBUTING.md).
 
 ### Backport
 
-- [Link to backport documentation](https://github.com/opensearch-project/opensearch-plugins/blob/main/BACKPORT.md)
+- [Link to backport documentation](https://github.com/opensearch-project/opensearch-plugins/blob/main/WORKFLOWS.md#managing-backports)
