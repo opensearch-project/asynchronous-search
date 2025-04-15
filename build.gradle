@@ -62,6 +62,7 @@ apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.rest-test'
 apply plugin: 'opensearch.pluginzip'
 apply from: 'gradle/formatting.gradle'
+apply plugin: 'opensearch.java-agent'
 
 
 checkstyle {
