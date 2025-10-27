@@ -33,7 +33,7 @@ buildscript {
 
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
-        classpath "org.jacoco:org.jacoco.agent:0.8.12"
+        classpath "org.jacoco:org.jacoco.agent:0.8.14"
     }
 }
 
