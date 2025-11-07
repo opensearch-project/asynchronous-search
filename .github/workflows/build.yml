@@ -17,7 +17,7 @@ jobs:
   linux-build:
     strategy:
       matrix:
-        java: [21, 24]
+        java: [21, 25]
     needs: Get-CI-Image-Tag
     # Job name
     name: Linux - Build Asynchronous Search
@@ -144,7 +144,7 @@ jobs:
   windows-build:
     strategy:
       matrix:
-        java: [21, 24]
+        java: [21, 25]
     # Job name
     name: Windows - Build Asynchronous Search
     # This job runs on Windows.
@@ -178,7 +178,7 @@ jobs:
   mac-os-build:
     strategy:
       matrix:
-        java: [21, 24]
+        java: [21, 25]
     # Job name
     name: MacOS - Build Asynchronous Search
     # This job runs on Mac OS.
