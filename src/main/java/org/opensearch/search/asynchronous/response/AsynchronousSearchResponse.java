@@ -16,6 +16,7 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.opensearch.OpenSearchException;
 import org.opensearch.ExceptionsHelper;
+import org.opensearch.Version;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.transport.client.Requests;
@@ -42,6 +43,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     private static final ParseField STATE = new ParseField("state");
     private static final ParseField START_TIME_IN_MILLIS = new ParseField("start_time_in_millis");
     private static final ParseField EXPIRATION_TIME_IN_MILLIS = new ParseField("expiration_time_in_millis");
+    private static final ParseField PROGRESS = new ParseField("progress");
     private static final ParseField RESPONSE = new ParseField("response");
     private static final ParseField ERROR = new ParseField("error");
     @Nullable
@@ -50,6 +52,8 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
     private final AsynchronousSearchState state;
     private final long startTimeMillis;
     private final long expirationTimeMillis;
+    @Nullable
+    private final AsynchronousSearchProgress progress;
     @Nullable
     private SearchResponse searchResponse;
     @Nullable
@@ -63,12 +67,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         SearchResponse searchResponse,
         Exception error
     ) {
-        this.id = id;
-        this.state = state;
-        this.startTimeMillis = startTimeMillis;
-        this.expirationTimeMillis = expirationTimeMillis;
-        this.searchResponse = searchResponse;
-        this.error = error == null ? null : ExceptionsHelper.convertToOpenSearchException(error);
+        this(id, state, startTimeMillis, expirationTimeMillis, searchResponse, error, null);
     }
 
     public AsynchronousSearchResponse(
@@ -79,12 +78,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         SearchResponse searchResponse,
         OpenSearchException error
     ) {
-        this.id = id;
-        this.state = state;
-        this.startTimeMillis = startTimeMillis;
-        this.expirationTimeMillis = expirationTimeMillis;
-        this.searchResponse = searchResponse;
-        this.error = error;
+        this(id, state, startTimeMillis, expirationTimeMillis, searchResponse, error, null);
     }
 
     public AsynchronousSearchResponse(
@@ -94,12 +88,45 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         SearchResponse searchResponse,
         OpenSearchException error
     ) {
+        this(null, state, startTimeMillis, expirationTimeMillis, searchResponse, error, null);
+    }
+
+    public AsynchronousSearchResponse(
+        String id,
+        AsynchronousSearchState state,
+        long startTimeMillis,
+        long expirationTimeMillis,
+        SearchResponse searchResponse,
+        Exception error,
+        AsynchronousSearchProgress progress
+    ) {
+        this(
+            id,
+            state,
+            startTimeMillis,
+            expirationTimeMillis,
+            searchResponse,
+            error == null ? null : ExceptionsHelper.convertToOpenSearchException(error),
+            progress
+        );
+    }
+
+    public AsynchronousSearchResponse(
+        String id,
+        AsynchronousSearchState state,
+        long startTimeMillis,
+        long expirationTimeMillis,
+        SearchResponse searchResponse,
+        OpenSearchException error,
+        AsynchronousSearchProgress progress
+    ) {
+        this.id = id;
         this.state = state;
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.searchResponse = searchResponse;
         this.error = error;
-        this.id = null;
+        this.progress = progress;
     }
 
     public AsynchronousSearchResponse(StreamInput in) throws IOException {
@@ -109,6 +136,11 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         this.expirationTimeMillis = in.readLong();
         this.searchResponse = in.readOptionalWriteable(SearchResponse::new);
         this.error = in.readBoolean() ? in.readException() : null;
+        if (in.getVersion().onOrAfter(Version.V_3_2_0)) {
+            this.progress = in.readOptionalWriteable(AsynchronousSearchProgress::new);
+        } else {
+            this.progress = null;
+        }
     }
 
     @Override
@@ -124,6 +156,9 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         } else {
             out.writeBoolean(false);
         }
+        if (out.getVersion().onOrAfter(Version.V_3_2_0)) {
+            out.writeOptionalWriteable(progress);
+        }
     }
 
     @Override
@@ -135,6 +170,11 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         builder.field(STATE.getPreferredName(), state);
         builder.field(START_TIME_IN_MILLIS.getPreferredName(), startTimeMillis);
         builder.field(EXPIRATION_TIME_IN_MILLIS.getPreferredName(), expirationTimeMillis);
+        if (progress != null) {
+            builder.startObject(PROGRESS.getPreferredName());
+            progress.toXContent(builder, params);
+            builder.endObject();
+        }
         if (searchResponse != null) {
             builder.startObject(RESPONSE.getPreferredName());
             searchResponse.innerToXContent(builder, params);
@@ -159,6 +199,10 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
 
     public SearchResponse getSearchResponse() {
         return searchResponse;
+    }
+
+    public AsynchronousSearchProgress getProgress() {
+        return progress;
     }
 
     public OpenSearchException getError() {
@@ -195,7 +239,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
      */
     @Override
     public int hashCode() {
-        return Objects.hash(id, state, startTimeMillis, expirationTimeMillis);
+        return Objects.hash(id, state, startTimeMillis, expirationTimeMillis, progress);
     }
 
     @Override
@@ -213,7 +257,8 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
                 && startTimeMillis == other.startTimeMillis
                 && expirationTimeMillis == other.expirationTimeMillis
                 && Objects.equals(getErrorAsMap(error), getErrorAsMap(other.error))
-                && Objects.equals(getResponseAsMap(searchResponse), getResponseAsMap(other.searchResponse));
+                && Objects.equals(getResponseAsMap(searchResponse), getResponseAsMap(other.searchResponse))
+                && Objects.equals(progress, other.progress);
         } catch (IOException e) {
             return false;
         }
@@ -264,6 +309,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
         long expirationTimeMillis = -1;
         SearchResponse searchResponse = null;
         OpenSearchException error = null;
+        AsynchronousSearchProgress progress = null;
         String currentFieldName = null;
         for (XContentParser.Token token = parser.nextToken(); token != XContentParser.Token.END_OBJECT; token = parser.nextToken()) {
             currentFieldName = parser.currentName();
@@ -271,6 +317,10 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
                 if (token == XContentParser.Token.START_OBJECT) {
                     ensureExpectedToken(XContentParser.Token.FIELD_NAME, parser.nextToken(), parser);
                     searchResponse = SearchResponse.innerFromXContent(parser);
+                }
+            } else if (PROGRESS.match(currentFieldName, parser.getDeprecationHandler())) {
+                if (token == XContentParser.Token.START_OBJECT) {
+                    progress = AsynchronousSearchProgress.fromXContent(parser);
                 }
             } else if (ERROR.match(currentFieldName, parser.getDeprecationHandler())) {
                 parser.nextToken();
@@ -290,7 +340,7 @@ public class AsynchronousSearchResponse extends ActionResponse implements Status
                 }
             }
         }
-        return new AsynchronousSearchResponse(id, status, startTimeMillis, expirationTimeMillis, searchResponse, error);
+        return new AsynchronousSearchResponse(id, status, startTimeMillis, expirationTimeMillis, searchResponse, error, progress);
     }
 
     // visible for testing

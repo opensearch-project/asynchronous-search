@@ -32,6 +32,7 @@ public class BeginPersistEvent extends AsynchronousSearchContextEvent {
                 asynchronousSearchContext.getExpirationTimeMillis(),
                 asynchronousSearchContext.getSearchResponse(),
                 asynchronousSearchContext.getSearchError(),
+                asynchronousSearchContext.getProgress(),
                 asynchronousSearchContext.getUser()
             );
         } catch (IOException e) {

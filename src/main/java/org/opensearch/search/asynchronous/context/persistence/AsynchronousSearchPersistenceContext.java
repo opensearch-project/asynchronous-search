@@ -19,6 +19,7 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -139,6 +140,35 @@ public class AsynchronousSearchPersistenceContext extends AsynchronousSearchCont
     @Override
     public User getUser() {
         return asynchronousSearchPersistenceModel.getUser();
+    }
+
+    @Override
+    public AsynchronousSearchProgress getProgress() {
+        if (asynchronousSearchPersistenceModel.getProgress() == null) {
+            return null;
+        }
+        BytesReference bytesReference = BytesReference.fromByteBuffer(
+            ByteBuffer.wrap(Base64.getUrlDecoder().decode(asynchronousSearchPersistenceModel.getProgress()))
+        );
+        try (
+            NamedWriteableAwareStreamInput wrapperStreamInput = new NamedWriteableAwareStreamInput(
+                bytesReference.streamInput(),
+                namedWriteableRegistry
+            )
+        ) {
+            wrapperStreamInput.setVersion(wrapperStreamInput.readVersion());
+            return new AsynchronousSearchProgress(wrapperStreamInput);
+        } catch (IOException e) {
+            logger.error(
+                () -> new ParameterizedMessage(
+                    "Failed to parse search progress for asynchronous search [{}] Progress : [{}] ",
+                    asynchronousSearchId,
+                    asynchronousSearchPersistenceModel.getProgress()
+                ),
+                e
+            );
+            return null;
+        }
     }
 
     @Override

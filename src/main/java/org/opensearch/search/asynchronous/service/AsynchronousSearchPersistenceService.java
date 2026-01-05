@@ -66,6 +66,7 @@ public class AsynchronousSearchPersistenceService {
     public static final String START_TIME_MILLIS = "start_time_millis";
     public static final String RESPONSE = "response";
     public static final String ERROR = "error";
+    public static final String PROGRESS = "progress";
     public static final String USER = "user";
 
     private static final Logger logger = LogManager.getLogger(AsynchronousSearchPersistenceService.class);
@@ -127,6 +128,7 @@ public class AsynchronousSearchPersistenceService {
                     (long) source.get(EXPIRATION_TIME_MILLIS),
                     source.containsKey(RESPONSE) ? (String) source.get(RESPONSE) : null,
                     source.containsKey(ERROR) ? (String) source.get(ERROR) : null,
+                    source.containsKey(PROGRESS) ? (String) source.get(PROGRESS) : null,
                     parseUser((Map<String, Object>) source.get(USER))
                 );
                 if (isUserValid(user, asynchronousSearchPersistenceModel.getUser())) {
@@ -274,6 +276,7 @@ public class AsynchronousSearchPersistenceService {
                                 (long) updatedSource.get(EXPIRATION_TIME_MILLIS),
                                 (String) updatedSource.get(RESPONSE),
                                 (String) updatedSource.get(ERROR),
+                                (String) updatedSource.get(PROGRESS),
                                 parseUser((Map<String, Object>) updatedSource.get(USER))
                             )
                         );
@@ -287,6 +290,7 @@ public class AsynchronousSearchPersistenceService {
                             (long) updatedSource.get(EXPIRATION_TIME_MILLIS),
                             (String) updatedSource.get(RESPONSE),
                             (String) updatedSource.get(ERROR),
+                            (String) updatedSource.get(PROGRESS),
                             parseUser((Map<String, Object>) updatedSource.get(USER))
                         )
                     );
@@ -384,6 +388,7 @@ public class AsynchronousSearchPersistenceService {
         Map<String, Object> source = new HashMap<>();
         source.put(RESPONSE, model.getResponse());
         source.put(ERROR, model.getError());
+        source.put(PROGRESS, model.getProgress());
         source.put(EXPIRATION_TIME_MILLIS, model.getExpirationTimeMillis());
         source.put(START_TIME_MILLIS, model.getStartTimeMillis());
         source.put(USER, model.getUser());
@@ -459,6 +464,9 @@ public class AsynchronousSearchPersistenceService {
                 .field("type", "binary")
                 .endObject()
                 .startObject(ERROR)
+                .field("type", "binary")
+                .endObject()
+                .startObject(PROGRESS)
                 .field("type", "binary")
                 .endObject()
                 .endObject()

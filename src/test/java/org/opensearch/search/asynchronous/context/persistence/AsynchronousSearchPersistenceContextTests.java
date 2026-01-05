@@ -12,6 +12,7 @@ import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.context.AsynchronousSearchContextId;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchIdConverter;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.TestClientUtils;
 import org.apache.lucene.search.TotalHits;
@@ -32,7 +33,9 @@ import org.opensearch.search.suggest.Suggest;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCase {
@@ -54,7 +57,7 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
         AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(
             id,
             asContextId,
-            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
+            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, null, user),
             System::currentTimeMillis,
             new NamedWriteableRegistry(searchModule.getNamedWriteables())
         );
@@ -63,7 +66,7 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
             new AsynchronousSearchPersistenceContext(
                 id,
                 asContextId,
-                new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, user),
+                new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, null, user),
                 System::currentTimeMillis,
                 new NamedWriteableRegistry(Collections.emptyList())
             )
@@ -79,6 +82,28 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
                 null
             )
         );
+    }
+
+    public void testSerializationRoundTripWithProgress() throws IOException {
+        AsynchronousSearchContextId asContextId = new AsynchronousSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong());
+        String id = AsynchronousSearchIdConverter.buildAsyncId(
+            new AsynchronousSearchId(UUID.randomUUID().toString(), randomNonNegativeLong(), asContextId)
+        );
+        long expirationTimeMillis = randomNonNegativeLong();
+        long startTimeMillis = randomNonNegativeLong();
+        SearchResponse searchResponse = getMockSearchResponse();
+        AsynchronousSearchProgress progress = createProgress();
+        User user = TestClientUtils.randomUserOrNull();
+        SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
+        AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(
+            id,
+            asContextId,
+            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, searchResponse, null, progress, user),
+            System::currentTimeMillis,
+            new NamedWriteableRegistry(searchModule.getNamedWriteables())
+        );
+        assertEquals(progress, asPersistenceContext.getProgress());
+        assertEquals(progress, asPersistenceContext.getAsynchronousSearchResponse().getProgress());
     }
 
     /**
@@ -106,7 +131,7 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
         AsynchronousSearchPersistenceContext asPersistenceContext = new AsynchronousSearchPersistenceContext(
             id,
             asContextId,
-            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, user),
+            new AsynchronousSearchPersistenceModel(startTimeMillis, expirationTimeMillis, null, exception, null, user),
             System::currentTimeMillis,
             new NamedWriteableRegistry(searchModule.getNamedWriteables())
         );
@@ -138,5 +163,13 @@ public class AsynchronousSearchPersistenceContextTests extends OpenSearchTestCas
             ShardSearchFailure.EMPTY_ARRAY,
             SearchResponse.Clusters.EMPTY
         );
+    }
+
+    private AsynchronousSearchProgress createProgress() {
+        List<AsynchronousSearchProgress.ShardProgress> shards = new ArrayList<>();
+        long maxDoc = randomLongBetween(0, 1000);
+        long maxDocIdProcessed = randomLongBetween(0, maxDoc);
+        shards.add(new AsynchronousSearchProgress.ShardProgress(null, "index-0", 0, maxDocIdProcessed, maxDoc));
+        return new AsynchronousSearchProgress(shards);
     }
 }

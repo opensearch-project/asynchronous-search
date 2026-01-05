@@ -12,6 +12,7 @@ import org.opensearch.commons.authuser.User;
 import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
 import org.opensearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.common.Nullable;
@@ -65,18 +66,27 @@ public abstract class AsynchronousSearchContext {
 
     public abstract @Nullable User getUser();
 
+    public @Nullable AsynchronousSearchProgress getProgress() {
+        return null;
+    }
+
     public boolean isExpired() {
         return getExpirationTimeMillis() < currentTimeSupplier.getAsLong();
     }
 
     public AsynchronousSearchResponse getAsynchronousSearchResponse() {
+        AsynchronousSearchProgress progress = getProgress();
+        if (progress == null && asynchronousSearchProgressListener != null) {
+            progress = asynchronousSearchProgressListener.progress();
+        }
         return new AsynchronousSearchResponse(
             getAsynchronousSearchId(),
             getAsynchronousSearchState(),
             getStartTimeMillis(),
             getExpirationTimeMillis(),
             getSearchResponse(),
-            getSearchError()
+            getSearchError(),
+            progress
         );
     }
 

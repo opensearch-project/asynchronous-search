@@ -118,6 +118,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
                                 asResponse.getExpirationTimeMillis(),
                                 asResponse.getSearchResponse(),
                                 null,
+                                null,
                                 user
                             ),
                             r
@@ -190,6 +191,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
                 System.currentTimeMillis() + new TimeValue(10, TimeUnit.DAYS).getMillis(),
                 searchResponse,
                 null,
+                null,
                 originalUser
             );
             CountDownLatch createLatch = new CountDownLatch(1);
@@ -246,6 +248,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
             System.currentTimeMillis() + new TimeValue(10, TimeUnit.DAYS).getMillis(),
             searchResponse,
             null,
+            null,
             null
         );
         String id1 = AsynchronousSearchIdConverter.buildAsyncId(asId1);
@@ -254,6 +257,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
             System.currentTimeMillis(),
             System.currentTimeMillis() + new TimeValue(10, TimeUnit.DAYS).getMillis(),
             searchResponse,
+            null,
             null,
             null
         );
@@ -321,6 +325,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
                     asResponse.getStartTimeMillis(),
                     newExpirationTime,
                     asResponse.getSearchResponse(),
+                    null,
                     null,
                     originalUser
                 );
@@ -430,6 +435,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
             asResponse.getStartTimeMillis(),
             newExpirationTime,
             asResponse.getSearchResponse(),
+            null,
             null,
             null
         );
@@ -631,6 +637,7 @@ public class AsynchronousSearchPersistenceServiceIT extends AsynchronousSearchSi
                 asResponse.getStartTimeMillis(),
                 asResponse.getExpirationTimeMillis(),
                 asResponse.getSearchResponse(),
+                null,
                 null,
                 user
             ),
