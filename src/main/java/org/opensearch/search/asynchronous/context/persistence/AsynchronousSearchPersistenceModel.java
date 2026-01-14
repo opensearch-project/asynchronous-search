@@ -14,6 +14,7 @@ import org.opensearch.Version;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -27,13 +28,22 @@ public class AsynchronousSearchPersistenceModel {
     private final long startTimeMillis;
     private final String response;
     private final String error;
+    private final String progress;
     private final User user;
 
-    public AsynchronousSearchPersistenceModel(long startTimeMillis, long expirationTimeMillis, String response, String error, User user) {
+    public AsynchronousSearchPersistenceModel(
+        long startTimeMillis,
+        long expirationTimeMillis,
+        String response,
+        String error,
+        String progress,
+        User user
+    ) {
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.response = response;
         this.error = error;
+        this.progress = progress;
         this.user = user;
     }
 
@@ -42,12 +52,14 @@ public class AsynchronousSearchPersistenceModel {
         long expirationTimeMillis,
         SearchResponse response,
         Exception error,
+        AsynchronousSearchProgress progress,
         User user
     ) throws IOException {
         this.startTimeMillis = startTimeMillis;
         this.expirationTimeMillis = expirationTimeMillis;
         this.response = serializeResponse(response);
         this.error = serializeError(error);
+        this.progress = serializeProgress(progress);
         this.user = user;
     }
 
@@ -58,6 +70,18 @@ public class AsynchronousSearchPersistenceModel {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             out.writeVersion(Version.CURRENT);
             response.writeTo(out);
+            byte[] bytes = BytesReference.toBytes(out.bytes());
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        }
+    }
+
+    private String serializeProgress(AsynchronousSearchProgress progress) throws IOException {
+        if (progress == null) {
+            return null;
+        }
+        try (BytesStreamOutput out = new BytesStreamOutput()) {
+            out.writeVersion(Version.CURRENT);
+            progress.writeTo(out);
             byte[] bytes = BytesReference.toBytes(out.bytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         }
@@ -100,6 +124,10 @@ public class AsynchronousSearchPersistenceModel {
         return error;
     }
 
+    public String getProgress() {
+        return progress;
+    }
+
     public long getExpirationTimeMillis() {
         return expirationTimeMillis;
     }
@@ -122,6 +150,8 @@ public class AsynchronousSearchPersistenceModel {
             && ((response == null && other.response == null)
                 || (response != null && other.response != null && response.equals(other.response)))
             && ((error == null && other.error == null) || (error != null && other.error != null && error.equals(other.error)))
+            && ((progress == null && other.progress == null)
+                || (progress != null && other.progress != null && progress.equals(other.progress)))
             && ((user == null && other.user == null) || (user != null && other.user != null && user.equals(other.user)));
 
     }

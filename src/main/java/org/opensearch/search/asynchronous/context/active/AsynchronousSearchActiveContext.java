@@ -16,6 +16,7 @@ import org.opensearch.search.asynchronous.context.permits.NoopAsynchronousSearch
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchIdConverter;
 import org.opensearch.search.asynchronous.listener.AsynchronousSearchProgressListener;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
 import org.opensearch.common.SetOnce;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.search.SearchProgressActionListener;
@@ -30,6 +31,7 @@ import org.opensearch.threadpool.ThreadPool;
 import java.io.Closeable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
@@ -56,6 +58,7 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
     private final Supplier<Boolean> persistSearchFailureSupplier;
     private final AsynchronousSearchContextPermits asynchronousSearchContextPermits;
     private final Supplier<SearchResponse> partialResponseSupplier;
+    private final AtomicReference<AsynchronousSearchProgress> progress;
     @Nullable
     private final User user;
 
@@ -87,6 +90,7 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
             : new NoopAsynchronousSearchContextPermits(asynchronousSearchContextId);
         this.user = user;
         this.persistSearchFailureSupplier = persistSearchFailureSupplier;
+        this.progress = new AtomicReference<>();
     }
 
     public void setTask(SearchTask searchTask) {
@@ -110,6 +114,7 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
                 e.getCause().setStackTrace(new StackTraceElement[0]);
             }
             this.error.set(e);
+            progress.compareAndSet(null, asynchronousSearchProgressListener.progress());
         } finally {
             boolean result = completed.compareAndSet(false, true);
             assert result : "Process search failure already complete";
@@ -127,6 +132,7 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
                 }
             }
             this.searchResponse.set(response);
+            progress.compareAndSet(null, asynchronousSearchProgressListener.progress());
         } finally {
             boolean result = completed.compareAndSet(false, true);
             assert result : "Process search response already complete";
@@ -136,6 +142,11 @@ public class AsynchronousSearchActiveContext extends AsynchronousSearchContext i
     @Override
     public SearchResponse getSearchResponse() {
         return completed.get() ? searchResponse.get() : partialResponseSupplier.get();
+    }
+
+    @Override
+    public AsynchronousSearchProgress getProgress() {
+        return progress.get();
     }
 
     @Override

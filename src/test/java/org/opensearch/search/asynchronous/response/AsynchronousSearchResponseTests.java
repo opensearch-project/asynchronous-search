@@ -30,7 +30,9 @@ import org.opensearch.search.suggest.Suggest;
 import org.opensearch.test.AbstractSerializingTestCase;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase<AsynchronousSearchResponse> {
@@ -53,7 +55,8 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
             randomNonNegativeLong(),
             randomNonNegativeLong(),
             getMockSearchResponse(),
-            null
+            null,
+            createProgress()
         );
 
     }
@@ -66,7 +69,8 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
             randomBoolean() ? instance.getStartTimeMillis() : randomNonNegativeLong(),
             randomBoolean() ? instance.getExpirationTimeMillis() : randomNonNegativeLong(),
             getMockSearchResponse(),
-            instance.getError()
+            instance.getError(),
+            randomBoolean() ? instance.getProgress() : createProgress()
         );
     }
 
@@ -95,6 +99,14 @@ public class AsynchronousSearchResponseTests extends AbstractSerializingTestCase
             ShardSearchFailure.EMPTY_ARRAY,
             SearchResponse.Clusters.EMPTY
         );
+    }
+
+    private AsynchronousSearchProgress createProgress() {
+        List<AsynchronousSearchProgress.ShardProgress> shards = new ArrayList<>();
+        long maxDoc = randomLongBetween(0, 1000);
+        long maxDocIdProcessed = randomLongBetween(0, maxDoc);
+        shards.add(new AsynchronousSearchProgress.ShardProgress(null, "index-0", 0, maxDocIdProcessed, maxDoc));
+        return new AsynchronousSearchProgress(shards);
     }
 
     /*

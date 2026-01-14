@@ -16,6 +16,7 @@ import org.opensearch.search.asynchronous.context.state.AsynchronousSearchState;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchId;
 import org.opensearch.search.asynchronous.id.AsynchronousSearchIdConverter;
 import org.opensearch.search.asynchronous.response.AcknowledgedResponse;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
 import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.asynchronous.utils.TestClientUtils;
 import org.opensearch.core.action.ActionListener;
@@ -88,6 +89,10 @@ public class AsynchronousSearchRequestRoutingIT extends AsynchronousSearchIntegT
                     GetAsynchronousSearchAction.INSTANCE,
                     new GetAsynchronousSearchRequest(submitResponse.getId())
                 ).get();
+                AsynchronousSearchProgress expectedProgress = submitResponse.getProgress();
+                if (expectedProgress == null) {
+                    expectedProgress = getResponse.getProgress();
+                }
                 assertEquals(
                     getResponse,
                     new AsynchronousSearchResponse(
@@ -96,7 +101,8 @@ public class AsynchronousSearchRequestRoutingIT extends AsynchronousSearchIntegT
                         submitResponse.getStartTimeMillis(),
                         submitResponse.getExpirationTimeMillis(),
                         submitResponse.getSearchResponse(),
-                        submitResponse.getError()
+                        submitResponse.getError(),
+                        expectedProgress
                     )
                 );
             } catch (InterruptedException | ExecutionException e) {

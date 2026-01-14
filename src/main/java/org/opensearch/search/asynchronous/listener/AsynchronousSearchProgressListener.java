@@ -8,19 +8,22 @@
  */
 package org.opensearch.search.asynchronous.listener;
 
-import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.common.SetOnce;
 import org.opensearch.action.search.SearchProgressActionListener;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchShard;
 import org.opensearch.action.search.ShardSearchFailure;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchProgress;
+import org.opensearch.search.asynchronous.response.AsynchronousSearchResponse;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +79,8 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
         boolean fetchPhase
     ) {
         partialResultsHolder.hasFetchPhase.set(fetchPhase);
+        partialResultsHolder.queryShards.set(Collections.unmodifiableList(shards));
+        partialResultsHolder.initShardProgress(shards.size());
         partialResultsHolder.totalShards.set(shards.size() + skippedShards.size());
         partialResultsHolder.skippedShards.set(skippedShards.size());
         partialResultsHolder.successfulShards.set(skippedShards.size());
@@ -131,11 +136,23 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
         onShardResult(shardIndex);
     }
 
+    // Not annotated with @Override to remain compatible with older SearchProgressActionListener versions.
+    protected void onQueryResult(int shardIndex, long maxDocIdProcessed, long maxDoc) {
+        assert shardIndex < partialResultsHolder.totalShards.get();
+        onShardProgress(shardIndex, maxDocIdProcessed, maxDoc);
+        onShardResult(shardIndex);
+    }
+
     private synchronized void onShardResult(int shardIndex) {
         if (partialResultsHolder.successfulShardIds.contains(shardIndex) == false) {
             partialResultsHolder.successfulShardIds.add(shardIndex);
             partialResultsHolder.successfulShards.incrementAndGet();
         }
+    }
+
+    private synchronized void onShardProgress(int shardIndex, long maxDocIdProcessed, long maxDoc) {
+        partialResultsHolder.maxDocIdProcessedByShard[shardIndex] = maxDocIdProcessed;
+        partialResultsHolder.maxDocByShard[shardIndex] = maxDoc;
     }
 
     private synchronized void onSearchFailure(int shardIndex, SearchShardTarget shardTarget, Exception e) {
@@ -152,6 +169,10 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
 
     public CompositeSearchProgressActionListener<AsynchronousSearchResponse> searchProgressActionListener() {
         return searchProgressActionListener;
+    }
+
+    public AsynchronousSearchProgress progress() {
+        return partialResultsHolder == null ? null : partialResultsHolder.progress();
     }
 
     @Override
@@ -198,12 +219,15 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
         final SetOnce<Integer> totalShards;
         final SetOnce<Integer> skippedShards;
         final SetOnce<SearchResponse.Clusters> clusters;
+        final SetOnce<List<SearchShard>> queryShards;
         final Set<Integer> successfulShardIds;
         final SetOnce<Boolean> hasFetchPhase;
         final AtomicInteger successfulShards;
         final AtomicReference<TotalHits> totalHits;
         final AtomicReference<InternalAggregations> internalAggregations;
         final AtomicReference<InternalAggregations> partialInternalAggregations;
+        volatile long[] maxDocIdProcessedByShard;
+        volatile long[] maxDocByShard;
         final long relativeStartMillis;
         final LongSupplier relativeTimeSupplier;
         final Supplier<InternalAggregation.ReduceContextBuilder> reduceContextBuilder;
@@ -222,11 +246,39 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
             this.hasFetchPhase = new SetOnce<>();
             this.totalHits = new AtomicReference<>();
             this.clusters = new SetOnce<>();
+            this.queryShards = new SetOnce<>();
             this.partialInternalAggregations = new AtomicReference<>();
             this.relativeStartMillis = relativeStartMillis;
             this.successfulShardIds = new HashSet<>(1);
             this.relativeTimeSupplier = relativeTimeSupplier;
             this.reduceContextBuilder = reduceContextBuilder;
+        }
+
+        void initShardProgress(int shardCount) {
+            maxDocIdProcessedByShard = new long[shardCount];
+            maxDocByShard = new long[shardCount];
+            Arrays.fill(maxDocIdProcessedByShard, -1L);
+            Arrays.fill(maxDocByShard, -1L);
+        }
+
+        AsynchronousSearchProgress progress() {
+            if (isInitialized == false || queryShards.get() == null) {
+                return null;
+            }
+            List<AsynchronousSearchProgress.ShardProgress> shardProgress = new ArrayList<>();
+            List<SearchShard> shards = queryShards.get();
+            for (int i = 0; i < shards.size(); i++) {
+                if (maxDocByShard[i] >= 0) {
+                    shardProgress.add(
+                        AsynchronousSearchProgress.ShardProgress.fromSearchShard(
+                            shards.get(i),
+                            maxDocIdProcessedByShard[i],
+                            maxDocByShard[i]
+                        )
+                    );
+                }
+            }
+            return new AsynchronousSearchProgress(shardProgress);
         }
 
         public SearchResponse partialResponse() {
