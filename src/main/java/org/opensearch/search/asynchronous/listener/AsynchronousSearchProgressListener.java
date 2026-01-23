@@ -144,6 +144,13 @@ public class AsynchronousSearchProgressListener extends SearchProgressActionList
     }
 
     private synchronized void onShardResult(int shardIndex) {
+        if (partialResultsHolder.maxDocByShard != null
+            && partialResultsHolder.maxDocIdProcessedByShard != null
+            && shardIndex < partialResultsHolder.maxDocByShard.length
+            && shardIndex < partialResultsHolder.maxDocIdProcessedByShard.length
+            && partialResultsHolder.maxDocByShard[shardIndex] >= 0) {
+            partialResultsHolder.maxDocIdProcessedByShard[shardIndex] = partialResultsHolder.maxDocByShard[shardIndex];
+        }
         if (partialResultsHolder.successfulShardIds.contains(shardIndex) == false) {
             partialResultsHolder.successfulShardIds.add(shardIndex);
             partialResultsHolder.successfulShards.incrementAndGet();

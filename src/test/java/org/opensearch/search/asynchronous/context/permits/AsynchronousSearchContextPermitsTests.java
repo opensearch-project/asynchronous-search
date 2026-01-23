@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -165,6 +166,21 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
     }
 
     public void testAsyncBlockOperationsOperationBeforeBlocked() throws InterruptedException, BrokenBarrierException {
+        final CountDownLatch allPermitsWaiting = new CountDownLatch(1);
+        final Semaphore semaphore = new Semaphore(Integer.MAX_VALUE, true) {
+            @Override
+            public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
+                if (permits == Integer.MAX_VALUE) {
+                    allPermitsWaiting.countDown();
+                }
+                return super.tryAcquire(permits, timeout, unit);
+            }
+        };
+        permits = new AsynchronousSearchContextPermits(
+            new AsynchronousSearchContextId(UUID.randomUUID().toString(), randomNonNegativeLong()),
+            threadPool,
+            semaphore
+        );
         final CyclicBarrier barrier = new CyclicBarrier(2);
         final CountDownLatch operationExecutingLatch = new CountDownLatch(1);
         final CountDownLatch firstOperationLatch = new CountDownLatch(1);
@@ -184,6 +200,7 @@ public class AsynchronousSearchContextPermitsTests extends OpenSearchTestCase {
             onBlocked.set(true);
             blockedLatch.countDown();
         }), TimeValue.timeValueMinutes(1), "");
+        assertTrue(allPermitsWaiting.await(30, TimeUnit.SECONDS));
         assertFalse(onBlocked.get());
 
         final CountDownLatch secondOperationExecuting = new CountDownLatch(1);

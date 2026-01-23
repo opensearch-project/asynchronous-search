@@ -73,4 +73,53 @@ public class AsynchronousSearchProgressListenerTests extends OpenSearchTestCase 
             ThreadPool.terminate(threadPool, 100, TimeUnit.MILLISECONDS);
         }
     }
+
+    public void testProgressMarksShardCompleteOnQueryResult() {
+        TestThreadPool threadPool = null;
+        try {
+            threadPool = new TestThreadPool(getClass().getName());
+            InternalAggregation.ReduceContextBuilder reduceContextBuilder = new InternalAggregation.ReduceContextBuilder() {
+                @Override
+                public InternalAggregation.ReduceContext forPartialReduction() {
+                    return InternalAggregation.ReduceContext.forPartialReduction(
+                        BigArrays.NON_RECYCLING_INSTANCE,
+                        null,
+                        () -> PipelineAggregator.PipelineTree.EMPTY
+                    );
+                }
+
+                @Override
+                public InternalAggregation.ReduceContext forFinalReduction() {
+                    return InternalAggregation.ReduceContext.forFinalReduction(
+                        BigArrays.NON_RECYCLING_INSTANCE,
+                        null,
+                        b -> {},
+                        PipelineAggregator.PipelineTree.EMPTY
+                    );
+                }
+            };
+            AsynchronousSearchProgressListener listener = new AsynchronousSearchProgressListener(
+                threadPool.relativeTimeInMillis(),
+                response -> null,
+                exception -> null,
+                threadPool.generic(),
+                threadPool::relativeTimeInMillis,
+                () -> reduceContextBuilder
+            );
+            List<SearchShard> shards = Collections.singletonList(new SearchShard(null, new ShardId("index", "uuid", 0)));
+            listener.onListShards(shards, Collections.emptyList(), SearchResponse.Clusters.EMPTY, false);
+            listener.onQueryResult(0, 3L, 10L);
+
+            AsynchronousSearchProgress progress = listener.progress();
+            assertNotNull(progress);
+            assertEquals(3L, progress.getShards().get(0).getMaxDocIdProcessed());
+
+            listener.onQueryResult(0);
+            AsynchronousSearchProgress completedProgress = listener.progress();
+            assertNotNull(completedProgress);
+            assertEquals(10L, completedProgress.getShards().get(0).getMaxDocIdProcessed());
+        } finally {
+            ThreadPool.terminate(threadPool, 100, TimeUnit.MILLISECONDS);
+        }
+    }
 }
