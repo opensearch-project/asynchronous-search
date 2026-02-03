@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.opensearch.core.action.ActionListener;
+import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchTask;
 import org.opensearch.action.search.TransportSearchAction;
@@ -123,7 +124,10 @@ public class TransportSubmitAsynchronousSearchAction extends HandledTransportAct
             };
             // set the parent task as the submit task for cancellation on connection close
             searchRequest.setParentTask(task.taskInfo(clusterService.localNode().getId(), false).getTaskId());
-            transportSearchAction.execute(searchRequest, progressListener);
+            try (ThreadContext.StoredContext ignore = threadPool.getThreadContext().stashContext()) {
+                threadPool.getThreadContext().putHeader("opensearch.asynchronous_search", "true");
+                transportSearchAction.execute(searchRequest, progressListener);
+            }
 
         } catch (Exception e) {
             logger.error(() -> new ParameterizedMessage("Failed to submit asynchronous search request [{}]", request), e);
