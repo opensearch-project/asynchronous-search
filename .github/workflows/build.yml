@@ -52,15 +52,43 @@ jobs:
           echo plugin $plugin
           mv -v build/distributions/$plugin ./
           echo "build-test-linux=$plugin" >> $GITHUB_OUTPUT
-      - name: Uploads coverage
-        uses: codecov/codecov-action@5c47607acb93fed5485fdbf7232e8a31425f672a # v5.0.2
+      - name: Upload Coverage Report Artifact
+        if: ${{ !cancelled() && matrix.java == 21 }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: jacoco-coverage-report
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
+          if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: async-plugin-linux-${{ matrix.java }}
           path: ${{ steps.step-build-test-linux.outputs.build-test-linux }}
           if-no-files-found: error
+
+  upload-coverage:
+    needs: linux-build
+    name: Upload Coverage Report to Codecov
+    if: ${{ !cancelled() && github.repository == 'opensearch-project/asynchronous-search' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Download Coverage Report
+        id: download-coverage
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: jacoco-coverage-report
+          path: build/reports/jacoco/test
+
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        if: steps.download-coverage.outcome == 'success'
+        with:
+          files: build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   linux-test-docker:
     strategy:
