@@ -201,7 +201,7 @@ public class AsynchronousSearchPostProcessor {
             logger.log(
                 level,
                 () -> new ParameterizedMessage(
-                    "Exception  occured while acquiring the permit for " + "asynchronousSearchContext [{}]",
+                    "Exception occurred while acquiring the permit for " + "asynchronousSearchContext [{}]",
                     asynchronousSearchContext.getAsynchronousSearchId()
                 ),
                 e
