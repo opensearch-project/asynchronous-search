@@ -143,7 +143,6 @@ public class AsynchronousSearchPostProcessorTests extends OpenSearchTestCase {
                 asActiveStore,
                 asStateMachine,
                 (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true),
-                testThreadPool,
                 clusterService
             );
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
@@ -219,7 +218,6 @@ public class AsynchronousSearchPostProcessorTests extends OpenSearchTestCase {
                 asActiveStore,
                 asStateMachine,
                 (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true),
-                testThreadPool,
                 clusterService
             );
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
@@ -287,7 +285,6 @@ public class AsynchronousSearchPostProcessorTests extends OpenSearchTestCase {
                 asActiveStore,
                 asStateMachine,
                 (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true),
-                testThreadPool,
                 clusterService
             );
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
@@ -358,7 +355,6 @@ public class AsynchronousSearchPostProcessorTests extends OpenSearchTestCase {
                 asActiveStore,
                 asStateMachine,
                 (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true),
-                testThreadPool,
                 clusterService
             );
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());
@@ -425,7 +421,6 @@ public class AsynchronousSearchPostProcessorTests extends OpenSearchTestCase {
                 asActiveStore,
                 asStateMachine,
                 (context) -> activeContextCleanUpConsumerInvocation.compareAndSet(false, true),
-                testThreadPool,
                 clusterService
             );
             SubmitAsynchronousSearchRequest submitAsynchronousSearchRequest = new SubmitAsynchronousSearchRequest(new SearchRequest());

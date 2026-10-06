@@ -27,6 +27,7 @@ import org.opensearch.search.asynchronous.transport.TransportAsynchronousSearchS
 import org.opensearch.search.asynchronous.transport.TransportDeleteAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.transport.TransportGetAsynchronousSearchAction;
 import org.opensearch.search.asynchronous.transport.TransportSubmitAsynchronousSearchAction;
+import org.opensearch.search.asynchronous.utils.PluginClient;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.transport.client.Client;
@@ -44,8 +45,10 @@ import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
+import org.opensearch.identity.PluginSubject;
 import org.opensearch.indices.SystemIndexDescriptor;
 import org.opensearch.plugins.ActionPlugin;
+import org.opensearch.plugins.IdentityAwarePlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.SystemIndexPlugin;
 import org.opensearch.repositories.RepositoriesService;
@@ -64,7 +67,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, SystemIndexPlugin {
+public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, SystemIndexPlugin, IdentityAwarePlugin {
 
     public static final String OPEN_DISTRO_ASYNC_SEARCH_GENERIC_THREAD_POOL_NAME = "opensearch_asynchronous_search_generic";
     public static final String LEGACY_OPENDISTRO_BASE_URI = "/_opendistro/_asynchronous_search";
@@ -73,6 +76,7 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
     private AsynchronousSearchPersistenceService persistenceService;
     private AsynchronousSearchActiveStore asynchronousSearchActiveStore;
     private AsynchronousSearchService asynchronousSearchService;
+    private PluginClient pluginClient;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -119,18 +123,24 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
-        this.persistenceService = new AsynchronousSearchPersistenceService(client, clusterService, threadPool);
+        this.pluginClient = new PluginClient(client);
+        this.persistenceService = new AsynchronousSearchPersistenceService(pluginClient, clusterService, threadPool);
         this.asynchronousSearchActiveStore = new AsynchronousSearchActiveStore(clusterService);
         this.asynchronousSearchService = new AsynchronousSearchService(
             persistenceService,
             asynchronousSearchActiveStore,
-            client,
+            pluginClient,
             clusterService,
             threadPool,
             new InternalAsynchronousSearchStats(),
             namedWriteableRegistry
         );
         return Arrays.asList(persistenceService, asynchronousSearchService);
+    }
+
+    @Override
+    public void assignSubject(PluginSubject pluginSubject) {
+        pluginClient.setSubject(pluginSubject);
     }
 
     @Override
