@@ -7,13 +7,12 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | Maintainer       | GitHub ID                                    | Affiliation |
 |------------------|----------------------------------------------|-------------|
 | Rishav Sagar     | [RS146BIJAY](https://github.com/RS146BIJAY)  | Amazon      |
-| Arpit Bandejiya  | [Arpit-Bandejiya](https://github.com/alchemist51) | Amazon      |
+| Arpit Bandejiya  | [alchemist51jiya](https://github.com/alchemist51) | Amazon      |
 | Pranit Kumar     | [pranikum](https://github.com/pranikum)      | Amazon      |
 | Bukhtawar Khan   | [Bukhtawar](https://github.com/Bukhtawar)    | Amazon      |
 | Marc Handalian   | [mch2](https://github.com/mch2)              | Amazon      |
 | Andrew Ross      | [andrross](https://github.com/andrross)      | Amazon      |
 | Kunal Kotwani    | [kotwanikunal](https://github.com/kotwanikunal) | Amazon      |
-| Poojita Raj      | [Poojita-Raj](https://github.com/Poojita-Raj) | Amazon      |
 | Rishikesh Pasham | [Rishikesh1159](https://github.com/Rishikesh1159)         | Amazon      |
 | Finn Carroll     | [finnegancarroll](https://github.com/finnegancarroll)         | Amazon      |
 
@@ -23,3 +22,5 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 |-------------| ------------------------------------------ | ----------- |
 | Anshul Agarwal | [anshul291995](https://github.com/anshul291995)     | Amazon      |
 | Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)       | Amazon      |
+| Poojita Raj      | [Poojita-Raj](https://github.com/Poojita-Raj) | Amazon      |
+
