@@ -128,6 +128,9 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
     private volatile long maxWaitForCompletionTimeout;
     private volatile long maxSearchRunningTime;
     private final AtomicLong idGenerator = new AtomicLong();
+    // Used only to cancel the search task behind a context. Expected to be a client that runs as the plugin
+    // subject, so that a user deleting their own asynchronous search does not also need the privilege to
+    // cancel tasks.
     private final Client client;
     private final ThreadPool threadPool;
     private final ClusterService clusterService;
@@ -172,7 +175,6 @@ public class AsynchronousSearchService extends AbstractLifecycleComponent implem
             asynchronousSearchActiveStore,
             asynchronousSearchStateMachine,
             this::freeActiveContext,
-            threadPool,
             clusterService
         );
         this.namedWriteableRegistry = namedWriteableRegistry;

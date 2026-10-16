@@ -79,6 +79,9 @@ public class AsynchronousSearchPersistenceService {
     public static final String SETTING_INDEX_CODEC = "index.codec";
     public static final String BEST_COMPRESSION_CODEC = "best_compression";
 
+    // Every operation here targets the plugin's own system index, so this is expected to be a client that
+    // runs as the plugin subject. Running as the caller would make persistence depend on whether the user
+    // who happened to trigger it can reach a system index.
     private final Client client;
     private final ClusterService clusterService;
     private final ThreadPool threadPool;
