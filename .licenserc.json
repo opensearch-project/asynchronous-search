@@ -20,6 +20,8 @@
     ".bat",
     ".policy",
     ".git",
+    ".idea",
+    ".github",
     ".gitignore",
     ".gradle",
     "gradle/wrapper",
