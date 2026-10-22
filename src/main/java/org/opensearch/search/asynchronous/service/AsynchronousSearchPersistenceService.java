@@ -122,9 +122,9 @@ public class AsynchronousSearchPersistenceService {
             return;
         }
         // Workaround: this GET runs as the plugin subject, so the security plugin evaluates it and turns realtime
-        // off because the index is a system index. The response is read right after storeResponse indexed it, and
-        // a non-realtime GET can miss it until the next refresh. Core refreshes the shard before the GET only when
-        // realtime is off, so this costs nothing while realtime holds.
+        // off because the index is a system index, and a response stored a moment ago can be missed. Core refreshes
+        // the shard first only when realtime is off, so with the security plugin each such GET refreshes one shard,
+        // and without it the flag does nothing.
         GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id).refresh(true);
         client.get(request, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists()) {
