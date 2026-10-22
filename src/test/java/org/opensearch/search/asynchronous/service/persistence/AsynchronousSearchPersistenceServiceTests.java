@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Tests the requests the persistence service issues, without a cluster. */
 public class AsynchronousSearchPersistenceServiceTests extends OpenSearchTestCase {
 
-    public void testGetResponseAsksForARefreshWhenRealtimeIsTurnedOff() {
+    public void testGetResponseAsksForARefreshSoANonRealtimeGetSeesTheStoredResponse() {
         ThreadPool threadPool = new TestThreadPool(getTestName());
         ClusterService clusterService = ClusterServiceUtils.createClusterService(threadPool);
         try {
@@ -59,7 +59,7 @@ public class AsynchronousSearchPersistenceServiceTests extends OpenSearchTestCas
             assertNotNull("getResponse must issue a GET", getRequest);
             assertTrue("realtime is still requested; the security plugin is what turns it off", getRequest.realtime());
             // Core acts on refresh only once realtime is off, which is when a write just made would be missed.
-            assertTrue(getRequest.refresh());
+            assertTrue("a non-realtime GET must refresh first to see a response stored a moment ago", getRequest.refresh());
         } finally {
             clusterService.close();
             ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);

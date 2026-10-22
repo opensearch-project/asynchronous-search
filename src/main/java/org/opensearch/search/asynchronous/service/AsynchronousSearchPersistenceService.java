@@ -121,10 +121,10 @@ public class AsynchronousSearchPersistenceService {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
         }
-        // Workaround: the security plugin turns realtime off for a GET on a system index once it evaluates the
-        // request, which it now does because the request runs as the plugin subject. The response is read right
-        // after storeResponse indexed it, so a non-realtime GET can miss it until the next refresh. Core refreshes
-        // the shard before the GET only when realtime is off, so this costs nothing while realtime holds.
+        // Workaround: this GET runs as the plugin subject, so the security plugin evaluates it and turns realtime
+        // off because the index is a system index. The response is read right after storeResponse indexed it, and
+        // a non-realtime GET can miss it until the next refresh. Core refreshes the shard before the GET only when
+        // realtime is off, so this costs nothing while realtime holds.
         GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id).refresh(true);
         client.get(request, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists()) {
