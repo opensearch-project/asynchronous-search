@@ -79,6 +79,9 @@ public class AsynchronousSearchPersistenceService {
     public static final String SETTING_INDEX_CODEC = "index.codec";
     public static final String BEST_COMPRESSION_CODEC = "best_compression";
 
+    // Every operation here targets the plugin's own system index, so this is expected to be a client that
+    // runs as the plugin subject. Running as the caller would make persistence depend on whether the user
+    // who happened to trigger it can reach a system index.
     private final Client client;
     private final ClusterService clusterService;
     private final ThreadPool threadPool;
@@ -118,7 +121,11 @@ public class AsynchronousSearchPersistenceService {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
         }
-        GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id);
+        // Workaround: this GET runs as the plugin subject, so the security plugin evaluates it and turns realtime
+        // off because the index is a system index, and a response stored a moment ago can be missed. Core refreshes
+        // the shard first only when realtime is off, so with the security plugin each such GET refreshes one shard,
+        // and without it the flag does nothing.
+        GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id).refresh(true);
         client.get(request, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists()) {
                 Map<String, Object> source = getResponse.getSource();

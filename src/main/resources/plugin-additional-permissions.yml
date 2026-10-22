@@ -1,0 +1,8 @@
+# Actions the plugin subject needs that security classifies as cluster permissions, so they fall
+# outside the grant a plugin already has on its own registered system indices.
+cluster_permissions:
+  # Cancelling the search task behind a context that is being deleted.
+  - "cluster:admin/tasks/cancel"
+  # Driven internally by the delete-by-query that removes expired responses.
+  - "indices:data/read/scroll"
+  - "indices:data/read/scroll/clear"
