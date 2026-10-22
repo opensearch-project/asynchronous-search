@@ -138,6 +138,12 @@ public class AsynchronousSearchPlugin extends Plugin implements ActionPlugin, Sy
         return Arrays.asList(persistenceService, asynchronousSearchService);
     }
 
+    /**
+     * Gives the plugin client the subject that its actions on the response index run as. Core calls this after
+     * {@code createComponents}, which builds the client.
+     *
+     * @param pluginSubject the subject core assigned to this plugin
+     */
     @Override
     public void assignSubject(PluginSubject pluginSubject) {
         pluginClient.setSubject(pluginSubject);

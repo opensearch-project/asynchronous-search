@@ -62,6 +62,9 @@ public class PluginClientTests extends OpenSearchTestCase {
         super.setUp();
         threadPool = new TestThreadPool(getTestName());
         threadContext = threadPool.getThreadContext();
+        // A plain executor, not one from the thread pool: those carry the submitter's context across the handoff,
+        // so the responding thread would already hold the caller's context and the context tests would pass
+        // without the client restoring anything.
         responder = Executors.newSingleThreadExecutor();
 
         // Records the context the action ran in and keeps the listener, so each test decides when and how the
@@ -93,10 +96,13 @@ public class PluginClientTests extends OpenSearchTestCase {
 
     @Override
     public void tearDown() throws Exception {
-        responder.shutdownNow();
-        assertTrue(responder.awaitTermination(10, TimeUnit.SECONDS));
-        ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
-        super.tearDown();
+        try {
+            responder.shutdownNow();
+            assertTrue(responder.awaitTermination(10, TimeUnit.SECONDS));
+        } finally {
+            ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
+            super.tearDown();
+        }
     }
 
     public void testRunsTheActionInsideTheSubject() {
@@ -106,7 +112,26 @@ public class PluginClientTests extends OpenSearchTestCase {
         pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, e -> {}));
 
         assertEquals("the action must run inside runAs", "set-by-subject", subjectSeenByDelegate);
-        assertNull("the caller's context must not reach the action", callerSeenByDelegate);
+        // Holds because the subject stashes the context, as the real subjects do.
+        assertNull("the action must not run in the caller's context", callerSeenByDelegate);
+    }
+
+    public void testListenerCompletedInsideRunAsSeesTheCallerContext() {
+        threadContext.putTransient(CALLER_TRANSIENT, "set-by-caller");
+        assignSubject();
+        // Completes on the calling thread while the subject's context is still in place, as a local action that
+        // fails validation does.
+        delegateBehaviour = listener -> listener.onResponse(new DummyResponse());
+
+        AtomicReference<String> callerSeen = new AtomicReference<>("listener did not run");
+        AtomicReference<String> subjectSeen = new AtomicReference<>("listener did not run");
+        pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {
+            callerSeen.set(threadContext.getTransient(CALLER_TRANSIENT));
+            subjectSeen.set(threadContext.getTransient(SUBJECT_TRANSIENT));
+        }, e -> {}));
+
+        assertEquals("set-by-caller", callerSeen.get());
+        assertNull("the subject's context must not reach the listener", subjectSeen.get());
     }
 
     public void testListenerSeesTheCallerContextAndNotTheSubjects() throws Exception {
@@ -153,7 +178,7 @@ public class PluginClientTests extends OpenSearchTestCase {
         assertEquals(List.of("deprecated"), warnings.get());
     }
 
-    public void testThrowsADelegateFailureToTheCallerAsTheWrappedClientWould() {
+    public void testThrowsADelegateFailureToTheCaller() {
         assignSubject();
         RuntimeException boom = new RuntimeException("failed to find action");
         delegateBehaviour = listener -> { throw boom; };
@@ -196,18 +221,24 @@ public class PluginClientTests extends OpenSearchTestCase {
     }
 
     public void testRejectsUseBeforeASubjectIsAssigned() {
+        List<Exception> failures = new ArrayList<>();
         IllegalStateException e = expectThrows(
             IllegalStateException.class,
-            () -> pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, f -> {}))
+            () -> pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, failures::add))
         );
         assertTrue(e.getMessage().contains("subject"));
+        assertNull("the action must not run without a subject", capturedListener);
+        assertEquals(List.of(), failures);
     }
 
     public void testAcceptsTheSameSubjectTwiceButRejectsADifferentOne() {
         RecordingSubject first = assignSubject();
         pluginClient.setSubject(first);
 
-        expectThrows(IllegalStateException.class, () -> pluginClient.setSubject(new RecordingSubject(threadContext)));
+        expectThrows(IllegalStateException.class, () -> pluginClient.setSubject(new RecordingSubject(threadContext, "set-by-other")));
+
+        pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, e -> {}));
+        assertEquals("a rejected subject must not replace the first one", "set-by-subject", subjectSeenByDelegate);
     }
 
     public void testRejectsANullSubject() {
@@ -259,9 +290,15 @@ public class PluginClientTests extends OpenSearchTestCase {
     private static class RecordingSubject implements PluginSubject {
 
         private final ThreadContext threadContext;
+        private final String marker;
 
         RecordingSubject(ThreadContext threadContext) {
+            this(threadContext, "set-by-subject");
+        }
+
+        RecordingSubject(ThreadContext threadContext, String marker) {
             this.threadContext = threadContext;
+            this.marker = marker;
         }
 
         @Override
@@ -272,7 +309,7 @@ public class PluginClientTests extends OpenSearchTestCase {
         @Override
         public <E extends Exception> void runAs(CheckedRunnable<E> runnable) throws E {
             try (ThreadContext.StoredContext ignored = threadContext.stashContext()) {
-                threadContext.putTransient(SUBJECT_TRANSIENT, "set-by-subject");
+                threadContext.putTransient(SUBJECT_TRANSIENT, marker);
                 runnable.run();
             }
         }
