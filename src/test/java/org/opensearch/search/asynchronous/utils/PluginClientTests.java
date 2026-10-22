@@ -11,13 +11,10 @@ package org.opensearch.search.asynchronous.utils;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.ActionType;
-import org.opensearch.common.CheckedRunnable;
 import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.identity.NamedPrincipal;
-import org.opensearch.identity.PluginSubject;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.client.NoOpClient;
 import org.opensearch.threadpool.TestThreadPool;
@@ -25,7 +22,6 @@ import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.client.Client;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +35,6 @@ import java.util.function.Consumer;
 public class PluginClientTests extends OpenSearchTestCase {
 
     private static final String CALLER_TRANSIENT = "caller.marker";
-    private static final String SUBJECT_TRANSIENT = "subject.marker";
     private static final String RESPONDER_TRANSIENT = "responder.marker";
 
     private static final ActionType<DummyResponse> DUMMY_ACTION = new ActionType<>(
@@ -78,7 +73,7 @@ public class PluginClientTests extends OpenSearchTestCase {
                 Request request,
                 ActionListener<Response> listener
             ) {
-                subjectSeenByDelegate = threadContext.getTransient(SUBJECT_TRANSIENT);
+                subjectSeenByDelegate = threadContext.getTransient(RecordingSubject.SUBJECT_TRANSIENT);
                 callerSeenByDelegate = threadContext.getTransient(CALLER_TRANSIENT);
                 capturedListener = (ActionListener<DummyResponse>) listener;
                 delegateBehaviour.accept(capturedListener);
@@ -127,7 +122,7 @@ public class PluginClientTests extends OpenSearchTestCase {
         AtomicReference<String> subjectSeen = new AtomicReference<>("listener did not run");
         pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {
             callerSeen.set(threadContext.getTransient(CALLER_TRANSIENT));
-            subjectSeen.set(threadContext.getTransient(SUBJECT_TRANSIENT));
+            subjectSeen.set(threadContext.getTransient(RecordingSubject.SUBJECT_TRANSIENT));
         }, e -> {}));
 
         assertEquals("set-by-caller", callerSeen.get());
@@ -257,7 +252,7 @@ public class PluginClientTests extends OpenSearchTestCase {
         AtomicReference<String> subjectSeen = new AtomicReference<>("listener did not run");
         Consumer<Object> record = ignored -> {
             callerSeen.set(threadContext.getTransient(CALLER_TRANSIENT));
-            subjectSeen.set(threadContext.getTransient(SUBJECT_TRANSIENT));
+            subjectSeen.set(threadContext.getTransient(RecordingSubject.SUBJECT_TRANSIENT));
         };
         pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(record::accept, record::accept));
 
@@ -270,7 +265,7 @@ public class PluginClientTests extends OpenSearchTestCase {
     }
 
     private RecordingSubject assignSubject() {
-        RecordingSubject subject = new RecordingSubject(threadContext);
+        RecordingSubject subject = new RecordingSubject(threadContext, "set-by-subject");
         pluginClient.setSubject(subject);
         return subject;
     }
@@ -281,38 +276,6 @@ public class PluginClientTests extends OpenSearchTestCase {
             threadContext.putTransient(RESPONDER_TRANSIENT, "set-by-responder");
             completion.accept(capturedListener);
         }).get(10, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Stands in for the plugin subject. Stashes and restores around its body as NoopPluginSubject and
-     * SecurePluginSubject do, and marks the context so a test can tell the subject's apart from the caller's.
-     */
-    private static class RecordingSubject implements PluginSubject {
-
-        private final ThreadContext threadContext;
-        private final String marker;
-
-        RecordingSubject(ThreadContext threadContext) {
-            this(threadContext, "set-by-subject");
-        }
-
-        RecordingSubject(ThreadContext threadContext, String marker) {
-            this.threadContext = threadContext;
-            this.marker = marker;
-        }
-
-        @Override
-        public Principal getPrincipal() {
-            return new NamedPrincipal("plugin:test");
-        }
-
-        @Override
-        public <E extends Exception> void runAs(CheckedRunnable<E> runnable) throws E {
-            try (ThreadContext.StoredContext ignored = threadContext.stashContext()) {
-                threadContext.putTransient(SUBJECT_TRANSIENT, marker);
-                runnable.run();
-            }
-        }
     }
 
     private static class DummyRequest extends ActionRequest {
