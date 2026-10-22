@@ -22,109 +22,246 @@ import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.client.NoOpClient;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.client.Client;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
-import static org.hamcrest.Matchers.nullValue;
-
+/** Tests that PluginClient runs actions as its subject and notifies the listener in the caller's context. */
 public class PluginClientTests extends OpenSearchTestCase {
 
-    private static final String CALLER_HEADER = "caller";
-    private static final String PLUGIN_HEADER = "plugin";
+    private static final String CALLER_TRANSIENT = "caller.marker";
+    private static final String SUBJECT_TRANSIENT = "subject.marker";
+    private static final String RESPONDER_TRANSIENT = "responder.marker";
 
-    private static final ActionType<TestResponse> TEST_ACTION = new ActionType<>("cluster:admin/test", in -> new TestResponse());
+    private static final ActionType<DummyResponse> DUMMY_ACTION = new ActionType<>(
+        "cluster:admin/plugin_client_test",
+        in -> new DummyResponse()
+    );
 
     private ThreadPool threadPool;
+    private ThreadContext threadContext;
+    private ExecutorService responder;
+    private PluginClient pluginClient;
+
+    private ActionListener<DummyResponse> capturedListener;
+    private String subjectSeenByDelegate;
+    private String callerSeenByDelegate;
+    private Consumer<ActionListener<DummyResponse>> delegateBehaviour;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
         threadPool = new TestThreadPool(getTestName());
-    }
+        threadContext = threadPool.getThreadContext();
+        responder = Executors.newSingleThreadExecutor();
 
-    @Override
-    public void tearDown() throws Exception {
-        ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
-        super.tearDown();
-    }
-
-    public void testRunsAsSubjectAndRestoresCallerContextForListener() {
-        AtomicReference<String> callerSeenByDelegate = new AtomicReference<>();
-        AtomicReference<String> pluginSeenByDelegate = new AtomicReference<>();
-        AtomicReference<String> callerSeenByListener = new AtomicReference<>();
-
+        // Records the context the action ran in and keeps the listener, so each test decides when and how the
+        // action completes. By default it does not complete, as for an asynchronous action.
+        delegateBehaviour = listener -> {};
         NoOpClient delegate = new NoOpClient(threadPool) {
             @Override
+            @SuppressWarnings("unchecked")
             protected <Request extends ActionRequest, Response extends ActionResponse> void doExecute(
                 ActionType<Response> action,
                 Request request,
                 ActionListener<Response> listener
             ) {
-                callerSeenByDelegate.set(threadPool.getThreadContext().getHeader(CALLER_HEADER));
-                pluginSeenByDelegate.set(threadPool.getThreadContext().getHeader(PLUGIN_HEADER));
-                listener.onResponse(null);
+                subjectSeenByDelegate = threadContext.getTransient(SUBJECT_TRANSIENT);
+                callerSeenByDelegate = threadContext.getTransient(CALLER_TRANSIENT);
+                capturedListener = (ActionListener<DummyResponse>) listener;
+                delegateBehaviour.accept(capturedListener);
+            }
+
+            // Non-null so that a client forwarding getRemoteClusterClient to its delegate cannot pass the
+            // refusal test by inheriting the delegate's own refusal.
+            @Override
+            public Client getRemoteClusterClient(String clusterAlias) {
+                return this;
             }
         };
-        PluginClient pluginClient = new PluginClient(delegate);
-        pluginClient.setSubject(new StashingSubject(threadPool));
-
-        try (ThreadContext.StoredContext ignored = threadPool.getThreadContext().stashContext()) {
-            threadPool.getThreadContext().putHeader(CALLER_HEADER, "user");
-            pluginClient.execute(
-                TEST_ACTION,
-                new TestRequest(),
-                ActionListener.wrap(
-                    response -> callerSeenByListener.set(threadPool.getThreadContext().getHeader(CALLER_HEADER)),
-                    e -> fail("unexpected failure: " + e)
-                )
-            );
-        }
-
-        assertThat(callerSeenByDelegate.get(), nullValue());
-        assertEquals(PLUGIN_HEADER, pluginSeenByDelegate.get());
-        // The listener is the caller's code, so it has to see the caller's context and not the subject's.
-        assertEquals("user", callerSeenByListener.get());
+        pluginClient = new PluginClient(delegate);
     }
 
-    public void testFailureInsideRunAsIsReportedThroughListener() {
-        RuntimeException thrown = new RuntimeException("boom");
-        AtomicReference<Exception> reported = new AtomicReference<>();
+    @Override
+    public void tearDown() throws Exception {
+        responder.shutdownNow();
+        assertTrue(responder.awaitTermination(10, TimeUnit.SECONDS));
+        ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
+        super.tearDown();
+    }
 
-        PluginClient pluginClient = new PluginClient(new NoOpClient(threadPool));
-        pluginClient.setSubject(new StashingSubject(threadPool) {
-            @Override
-            public <E extends Exception> void runAs(CheckedRunnable<E> r) {
-                throw thrown;
-            }
+    public void testRunsTheActionInsideTheSubject() {
+        threadContext.putTransient(CALLER_TRANSIENT, "set-by-caller");
+        assignSubject();
+
+        pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, e -> {}));
+
+        assertEquals("the action must run inside runAs", "set-by-subject", subjectSeenByDelegate);
+        assertNull("the caller's context must not reach the action", callerSeenByDelegate);
+    }
+
+    public void testListenerSeesTheCallerContextAndNotTheSubjects() throws Exception {
+        assertListenerSeesCallerContext(listener -> listener.onResponse(new DummyResponse()));
+    }
+
+    public void testListenerSeesTheCallerContextOnFailure() throws Exception {
+        assertListenerSeesCallerContext(listener -> listener.onFailure(new RuntimeException("action failed")));
+    }
+
+    public void testRestoresTheRespondingThreadsContextAfterTheListenerReturns() throws Exception {
+        threadContext.putTransient(CALLER_TRANSIENT, "set-by-caller");
+        assignSubject();
+        pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, e -> {}));
+
+        // Restoring the caller's context and keeping it would leave it on the responding thread for whatever
+        // runs there next.
+        AtomicReference<String> responderAfter = new AtomicReference<>();
+        AtomicReference<String> callerLeftBehind = new AtomicReference<>();
+        completeOnAnotherThread(listener -> {
+            listener.onResponse(new DummyResponse());
+            responderAfter.set(threadContext.getTransient(RESPONDER_TRANSIENT));
+            callerLeftBehind.set(threadContext.getTransient(CALLER_TRANSIENT));
         });
 
-        pluginClient.execute(TEST_ACTION, new TestRequest(), ActionListener.wrap(response -> fail("expected a failure"), reported::set));
-
-        assertSame(thrown, reported.get());
+        assertEquals("the responding thread's own context must come back", "set-by-responder", responderAfter.get());
+        assertNull("the caller's context must not be left on the responding thread", callerLeftBehind.get());
     }
 
-    public void testWithoutASubjectTheClientRefusesToExecute() {
-        PluginClient pluginClient = new PluginClient(new NoOpClient(threadPool));
-        expectThrows(
-            IllegalStateException.class,
-            () -> pluginClient.execute(TEST_ACTION, new TestRequest(), ActionListener.wrap(r -> {}, failure -> {}))
+    public void testListenerSeesResponseHeadersTheActionAdded() throws Exception {
+        assignSubject();
+        AtomicReference<List<String>> warnings = new AtomicReference<>();
+        pluginClient.execute(
+            DUMMY_ACTION,
+            new DummyRequest(),
+            ActionListener.wrap(r -> warnings.set(threadContext.getResponseHeaders().get("Warning")), e -> {})
         );
+
+        completeOnAnotherThread(listener -> {
+            threadContext.addResponseHeader("Warning", "deprecated");
+            listener.onResponse(new DummyResponse());
+        });
+
+        assertEquals(List.of("deprecated"), warnings.get());
+    }
+
+    public void testThrowsADelegateFailureToTheCallerAsTheWrappedClientWould() {
+        assignSubject();
+        RuntimeException boom = new RuntimeException("failed to find action");
+        delegateBehaviour = listener -> { throw boom; };
+
+        List<Exception> failures = new ArrayList<>();
+        RuntimeException thrown = expectThrows(
+            RuntimeException.class,
+            () -> pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, failures::add))
+        );
+
+        assertSame(boom, thrown);
+        assertEquals("a failure thrown before the listener exists must not also reach it", List.of(), failures);
+    }
+
+    public void testDoesNotNotifyAgainWhenTheListenerItselfThrows() {
+        assignSubject();
+        delegateBehaviour = listener -> listener.onResponse(new DummyResponse());
+
+        RuntimeException listenerBug = new RuntimeException("listener bug");
+        AtomicInteger calls = new AtomicInteger();
+        ActionListener<DummyResponse> throwing = new ActionListener<>() {
+            @Override
+            public void onResponse(DummyResponse response) {
+                calls.incrementAndGet();
+                throw listenerBug;
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                calls.incrementAndGet();
+            }
+        };
+
+        RuntimeException surfaced = expectThrows(
+            RuntimeException.class,
+            () -> pluginClient.execute(DUMMY_ACTION, new DummyRequest(), throwing)
+        );
+        assertSame(listenerBug, surfaced);
+        assertEquals("the listener must be told exactly once", 1, calls.get());
+    }
+
+    public void testRejectsUseBeforeASubjectIsAssigned() {
+        IllegalStateException e = expectThrows(
+            IllegalStateException.class,
+            () -> pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(r -> {}, f -> {}))
+        );
+        assertTrue(e.getMessage().contains("subject"));
+    }
+
+    public void testAcceptsTheSameSubjectTwiceButRejectsADifferentOne() {
+        RecordingSubject first = assignSubject();
+        pluginClient.setSubject(first);
+
+        expectThrows(IllegalStateException.class, () -> pluginClient.setSubject(new RecordingSubject(threadContext)));
+    }
+
+    public void testRejectsANullSubject() {
+        expectThrows(NullPointerException.class, () -> pluginClient.setSubject(null));
+    }
+
+    public void testRefusesARemoteClusterClient() {
+        expectThrows(UnsupportedOperationException.class, () -> pluginClient.getRemoteClusterClient("remote"));
+    }
+
+    private void assertListenerSeesCallerContext(Consumer<ActionListener<DummyResponse>> completion) throws Exception {
+        threadContext.putTransient(CALLER_TRANSIENT, "set-by-caller");
+        assignSubject();
+
+        AtomicReference<String> callerSeen = new AtomicReference<>("listener did not run");
+        AtomicReference<String> subjectSeen = new AtomicReference<>("listener did not run");
+        Consumer<Object> record = ignored -> {
+            callerSeen.set(threadContext.getTransient(CALLER_TRANSIENT));
+            subjectSeen.set(threadContext.getTransient(SUBJECT_TRANSIENT));
+        };
+        pluginClient.execute(DUMMY_ACTION, new DummyRequest(), ActionListener.wrap(record::accept, record::accept));
+
+        // A response arrives on a pooled thread that never carried the caller's context, so the wrapper around
+        // the listener is the only thing that can put it back.
+        completeOnAnotherThread(completion);
+
+        assertEquals("set-by-caller", callerSeen.get());
+        assertNull("the subject's context must not reach the listener", subjectSeen.get());
+    }
+
+    private RecordingSubject assignSubject() {
+        RecordingSubject subject = new RecordingSubject(threadContext);
+        pluginClient.setSubject(subject);
+        return subject;
+    }
+
+    /** Completes the captured action on a thread that never carried the caller's context. */
+    private void completeOnAnotherThread(Consumer<ActionListener<DummyResponse>> completion) throws Exception {
+        responder.submit(() -> {
+            threadContext.putTransient(RESPONDER_TRANSIENT, "set-by-responder");
+            completion.accept(capturedListener);
+        }).get(10, TimeUnit.SECONDS);
     }
 
     /**
-     * Mirrors the real subject implementations, which stash the caller's context for the duration of runAs and
-     * therefore restore it themselves on the way out. A fake without that behaviour would let a client that
-     * never restores the caller's context for its listener pass.
+     * Stands in for the plugin subject. Stashes and restores around its body as NoopPluginSubject and
+     * SecurePluginSubject do, and marks the context so a test can tell the subject's apart from the caller's.
      */
-    private static class StashingSubject implements PluginSubject {
+    private static class RecordingSubject implements PluginSubject {
 
-        private final ThreadPool threadPool;
+        private final ThreadContext threadContext;
 
-        StashingSubject(ThreadPool threadPool) {
-            this.threadPool = threadPool;
+        RecordingSubject(ThreadContext threadContext) {
+            this.threadContext = threadContext;
         }
 
         @Override
@@ -133,22 +270,22 @@ public class PluginClientTests extends OpenSearchTestCase {
         }
 
         @Override
-        public <E extends Exception> void runAs(CheckedRunnable<E> r) throws E {
-            try (ThreadContext.StoredContext ignored = threadPool.getThreadContext().stashContext()) {
-                threadPool.getThreadContext().putHeader(PLUGIN_HEADER, PLUGIN_HEADER);
-                r.run();
+        public <E extends Exception> void runAs(CheckedRunnable<E> runnable) throws E {
+            try (ThreadContext.StoredContext ignored = threadContext.stashContext()) {
+                threadContext.putTransient(SUBJECT_TRANSIENT, "set-by-subject");
+                runnable.run();
             }
         }
     }
 
-    private static class TestRequest extends ActionRequest {
+    private static class DummyRequest extends ActionRequest {
         @Override
         public ActionRequestValidationException validate() {
             return null;
         }
     }
 
-    private static class TestResponse extends ActionResponse {
+    private static class DummyResponse extends ActionResponse {
         @Override
         public void writeTo(StreamOutput out) throws IOException {}
     }
