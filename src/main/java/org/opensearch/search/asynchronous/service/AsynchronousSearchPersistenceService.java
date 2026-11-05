@@ -121,11 +121,9 @@ public class AsynchronousSearchPersistenceService {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
         }
-        // Workaround: this GET runs as the plugin subject, so the security plugin evaluates it and turns realtime
-        // off because the index is a system index, and a response stored a moment ago can be missed. Core refreshes
-        // the shard first only when realtime is off, so with the security plugin each such GET refreshes one shard,
-        // and without it the flag does nothing.
-        GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id).refresh(true);
+        // Reads a response that may have been stored a moment ago, so it relies on the GET staying realtime. It names
+        // only the plugin's own system index, which the security plugin keeps realtime for the plugin subject.
+        GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id);
         client.get(request, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists()) {
                 Map<String, Object> source = getResponse.getSource();
