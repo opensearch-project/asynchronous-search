@@ -23,4 +23,3 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | Anshul Agarwal | [anshul291995](https://github.com/anshul291995)     | Amazon      |
 | Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)       | Amazon      |
 | Poojita Raj      | [Poojita-Raj](https://github.com/Poojita-Raj) | Amazon      |
-
