@@ -121,8 +121,8 @@ public class AsynchronousSearchPersistenceService {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
         }
-        // Reads a response that may have been stored a moment ago, so it relies on the GET staying realtime. It names
-        // only the plugin's own system index, which the security plugin keeps realtime for the plugin subject.
+        // Must stay realtime to see a response stored a moment ago. The security plugin keeps a plugin subject's GET
+        // realtime when it names only that plugin's own system indices and none of them is a protected index.
         GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id);
         client.get(request, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists()) {

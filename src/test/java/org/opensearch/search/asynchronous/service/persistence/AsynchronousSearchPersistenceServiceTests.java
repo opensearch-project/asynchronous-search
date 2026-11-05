@@ -59,8 +59,6 @@ public class AsynchronousSearchPersistenceServiceTests extends OpenSearchTestCas
 
             GetRequest getRequest = (GetRequest) issued.get();
             assertNotNull("getResponse must issue a GET", getRequest);
-            // A realtime GET sees a response stored a moment ago. The security plugin keeps it realtime for the plugin
-            // subject only when every index it names is one of the plugin's own system indices.
             assertTrue("getResponse must ask for a realtime GET to see a response stored a moment ago", getRequest.realtime());
             assertArrayEquals(
                 "getResponse must name only the response index",
