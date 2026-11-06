@@ -32,8 +32,6 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.unit.TimeValue;
-import org.opensearch.common.util.concurrent.ThreadContext;
-import org.opensearch.threadpool.ThreadPool;
 
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
@@ -50,21 +48,18 @@ public class AsynchronousSearchPostProcessor {
     private final AsynchronousSearchActiveStore asynchronousSearchActiveStore;
     private final AsynchronousSearchStateMachine asynchronousSearchStateMachine;
     private final Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer;
-    private final ThreadPool threadPool;
 
     public AsynchronousSearchPostProcessor(
         AsynchronousSearchPersistenceService asynchronousSearchPersistenceService,
         AsynchronousSearchActiveStore asynchronousSearchActiveStore,
         AsynchronousSearchStateMachine stateMachine,
         Consumer<AsynchronousSearchActiveContext> freeActiveContextConsumer,
-        ThreadPool threadPool,
         ClusterService clusterService
     ) {
         this.asynchronousSearchActiveStore = asynchronousSearchActiveStore;
         this.asynchronousSearchPersistenceService = asynchronousSearchPersistenceService;
         this.asynchronousSearchStateMachine = stateMachine;
         this.freeActiveContextConsumer = freeActiveContextConsumer;
-        this.threadPool = threadPool;
     }
 
     public AsynchronousSearchResponse processSearchFailure(Exception exception, AsynchronousSearchContextId asynchronousSearchContextId) {
@@ -136,18 +131,35 @@ public class AsynchronousSearchPostProcessor {
                 return;
             }
             logger.debug("Persisting response for asynchronous search id [{}]", asynchronousSearchContext.getAsynchronousSearchId());
-            try (ThreadContext.StoredContext ignore = threadPool.getThreadContext().stashContext()) {
-                asynchronousSearchPersistenceService.storeResponse(
-                    asynchronousSearchContext.getAsynchronousSearchId(),
-                    persistenceModel,
-                    ActionListener.runAfter(ActionListener.wrap((indexResponse) -> {
-                        // Mark any dangling reference as PERSISTED and cleaning it up from the IN_MEMORY context
-                        logger.debug(
-                            "Successfully persisted response for asynchronous search id [{}]",
-                            asynchronousSearchContext.getAsynchronousSearchId()
+            asynchronousSearchPersistenceService.storeResponse(
+                asynchronousSearchContext.getAsynchronousSearchId(),
+                persistenceModel,
+                ActionListener.runAfter(ActionListener.wrap((indexResponse) -> {
+                    // Mark any dangling reference as PERSISTED and cleaning it up from the IN_MEMORY context
+                    logger.debug(
+                        "Successfully persisted response for asynchronous search id [{}]",
+                        asynchronousSearchContext.getAsynchronousSearchId()
+                    );
+                    try {
+                        asynchronousSearchStateMachine.trigger(new SearchResponsePersistedEvent(asynchronousSearchContext));
+                    } catch (AsynchronousSearchStateMachineClosedException ex) {
+                        // this should never happen since we had checked after acquiring the all permits so a
+                        // concurrent delete is not expected here, however an external task cancellation
+                        // can cause this
+                        logger.warn(
+                            "Unexpected state, possibly caused by external task cancellation,"
+                                + " context with id [{}] closed while triggering event [{}]",
+                            asynchronousSearchContext.getAsynchronousSearchId(),
+                            SearchResponsePersistedEvent.class.getName()
                         );
+                    } finally {
+                        freeActiveContextConsumer.accept(asynchronousSearchContext);
+                    }
+                },
+
+                    (e) -> {
                         try {
-                            asynchronousSearchStateMachine.trigger(new SearchResponsePersistedEvent(asynchronousSearchContext));
+                            asynchronousSearchStateMachine.trigger(new SearchResponsePersistFailedEvent(asynchronousSearchContext));
                         } catch (AsynchronousSearchStateMachineClosedException ex) {
                             // this should never happen since we had checked after acquiring the all permits so a
                             // concurrent delete is not expected here, however an external task cancellation
@@ -156,40 +168,21 @@ public class AsynchronousSearchPostProcessor {
                                 "Unexpected state, possibly caused by external task cancellation,"
                                     + " context with id [{}] closed while triggering event [{}]",
                                 asynchronousSearchContext.getAsynchronousSearchId(),
-                                SearchResponsePersistedEvent.class.getName()
+                                SearchResponsePersistFailedEvent.class.getName()
                             );
                         } finally {
                             freeActiveContextConsumer.accept(asynchronousSearchContext);
                         }
-                    },
-
-                        (e) -> {
-                            try {
-                                asynchronousSearchStateMachine.trigger(new SearchResponsePersistFailedEvent(asynchronousSearchContext));
-                            } catch (AsynchronousSearchStateMachineClosedException ex) {
-                                // this should never happen since we had checked after acquiring the all permits so a
-                                // concurrent delete is not expected here, however an external task cancellation
-                                // can cause this
-                                logger.warn(
-                                    "Unexpected state, possibly caused by external task cancellation,"
-                                        + " context with id [{}] closed while triggering event [{}]",
-                                    asynchronousSearchContext.getAsynchronousSearchId(),
-                                    SearchResponsePersistFailedEvent.class.getName()
-                                );
-                            } finally {
-                                freeActiveContextConsumer.accept(asynchronousSearchContext);
-                            }
-                            logger.error(
-                                () -> new ParameterizedMessage(
-                                    "Failed to persist final response for [{}] due to [{}]",
-                                    asynchronousSearchContext.getAsynchronousSearchId(),
-                                    e
-                                )
-                            );
-                        }
-                    ), releasable::close)
-                );
-            }
+                        logger.error(
+                            () -> new ParameterizedMessage(
+                                "Failed to persist final response for [{}] due to [{}]",
+                                asynchronousSearchContext.getAsynchronousSearchId(),
+                                e
+                            )
+                        );
+                    }
+                ), releasable::close)
+            );
 
         }, (e) -> {
             // Failure to acquire context can happen either due to a TimeoutException or AsynchronousSearchAlreadyClosedException
