@@ -79,6 +79,9 @@ public class AsynchronousSearchPersistenceService {
     public static final String SETTING_INDEX_CODEC = "index.codec";
     public static final String BEST_COMPRESSION_CODEC = "best_compression";
 
+    // Every operation here targets the plugin's own system index, so this is expected to be a client that
+    // runs as the plugin subject. Running as the caller would make persistence depend on whether the user
+    // who happened to trigger it can reach a system index.
     private final Client client;
     private final ClusterService clusterService;
     private final ThreadPool threadPool;
@@ -118,6 +121,8 @@ public class AsynchronousSearchPersistenceService {
             listener.onFailure(new ResourceNotFoundException(id));
             return;
         }
+        // Must stay realtime to see a response stored a moment ago. The security plugin keeps a plugin subject's GET
+        // realtime when it names only that plugin's own system indices and none of them is a protected index.
         GetRequest request = new GetRequest(ASYNC_SEARCH_RESPONSE_INDEX, id);
         client.get(request, ActionListener.wrap(getResponse -> {
             if (getResponse.isExists()) {
