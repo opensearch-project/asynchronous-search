@@ -10,7 +10,6 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | Arpit Bandejiya  | [alchemist51](https://github.com/alchemist51) | Amazon      |
 | Pranit Kumar     | [pranikum](https://github.com/pranikum)      | Amazon      |
 | Bukhtawar Khan   | [Bukhtawar](https://github.com/Bukhtawar)    | Amazon      |
-| Marc Handalian   | [mch2](https://github.com/mch2)              | Amazon      |
 | Andrew Ross      | [andrross](https://github.com/andrross)      | Amazon      |
 | Kunal Kotwani    | [kotwanikunal](https://github.com/kotwanikunal) | Amazon      |
 | Rishikesh Pasham | [Rishikesh1159](https://github.com/Rishikesh1159)         | Amazon      |
@@ -23,3 +22,4 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 | Anshul Agarwal | [anshul291995](https://github.com/anshul291995)     | Amazon      |
 | Bharathwaj G    | [bharath-techie](https://github.com/bharath-techie)       | Amazon      |
 | Poojita Raj      | [Poojita-Raj](https://github.com/Poojita-Raj) | Amazon      |
+| Marc Handalian | [mch2](https://github.com/mch2)            | Amazon      |
