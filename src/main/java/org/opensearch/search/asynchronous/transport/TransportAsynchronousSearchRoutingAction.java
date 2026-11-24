@@ -193,9 +193,9 @@ public abstract class TransportAsynchronousSearchRoutingAction<
             ThreadContext threadContext = threadPool.getThreadContext();
             String userStr = threadContext.getTransient(ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT);
             User user = User.parse(userStr);
-            try (ThreadContext.StoredContext ctx = threadContext.stashContext()) {
-                handleRequest(asynchronousSearchId, request, listener, user);
-            }
+            // Ownership of an asynchronous search is checked against this user rather than against index
+            // privileges, and the operations on the response index go through the plugin client.
+            handleRequest(asynchronousSearchId, request, listener, user);
         }
     }
 }
